@@ -1,6 +1,8 @@
 # Campus Hot & Cold
 
-## Project overview
+## Project domain
+
+Educational geography game
 
 Campus Hot & Cold is a Java geography game for Canadian university students. Choose a campus, then identify a secret landmark in six guesses. After each guess, get a hot/cold label and see whether you moved closer or farther away. The campus is known at the start, and a list of landmark names gives new players a way in. The 3D view would fly to the building you just guessed and fly to the secret landmark when the round ends.
 
@@ -25,14 +27,48 @@ Proposed four-person split. Teammate names and final ownership are pending roste
 
 Optional fifth use case: As a player, I want to browse the landmarks for a campus before playing so I can learn the campus. Show the names and let the player inspect each landmark without starting a round.
 
+## Use-case specifications
+
+### Start a round
+
+- **Actor and trigger:** The player selects a campus and clicks Start round.
+- **Precondition:** A campus pack is available.
+- **Main flow:** The app loads the campus coordinates, chooses a secret landmark, and displays candidate landmarks and the guess limit.
+- **Alternate flow:** If the API is unavailable or returns fewer than six eligible landmarks, the app displays a retry message.
+- **Postcondition:** A fresh round is ready, with the target hidden.
+
+### Submit a guess
+
+- **Actor and trigger:** The player selects a candidate and clicks Guess.
+- **Precondition:** A round is in progress.
+- **Main flow:** The app records the guess, displays its heat and trend, and decrements guesses remaining.
+- **Alternate flow:** A duplicate or invalid guess consumes no turn. A correct guess or the sixth valid guess ends the round.
+- **Postcondition:** The guess appears in history and the round is updated.
+
+### Explore a landmark
+
+- **Actor and trigger:** The player clicks Open landmark on map.
+- **Precondition:** At least one guess exists or the target has been revealed.
+- **Main flow:** The app opens the latest guessed landmark or the revealed answer in a browser map.
+- **Alternate flow:** If browser launch fails, the app displays an error.
+- **Postcondition:** The round is unchanged.
+
+### Review results
+
+- **Actor and trigger:** The player completes a round.
+- **Precondition:** The player solved the round or exhausted the guess limit.
+- **Main flow:** The app reveals the answer, shows the score, and displays the distance for each guess.
+- **Postcondition:** The results remain visible until the player starts another round. The final MVP will persist completed rounds to a local file and let players reopen them after restarting.
+
 ## Core entities
 
-| Entity | Responsibility |
-|---|---|
-| Campus | Stable ID, display name, and configuration for its landmark pack and distance bands. |
-| Landmark | Stable ID, campus ID, display name, and latitude/longitude. |
-| Round | Secret landmark ID, ordered guesses, guess limit, and status. |
-| Guess | Guessed landmark ID, computed distance, heat band, and change from the previous guess. |
+| Entity | Instance data | Relevant methods |
+|---|---|---|
+| `Campus` | Name and article titles | `name()`, `articleTitles()` |
+| `Landmark` | Wikipedia page ID, name, latitude, longitude | `distanceTo(other)` |
+| `Round` | Candidate landmarks, secret landmark, and ordered guesses. The guess limit is a class constant. | `submitGuess(id)`, `guessesRemaining()`, `isWon()`, `score()`, `revealedLandmark()` |
+| `Guess` | Landmark, distance in metres, heat, and trend | `evaluate(landmark, target, previous)` and record accessors |
+
 
 ## External API and successful request
 
@@ -63,7 +99,7 @@ Run `java -cp out campus.ui.CampusGame --check-api` to verify the live API and l
 
 The proposed 3D viewer uses the [Google Maps JavaScript 3D camera API](https://developers.google.com/maps/documentation/javascript/3d/animate-camera) in a browser page opened by the Java app. Each valid guess sends the guessed coordinates to the viewer and flies the camera to an angled view of the landmark. For a front-facing shot, try a per-landmark camera heading and offset. The final reveal uses the secret landmark as the destination.
 
-First prototype one U of T building in a normal browser and confirm imagery, camera framing, and [key and billing setup](https://developers.google.com/maps/documentation/javascript/get-api-key). Check coverage before adding another campus. The map viewing use case can use a 2D map link while the 3D view is being evaluated. Keep the game and scoring in Java.
+First prototype one U of T building in a normal browser and confirm imagery, camera framing, and [key and billing setup](https://developers.google.com/maps/documentation/javascript/get-api-key). The 3D API has not been called from this project yet. Check coverage before adding another campus. The map viewing use case can use a 2D map link while the 3D view is being evaluated. Keep the game and scoring in Java.
 
 ## November 13 milestone
 
