@@ -1,13 +1,12 @@
 # Campus Hot & Cold
 
-Java 21 / Swing geography game. See [Tony's start-round implementation](docs/TONY-START-ROUND.md) and [teammate prompts and integration plan](docs/TEAM-HANDOFF.md).
+Java 21 / Swing geography game.
 
 ## Current status
 
 - Tony's Start a round use case now has Clean Architecture input/output boundaries, a controller, interactor, presenter, view model, a real HTTP gateway, and 20 JUnit tests.
 - The existing starter still supports guessing, a final recap, and opening a map. These flows remain for teammates to refactor into their own use cases.
 - Saved results/history and persistence are **not yet implemented**. The 3D map is proposed, not implemented.
-- The public repository URL was submitted to MarkUs on November 21, 2026 at 08:47 EST. MarkUs confirms all required files were submitted but warns that late submissions are recorded and not graded. Course-staff acceptance is still needed.
 
 ## Project domain
 
@@ -25,7 +24,7 @@ Campus Hot & Cold is a Java geography game for Canadian university students. Cho
 
 ## User stories and proposed ownership
 
-Three-person plan confirmed by Tony. These are proposed responsibilities, not claims of completed contributions. Each member must implement/review their own use case and contribute through their own pull request. MarkUs still lists Hang Wu; the official roster has not been changed here.
+Planned use-case responsibilities are listed below. Implementation status is summarized above.
 
 | Owner | Use case | User story | Completion check |
 |---|---|---|---|
@@ -112,7 +111,7 @@ Run `java -cp out campus.Main --check-api` to verify the live API and list the i
 
 ## Development and verification
 
-Use feature branches and pull requests. GitHub Actions runs `mvn verify` on pushes and PRs. Tests use a fake gateway and a local HTTP server, so they run without Wikipedia access. See [the handoff](docs/TEAM-HANDOFF.md) for the two copy-ready teammate prompts and the shared session contract.
+Use feature branches and pull requests. GitHub Actions runs `mvn verify` on pushes and PRs. Tests use a fake gateway and a local HTTP server, so they run without Wikipedia access.
 
 `campus.Main` is the composition root. Application/domain code has no Swing or infrastructure dependencies. Start output goes through the presenter into an immutable view model; the target stays inside `GameSession`/`Round` during play. Do not add credentials or API keys to this public repository.
 
