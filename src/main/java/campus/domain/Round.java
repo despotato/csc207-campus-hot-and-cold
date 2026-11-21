@@ -1,17 +1,32 @@
 package campus.domain;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 
 public final class Round {
     public static final int GUESS_LIMIT = 6;
 
+    private final UUID id = UUID.randomUUID();
+    private final Campus campus;
     private final List<Landmark> landmarks;
     private final Landmark target;
     private final List<Guess> guesses = new ArrayList<>();
 
+    private CompletedRoundResult completedResult;
+
     public Round(List<Landmark> landmarks, Landmark target) {
+        this(Campus.ST_GEORGE, landmarks, target);
+    }
+
+    public Round(Campus campus, List<Landmark> landmarks, Landmark target) {
+        this.campus = Objects.requireNonNull(campus);
+        if (campus.name() == null || campus.name().isBlank()) {
+            throw new IllegalArgumentException("A round needs a campus name.");
+        }
         this.landmarks = List.copyOf(landmarks);
         if (landmarks.size() < GUESS_LIMIT || !landmarks.contains(target)
                 || landmarks.stream().map(Landmark::id).distinct().count() != landmarks.size()) {
@@ -44,6 +59,10 @@ public final class Round {
         return isWon() ? guessesRemaining() + 1 : 0;
     }
 
+    public Optional<CompletedRoundResult> completedResult() {
+        return Optional.ofNullable(completedResult);
+    }
+
     public Guess submitGuess(long landmarkId) {
         if (revealedLandmark().isPresent()) {
             throw new IllegalStateException("This round is already complete.");
@@ -56,6 +75,13 @@ public final class Round {
         Guess previous = guesses.isEmpty() ? null : guesses.getLast();
         Guess result = Guess.evaluate(landmark, target, previous);
         guesses.add(result);
+        if (revealedLandmark().isPresent()) {
+            var attempts = guesses.stream()
+                    .map(guess -> new CompletedRoundResult.Attempt(guess.landmark(), guess.distanceMetres()))
+                    .toList();
+            completedResult = new CompletedRoundResult(id, campus.name(), Instant.now(),
+                    target, attempts, isWon(), score());
+        }
         return result;
     }
 }
