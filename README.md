@@ -5,8 +5,8 @@ Java 21 / Swing geography game.
 ## Current status
 
 - Tony's Start a round use case now has Clean Architecture input/output boundaries, a controller, interactor, presenter, view model, a real HTTP gateway, and 20 JUnit tests.
-- The existing starter still supports guessing, a final recap, and opening a map. These flows remain for teammates to refactor into their own use cases.
-- Saved results/history and persistence are **not yet implemented**. The 3D map is proposed, not implemented.
+- The starter guessing flow supports playing through a round.
+- Finished rounds save locally. Open **History** to reopen a recap and view its answer or guesses on a browser map. The 3D map remains a proposal.
 
 ## Project domain
 
@@ -63,7 +63,7 @@ Planned use-case responsibilities are listed below. Implementation status is sum
 - **Actor and trigger:** The player completes a round.
 - **Precondition:** The player solved the round or exhausted the guess limit.
 - **Main flow:** The app reveals the answer, shows the score, and displays the distance for each guess.
-- **Postcondition:** The results remain visible until the player starts another round. The final MVP will persist completed rounds to a local file and let players reopen them after restarting.
+- **Postcondition:** The recap remains visible until the player starts another round. Completed rounds are saved locally and can be reopened after restarting.
 
 ## Core entities
 
@@ -108,6 +108,12 @@ java -cp out campus.Main
 ```
 
 Run `java -cp out campus.Main --check-api` to verify the live API and list the imported coordinates without opening Swing. The previous `campus.ui.CampusGame` entry point remains supported. Network access to Wikipedia is required to start a new round; failed loads show a retry message. No API key or billing account is required for the Wikipedia integration.
+
+## Saved results and history
+
+Complete a round to save its result automatically. **History** lists saved rounds newest first. Select a round and click **Open recap** to see the answer, score, and ordered distances. The recap offers map links for the answer and each guessed landmark. **Back to game** preserves the current round.
+
+The app stores one versioned file per completed round in `~/.campus-hot-and-cold/rounds/`. If a save fails, the recap stays visible and **Retry save** uses the original result. Check that the storage directory is writable. If History names an unreadable file, restore it from backup or move it out of the rounds directory for inspection, then click **Reload**.
 
 ## Development and verification
 

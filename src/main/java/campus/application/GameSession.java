@@ -2,6 +2,8 @@ package campus.application;
 
 import campus.domain.Round;
 
+import java.util.Optional;
+
 /** In-memory round shared by use cases. Commands must be serialized by the UI. */
 public final class GameSession {
     private Round round;
@@ -11,9 +13,10 @@ public final class GameSession {
     }
 
     public Round currentRound() {
-        if (round == null) {
-            throw new IllegalStateException("Start a round first.");
-        }
-        return round;
+        return findCurrentRound().orElseThrow(() -> new IllegalStateException("Start a round first."));
+    }
+
+    public Optional<Round> findCurrentRound() {
+        return Optional.ofNullable(round);
     }
 }

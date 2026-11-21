@@ -1,10 +1,15 @@
 package campus;
 
+import campus.adapters.SavedResultsController;
+import campus.adapters.SavedResultsPresenter;
 import campus.adapters.StartRoundController;
 import campus.adapters.StartRoundPresenter;
 import campus.application.GameSession;
+import campus.application.SavedResultsInteractor;
 import campus.application.StartRoundInteractor;
 import campus.domain.Campus;
+import campus.infrastructure.BrowserLandmarkMapGateway;
+import campus.infrastructure.FileRoundRepository;
 import campus.infrastructure.WikipediaLandmarkGateway;
 import campus.ui.CampusGame;
 
@@ -12,11 +17,12 @@ import javax.swing.SwingUtilities;
 import java.awt.GraphicsEnvironment;
 import java.io.IOException;
 import java.net.http.HttpClient;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Locale;
 import java.util.random.RandomGenerator;
 
-/** Composition root: the only place that wires UI, adapters, use cases, and HTTP together. */
+/** Composition root: the only place that wires UI, adapters, use cases, and infrastructure together. */
 public final class Main {
     private Main() { }
 
@@ -42,6 +48,11 @@ public final class Main {
         var presenter = new StartRoundPresenter();
         var interactor = new StartRoundInteractor(gateway, RandomGenerator.getDefault(), session, presenter);
         var controller = new StartRoundController(interactor);
-        SwingUtilities.invokeLater(() -> new CampusGame(controller, presenter, session).show());
+        var resultsPresenter = new SavedResultsPresenter();
+        var resultsDirectory = Path.of(System.getProperty("user.home"), ".campus-hot-and-cold", "rounds");
+        var results = new SavedResultsController(new SavedResultsInteractor(session,
+                new FileRoundRepository(resultsDirectory), new BrowserLandmarkMapGateway(), resultsPresenter));
+        SwingUtilities.invokeLater(() ->
+                new CampusGame(controller, presenter, session, results, resultsPresenter).show());
     }
 }
