@@ -13,7 +13,8 @@ public final class Round {
 
     public Round(List<Landmark> landmarks, Landmark target) {
         this.landmarks = List.copyOf(landmarks);
-        if (landmarks.size() < GUESS_LIMIT || !landmarks.contains(target)) {
+        if (landmarks.size() < GUESS_LIMIT || !landmarks.contains(target)
+                || landmarks.stream().map(Landmark::id).distinct().count() != landmarks.size()) {
             throw new IllegalArgumentException("A round needs six landmarks and a valid target.");
         }
         this.target = target;
@@ -58,3 +59,4 @@ public final class Round {
         return result;
     }
 }
+

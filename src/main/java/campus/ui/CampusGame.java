@@ -1,11 +1,14 @@
 package campus.ui;
 
-import campus.application.StartRoundInteractor;
+import campus.adapters.StartRoundController;
+import campus.adapters.StartRoundPresenter;
+import campus.adapters.StartRoundViewModel;
+import campus.application.GameSession;
+import campus.application.StartRoundResponse.Candidate;
 import campus.domain.Campus;
 import campus.domain.Guess;
 import campus.domain.Landmark;
 import campus.domain.Round;
-import campus.infrastructure.WikipediaLandmarkGateway;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -13,20 +16,18 @@ import java.awt.BorderLayout;
 import java.awt.Desktop;
 import java.awt.FlowLayout;
 import java.awt.Font;
-import java.awt.GraphicsEnvironment;
 import java.io.IOException;
 import java.net.URI;
-import java.net.http.HttpClient;
-import java.time.Duration;
 import java.util.Locale;
 import java.util.concurrent.ExecutionException;
-import java.util.random.RandomGenerator;
 
 public final class CampusGame {
-    private final StartRoundInteractor startRound;
+    private final StartRoundController startRound;
+    private final StartRoundPresenter presenter;
+    private final GameSession session;
     private final JComboBox<Campus> campuses = new JComboBox<>(new Campus[]{Campus.ST_GEORGE});
     private final JButton start = new JButton("Start round");
-    private final JComboBox<Landmark> candidates = new JComboBox<>();
+    private final JComboBox<Candidate> candidates = new JComboBox<>();
     private final JButton submit = new JButton("Guess");
     private final JButton map = new JButton("Open landmark on map");
     private final JLabel status = new JLabel("Choose a campus and start a round.");
@@ -35,29 +36,17 @@ public final class CampusGame {
     private Round round;
     private Landmark mapTarget;
 
-    private CampusGame(StartRoundInteractor startRound) {
+    public CampusGame(StartRoundController startRound, StartRoundPresenter presenter, GameSession session) {
         this.startRound = startRound;
+        this.presenter = presenter;
+        this.session = session;
     }
 
     public static void main(String[] args) throws IOException, InterruptedException {
-        var client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(8)).build();
-        var interactor = new StartRoundInteractor(new WikipediaLandmarkGateway(client),
-                RandomGenerator.getDefault());
-        if (args.length == 1 && "--check-api".equals(args[0])) {
-            Round loadedRound = interactor.execute(Campus.ST_GEORGE);
-            System.out.println("Loaded " + loadedRound.landmarks().size() + " landmarks.");
-            loadedRound.landmarks().forEach(landmark -> System.out.printf(Locale.ROOT,
-                    "%s: %.6f, %.6f%n", landmark.name(), landmark.latitude(), landmark.longitude()));
-            return;
-        }
-        if (GraphicsEnvironment.isHeadless()) {
-            System.err.println("A desktop session is required for the game. Use --check-api to verify setup.");
-            return;
-        }
-        SwingUtilities.invokeLater(() -> new CampusGame(interactor).show());
+        campus.Main.main(args);
     }
 
-    private void show() {
+    public void show() {
         JFrame frame = new JFrame("Campus Hot & Cold");
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         JPanel content = new JPanel(new BorderLayout(12, 12));
@@ -123,10 +112,11 @@ public final class CampusGame {
         mapStatus.setText(" ");
         status.setText("Loading landmarks from Wikipedia…");
 
-        new SwingWorker<Round, Void>() {
+        new SwingWorker<StartRoundViewModel, Void>() {
             @Override
-            protected Round doInBackground() throws Exception {
-                return startRound.execute(campus);
+            protected StartRoundViewModel doInBackground() {
+                startRound.start(campus);
+                return presenter.viewModel();
             }
 
             @Override
@@ -134,33 +124,38 @@ public final class CampusGame {
                 start.setEnabled(true);
                 campuses.setEnabled(true);
                 try {
-                    round = get();
+                    StartRoundViewModel model = get();
+                    if (!model.successful()) {
+                        restoreAfterLoadError(model.status());
+                        return;
+                    }
+                    round = session.currentRound();
                     mapTarget = null;
-                    candidates.setModel(new DefaultComboBoxModel<>(round.landmarks().toArray(Landmark[]::new)));
+                    candidates.setModel(new DefaultComboBoxModel<>(model.candidates().toArray(Candidate[]::new)));
                     candidates.setEnabled(true);
                     submit.setEnabled(true);
                     history.setText("");
-                    status.setText("Choose a landmark. " + round.guessesRemaining() + " guesses left.");
+                    status.setText(model.status());
                 } catch (ExecutionException exception) {
-                    restoreAfterLoadError();
+                    restoreAfterLoadError("Could not start the round. Please retry.");
                 } catch (InterruptedException exception) {
                     Thread.currentThread().interrupt();
-                    restoreAfterLoadError();
+                    restoreAfterLoadError("Loading was interrupted. Please retry.");
                 }
             }
         }.execute();
     }
 
-    private void restoreAfterLoadError() {
+    private void restoreAfterLoadError(String message) {
         boolean canGuess = round != null && round.revealedLandmark().isEmpty();
         candidates.setEnabled(canGuess);
         submit.setEnabled(canGuess);
         map.setEnabled(mapTarget != null);
-        status.setText("Could not load campus landmarks. Check your connection and retry.");
+        status.setText(message);
     }
 
     private void submitGuess() {
-        Landmark selected = (Landmark) candidates.getSelectedItem();
+        Candidate selected = (Candidate) candidates.getSelectedItem();
         if (selected == null) {
             return;
         }
@@ -169,7 +164,7 @@ public final class CampusGame {
         history.append(round.guesses().size() + ". " + selected.name() + " — "
                 + label(guess.heat()) + trend + "\n");
         candidates.removeItem(selected);
-        mapTarget = selected;
+        mapTarget = guess.landmark();
         map.setEnabled(true);
         mapStatus.setText(" ");
         var revealed = round.revealedLandmark();
@@ -210,3 +205,4 @@ public final class CampusGame {
         return Character.toUpperCase(text.charAt(0)) + text.substring(1);
     }
 }
+
