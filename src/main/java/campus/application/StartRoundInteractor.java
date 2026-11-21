@@ -23,7 +23,7 @@ public record StartRoundInteractor(LandmarkGateway gateway, RandomGenerator rand
                 output.presentFailure("Fewer than six landmarks loaded. Please retry.");
                 return;
             }
-            Round next = new Round(landmarks, landmarks.get(random.nextInt(landmarks.size())));
+            Round next = new Round(campus, landmarks, landmarks.get(random.nextInt(landmarks.size())));
             // Replace the old round only after the new round is fully valid.
             session.start(next);
             output.present(new StartRoundResponse(campus.name(), landmarks.stream()
