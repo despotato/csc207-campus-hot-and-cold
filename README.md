@@ -1,5 +1,14 @@
 # Campus Hot & Cold
 
+Java 21 / Swing geography game. See [Tony's start-round implementation](docs/TONY-START-ROUND.md) and [teammate prompts and integration plan](docs/TEAM-HANDOFF.md).
+
+## Current status
+
+- Tony's Start a round use case now has Clean Architecture input/output boundaries, a controller, interactor, presenter, view model, a real HTTP gateway, and 20 JUnit tests.
+- The existing starter still supports guessing, a final recap, and opening a map. These flows remain for teammates to refactor into their own use cases.
+- Saved results/history and persistence are **not yet implemented**. The 3D map is proposed, not implemented.
+- The public repository URL was submitted to MarkUs on November 21, 2026 at 08:47 EST. MarkUs confirms all required files were submitted but warns that late submissions are recorded and not graded. Course-staff acceptance is still needed.
+
 ## Project domain
 
 Educational geography game
@@ -16,16 +25,13 @@ Campus Hot & Cold is a Java geography game for Canadian university students. Cho
 
 ## User stories and proposed ownership
 
-Proposed four-person split. Teammate names and final ownership are pending roster confirmation.
+Three-person plan confirmed by Tony. These are proposed responsibilities, not claims of completed contributions. Each member must implement/review their own use case and contribute through their own pull request. MarkUs still lists Hang Wu; the official roster has not been changed here.
 
 | Owner | Use case | User story | Completion check |
 |---|---|---|---|
-| Tony Yin (proposed) | Start a round | As a player, I want to choose a campus so I can play somewhere I recognize. | Load the landmark list, pick a secret, and show six available guesses. Show a retry message if too few landmarks load. |
-| Teammate 2 (TBD) | Submit a guess | As a player, I want to know how warm my guess is and whether I got closer so I can narrow down the answer. | Score the distance, append feedback to history, and handle a win, a loss, and duplicates. |
-| Teammate 3 (TBD) | Explore a guessed landmark | As a player, I want to see the place I just guessed so I can recognize it next time I’m on campus. | Open the latest guess in a browser map. The browser viewer can later use a 3D fly-to. |
-| Teammate 4 (TBD) | Review results | As a player, I want to see the secret location and how my guesses compared so I can understand the round. | Reveal the answer, show the score and ordered distances, for each guess. |
-
-Optional fifth use case: As a player, I want to browse the landmarks for a campus before playing so I can learn the campus. Show the names and let the player inspect each landmark without starting a round.
+| Tony Yin | Start a round | As a player, I want to choose a campus so I can play somewhere I recognize. | Load the landmark list, pick a secret, and show six available guesses. Show a retry message if too few landmarks load. |
+| Jinshi Li | Submit a guess | As a player, I want to know how warm my guess is and whether I got closer so I can narrow down the answer. | Score the distance, append feedback to history, and handle a win, a loss, and duplicates. |
+| Takumi Goto | Review saved results | As a player, I want to review a completed round later so I can learn from my guesses. | Save completed rounds, reopen them after restarting, reveal the answer and ordered distances, and open a guessed/revealed location on a map. |
 
 ## Use-case specifications
 
@@ -83,17 +89,32 @@ GET https://en.wikipedia.org/w/api.php
 
 On November 13, 2026, the Java API check returned 12 landmarks from the full campus pack. Robarts Library returned latitude `43.664444` and longitude `-79.399444`. Convocation Hall resolved through a redirect.
 
+Rechecked from Java on November 21, 2026: all 12 landmarks loaded successfully, including Robarts Library at `43.664444, -79.399444`. This execution environment required its normal HTTPS proxy and system certificate store; those environment-specific settings are not committed to the app.
+
 ## Run locally
 
-Install JDK 21 or later. In a macOS, Linux, or Git Bash terminal, run:
+Install **JDK 21** (not just a JRE) and Maven. Open `pom.xml` in IntelliJ as a Maven project, or run:
+
+```sh
+mvn verify
+java -jar target/campus-hot-and-cold-0.2.0.jar
+```
+
+Without Maven, compile and run in a macOS, Linux, or Git Bash terminal:
 
 ```sh
 mkdir -p out
 javac -d out $(find src/main/java -name '*.java')
-java -cp out campus.ui.CampusGame
+java -cp out campus.Main
 ```
 
-Run `java -cp out campus.ui.CampusGame --check-api` to verify the live API and list the imported coordinates without opening Swing.
+Run `java -cp out campus.Main --check-api` to verify the live API and list the imported coordinates without opening Swing. The previous `campus.ui.CampusGame` entry point remains supported. Network access to Wikipedia is required to start a new round; failed loads show a retry message. No API key or billing account is required for the Wikipedia integration.
+
+## Development and verification
+
+Use feature branches and pull requests. GitHub Actions runs `mvn verify` on pushes and PRs. Tests use a fake gateway and a local HTTP server, so they run without Wikipedia access. See [the handoff](docs/TEAM-HANDOFF.md) for the two copy-ready teammate prompts and the shared session contract.
+
+`campus.Main` is the composition root. Application/domain code has no Swing or infrastructure dependencies. Start output goes through the presenter into an immutable view model; the target stays inside `GameSession`/`Round` during play. Do not add credentials or API keys to this public repository.
 
 ## 3D campus view
 
@@ -104,3 +125,4 @@ First prototype one U of T building in a normal browser and confirm imagery, cam
 ## November 13 milestone
 
 The starter includes the four domain entities, the Wikipedia gateway, the start-round interactor, and the Swing screen. A player can load the campus, play a full round, view the results, and open the most recent guess or revealed answer in a browser map. The 3D fly-to is proposed and depends on testing camera framing and imagery coverage on the selected campus.
+

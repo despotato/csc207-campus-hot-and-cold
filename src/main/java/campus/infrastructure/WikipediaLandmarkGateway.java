@@ -26,18 +26,24 @@ import java.util.List;
 import java.util.Map;
 
 public final class WikipediaLandmarkGateway implements LandmarkGateway {
-    private static final String ENDPOINT = "https://en.wikipedia.org/w/api.php";
     private final HttpClient client;
+    private final URI endpoint;
 
     public WikipediaLandmarkGateway(HttpClient client) {
+        this(client, URI.create("https://en.wikipedia.org/w/api.php"));
+    }
+
+    /** Endpoint injection allows integration tests against a local HTTP server. */
+    public WikipediaLandmarkGateway(HttpClient client, URI endpoint) {
         this.client = client;
+        this.endpoint = endpoint;
     }
 
     @Override
     public List<Landmark> load(Campus campus) throws IOException, InterruptedException {
         String titles = URLEncoder.encode(String.join("|", campus.articleTitles()),
                 StandardCharsets.UTF_8);
-        URI uri = URI.create(ENDPOINT + "?action=query&prop=coordinates&redirects=1"
+        URI uri = URI.create(endpoint + "?action=query&prop=coordinates&redirects=1"
                 + "&coprimary=primary&colimit=max&format=xml&titles=" + titles);
         HttpRequest request = HttpRequest.newBuilder(uri)
                 .timeout(Duration.ofSeconds(15))
@@ -54,6 +60,7 @@ public final class WikipediaLandmarkGateway implements LandmarkGateway {
         try {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+            factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
             factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
             factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
             var document = factory.newDocumentBuilder().parse(new ByteArrayInputStream(body));
@@ -78,8 +85,9 @@ public final class WikipediaLandmarkGateway implements LandmarkGateway {
                 }
             }
             return landmarks.values().stream().sorted(Comparator.comparing(Landmark::name)).toList();
-        } catch (ParserConfigurationException | SAXException | NumberFormatException exception) {
+        } catch (ParserConfigurationException | SAXException | IllegalArgumentException exception) {
             throw new IOException("Wikipedia returned unreadable landmark data.", exception);
         }
     }
 }
+
