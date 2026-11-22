@@ -6,11 +6,11 @@ import campus.adapters.SavedResultsViewModel;
 import campus.adapters.StartRoundController;
 import campus.adapters.StartRoundPresenter;
 import campus.adapters.StartRoundViewModel;
-import campus.application.GameSession;
+import campus.adapters.SubmitGuessController;
+import campus.adapters.SubmitGuessPresenter;
+import campus.adapters.SubmitGuessViewModel;
 import campus.application.StartRoundResponse.Candidate;
 import campus.domain.Campus;
-import campus.domain.Guess;
-import campus.domain.Round;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -21,7 +21,6 @@ import java.awt.Font;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
-import java.util.Locale;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
@@ -29,7 +28,8 @@ import java.util.function.Consumer;
 public final class CampusGame {
     private final StartRoundController startRound;
     private final StartRoundPresenter presenter;
-    private final GameSession session;
+    private final SubmitGuessController submitGuessController;
+    private final SubmitGuessPresenter submitGuessPresenter;
     private final SavedResultsController savedResults;
     private final SavedResultsPresenter resultsPresenter;
     private final SavedRoundsPanel savedRounds;
@@ -45,16 +45,20 @@ public final class CampusGame {
     private final JLabel status = new JLabel("Choose a campus and start a round.");
     private final JLabel mapStatus = new JLabel(" ");
     private final JTextArea history = new JTextArea(11, 48);
-    private Round round;
+    private boolean roundActive;
+    private boolean roundComplete;
+    private int guessesMade;
     private UUID visibleRecap;
     private boolean savePending;
     private boolean saving;
 
-    public CampusGame(StartRoundController startRound, StartRoundPresenter presenter, GameSession session,
+    public CampusGame(StartRoundController startRound, StartRoundPresenter presenter,
+                      SubmitGuessController submitGuessController, SubmitGuessPresenter submitGuessPresenter,
                       SavedResultsController savedResults, SavedResultsPresenter resultsPresenter) {
         this.startRound = startRound;
         this.presenter = presenter;
-        this.session = session;
+        this.submitGuessController = submitGuessController;
+        this.submitGuessPresenter = submitGuessPresenter;
         this.savedResults = savedResults;
         this.resultsPresenter = resultsPresenter;
         this.savedRounds = new SavedRoundsPanel(() -> screens.show(screenPanel, "game"),
@@ -145,7 +149,7 @@ public final class CampusGame {
         Campus campus = (Campus) campuses.getSelectedItem();
         setBusy(true);
         mapStatus.setText(" ");
-        status.setText("Loading landmarks from Wikipedia…");
+        status.setText("Loading landmarks from Wikipedia��");
 
         new SwingWorker<StartRoundViewModel, Void>() {
             @Override
@@ -162,7 +166,9 @@ public final class CampusGame {
                         status.setText(model.status());
                         return;
                     }
-                    round = session.currentRound();
+                    roundActive = true;
+                    roundComplete = false;
+                    guessesMade = 0;
                     visibleRecap = null;
                     candidates.setModel(new DefaultComboBoxModel<>(model.candidates().toArray(Candidate[]::new)));
                     history.setText("");
@@ -184,17 +190,21 @@ public final class CampusGame {
         if (selected == null) {
             return;
         }
-        Guess guess = round.submitGuess(selected.id());
-        String trend = guess.trend() == Guess.Trend.FIRST ? "" : " · " + label(guess.trend());
-        history.append(round.guesses().size() + ". " + selected.name() + " — "
-                + label(guess.heat()) + trend + "\n");
-        candidates.removeItem(selected);
-        map.setEnabled(true);
+        submitGuessController.submit(selected.id());
+        SubmitGuessViewModel model = submitGuessPresenter.viewModel();
+        status.setText(model.status());
+        if (!model.guessAccepted()) {
+            return;
+        }
+        guessesMade = 6 - model.guessesRemaining();
+        roundComplete = model.completed();
+        candidates.setModel(new DefaultComboBoxModel<>(model.candidates().toArray(Candidate[]::new)));
+        history.setText(model.feedbackLines().isEmpty() ? ""
+                : String.join("\n", model.feedbackLines()) + "\n");
+        map.setEnabled(guessesMade > 0);
         mapStatus.setText(" ");
-        if (round.revealedLandmark().isPresent()) {
+        if (model.completed()) {
             roundCompleted();
-        } else {
-            status.setText(round.guessesRemaining() + " guesses left.");
         }
     }
 
@@ -206,7 +216,7 @@ public final class CampusGame {
 
     private void saveRound() {
         saving = true;
-        status.setText("Saving result…");
+        status.setText("Saving result��");
         runResults(savedResults::saveCurrentRound, model -> {
             saving = false;
             if (model instanceof SavedResultsViewModel.Recap recap) {
@@ -216,7 +226,7 @@ public final class CampusGame {
                 }
                 savePending = recap.retrySave();
                 status.setText(savePending
-                        ? recap.title() + " — Save failed. Check storage and retry."
+                        ? recap.title() + " �� Save failed. Check storage and retry."
                         : recap.title());
             } else if (model instanceof SavedResultsViewModel.Status message) {
                 status.setText(message.message());
@@ -237,7 +247,7 @@ public final class CampusGame {
     }
 
     private void runHistoryAction(Runnable action) {
-        savedRounds.showStatus("Working…");
+        savedRounds.showStatus("Working��");
         runResults(action, model -> {
             switch (model) {
                 case SavedResultsViewModel.History results -> savedRounds.showHistory(results);
@@ -273,21 +283,18 @@ public final class CampusGame {
     }
 
     private void setBusy(boolean busy) {
-        boolean canGuess = !busy && round != null && round.revealedLandmark().isEmpty();
+        boolean canGuess = !busy && roundActive && !roundComplete;
         start.setEnabled(!busy && !savePending);
         campuses.setEnabled(!busy && !savePending);
         candidates.setEnabled(canGuess);
         submit.setEnabled(canGuess);
-        map.setEnabled(!busy && round != null && !round.guesses().isEmpty());
+        map.setEnabled(!busy && roundActive && guessesMade > 0);
         browseHistory.setEnabled(!busy);
         retrySave.setVisible(savePending);
         retrySave.setEnabled(!busy && savePending);
         savedRounds.setBusy(busy);
     }
-
-    private static String label(Enum<?> value) {
-        String text = value.name().toLowerCase(Locale.ROOT);
-        return Character.toUpperCase(text.charAt(0)) + text.substring(1);
-    }
 }
+
+
 
