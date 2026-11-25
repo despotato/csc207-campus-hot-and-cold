@@ -4,8 +4,8 @@ Java 21 / Swing geography game.
 
 ## Current status
 
-- Tony's Start a round use case now has Clean Architecture input/output boundaries, a controller, interactor, presenter, view model, a real HTTP gateway, and 20 JUnit tests.
-- The starter guessing flow supports playing through a round.
+- Start a round and Submit a guess use Clean Architecture input/output boundaries, controllers, interactors, presenters, and immutable view models.
+- The core game supports six distinct guesses, written heat/trend feedback, wins/losses, answer reveal, and scoring. The UI does not receive the hidden target or exact distances during play.
 - Finished rounds save locally. Open **History** to reopen a recap and view its answer or guesses on a browser map. The 3D map remains a proposal.
 
 ## Project domain
@@ -117,7 +117,7 @@ The app stores one versioned file per completed round in `~/.campus-hot-and-cold
 
 ## Development and verification
 
-Use feature branches and pull requests. GitHub Actions runs `mvn verify` on pushes and PRs. Tests use a fake gateway and a local HTTP server, so they run without Wikipedia access.
+Use feature branches and pull requests. GitHub Actions runs `mvn verify` under a virtual display on pushes and PRs, including desktop Swing integration tests. Each successful run provides a downloadable Java 21 JAR artifact. Tests use a fake gateway and a local HTTP server, so they run without Wikipedia access.
 
 `campus.Main` is the composition root. Application/domain code has no Swing or infrastructure dependencies. Start output goes through the presenter into an immutable view model; the target stays inside `GameSession`/`Round` during play. Do not add credentials or API keys to this public repository.
 
@@ -131,3 +131,11 @@ First prototype one U of T building in a normal browser and confirm imagery, cam
 
 The starter includes the four domain entities, the Wikipedia gateway, the start-round interactor, and the Swing screen. A player can load the campus, play a full round, view the results, and open the most recent guess or revealed answer in a browser map. The 3D fly-to is proposed and depends on testing camera framing and imagery coverage on the selected campus.
 
+
+## Core-game verification
+
+The desktop integration suite clicks the actual Swing controls with deterministic landmark data. It checks a win, a six-guess loss, automatic saving, a failed-save retry, history after a fresh app session, map destinations, failed network loads, and starting another round. External browser launching is replaced by a recording gateway; the real map link still needs a browser on the player's computer.
+
+On Linux, run all desktop tests with `xvfb-run -a mvn verify`. On a normal desktop, `mvn verify` includes them automatically. In headless environments without a display, desktop tests are skipped; the other tests still run. The integration tests do not access Wikipedia or modify real player history.
+
+The implemented scope is one campus and browser map links. Multiple campuses and animated 3D views are future extensions.

@@ -94,6 +94,9 @@ public final class CampusGame {
         JPanel titleRow = new JPanel(new FlowLayout(FlowLayout.LEADING));
         titleRow.add(heading);
         controls.add(titleRow);
+        JLabel instructions = new JLabel("Find the secret landmark in six guesses. Hot <100 m; warm <250 m; cool <500 m.");
+        controls.add(instructions);
+        controls.add(new JLabel("Warmer / colder compares your latest guess with the previous one."));
 
         JPanel campusRow = new JPanel(new FlowLayout(FlowLayout.LEADING));
         JLabel campusLabel = new JLabel("Campus");
@@ -149,7 +152,7 @@ public final class CampusGame {
         Campus campus = (Campus) campuses.getSelectedItem();
         setBusy(true);
         mapStatus.setText(" ");
-        status.setText("Loading landmarks from Wikipedia��");
+        status.setText("Loading landmarks from Wikipedia...");
 
         new SwingWorker<StartRoundViewModel, Void>() {
             @Override
@@ -196,7 +199,7 @@ public final class CampusGame {
         if (!model.guessAccepted()) {
             return;
         }
-        guessesMade = 6 - model.guessesRemaining();
+        guessesMade = campus.domain.Round.GUESS_LIMIT - model.guessesRemaining();
         roundComplete = model.completed();
         candidates.setModel(new DefaultComboBoxModel<>(model.candidates().toArray(Candidate[]::new)));
         history.setText(model.feedbackLines().isEmpty() ? ""
@@ -216,7 +219,7 @@ public final class CampusGame {
 
     private void saveRound() {
         saving = true;
-        status.setText("Saving result��");
+        status.setText("Saving result...");
         runResults(savedResults::saveCurrentRound, model -> {
             saving = false;
             if (model instanceof SavedResultsViewModel.Recap recap) {
@@ -226,7 +229,7 @@ public final class CampusGame {
                 }
                 savePending = recap.retrySave();
                 status.setText(savePending
-                        ? recap.title() + " �� Save failed. Check storage and retry."
+                        ? recap.title() + " - Save failed. Check storage and retry."
                         : recap.title());
             } else if (model instanceof SavedResultsViewModel.Status message) {
                 status.setText(message.message());
@@ -247,7 +250,7 @@ public final class CampusGame {
     }
 
     private void runHistoryAction(Runnable action) {
-        savedRounds.showStatus("Working��");
+        savedRounds.showStatus("Working...");
         runResults(action, model -> {
             switch (model) {
                 case SavedResultsViewModel.History results -> savedRounds.showHistory(results);
@@ -295,6 +298,3 @@ public final class CampusGame {
         savedRounds.setBusy(busy);
     }
 }
-
-
-
