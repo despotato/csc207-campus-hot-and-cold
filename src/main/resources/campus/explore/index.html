@@ -29,6 +29,13 @@
   button.secondary { background: var(--paper); }
   kbd { display: inline-block; min-width: 1.6em; padding: 0 4px; border: 2px solid var(--paper); border-bottom-width: 4px; text-align: center; font: inherit; }
 
+  /* Building name labels, drawn crisp over the pixelated map. */
+  #labels { position: fixed; inset: 0; pointer-events: none; overflow: hidden; }
+  #labels div { position: absolute; left: 0; top: 0; white-space: nowrap; font-size: 10px; line-height: 1; padding: 3px 5px 2px;
+    background: #1b1f3acc; color: var(--paper); border: 1px solid #fff8e766; will-change: transform; }
+  #labels div.zone { border-color: var(--mint); color: var(--mint); }
+  #labels div.target { border-color: var(--gold); color: var(--gold); font-size: 12px; }
+
   /* HUD */
   #hud { position: fixed; top: 12px; left: 12px; display: grid; gap: 4px; min-width: 190px; }
   #hud .row { display: flex; justify-content: space-between; gap: 12px; }
@@ -49,6 +56,8 @@
   #banner { position: fixed; top: 12px; left: 50%; transform: translateX(-50%); max-width: min(680px, 92vw); text-align: center; }
   #banner .hint { color: var(--gold); margin-top: 4px; }
   #tip { position: fixed; pointer-events: none; padding: 4px 8px; font-size: 12px; transform: translate(12px, 12px); }
+  #mapTitle { position: fixed; top: 12px; left: 50%; transform: translateX(-50%); text-align: center; }
+  #mapTitle small { display: block; font-size: 11px; opacity: .8; }
 
   /* Screens */
   .screen { position: fixed; inset: 0; display: grid; place-items: center; background: #1b1f3a66; padding: 16px; }
@@ -85,6 +94,7 @@
 </head>
 <body>
 <div id="map"></div>
+<div id="labels"></div>
 <div id="vignette"></div>
 
 <div id="hud" class="panel hidden" aria-live="polite">
@@ -95,8 +105,9 @@
 <div id="log" class="panel hidden"><h3>Checks</h3><ol id="checks"></ol><p id="nochecks">None yet. Press <kbd>Space</kbd>.</p></div>
 <div id="compass" class="hidden" title="North"><span id="needle">▲N</span></div>
 <div id="help" class="panel hidden">
-  <kbd>W</kbd>/<kbd>↑</kbd> walk · <kbd>A</kbd><kbd>D</kbd>/<kbd>←</kbd><kbd>→</kbd> turn · <kbd>S</kbd>/<kbd>↓</kbd> turn around · <kbd>Shift</kbd> run · <kbd>Space</kbd> check
+  <kbd>W</kbd> walk · <kbd>A</kbd><kbd>D</kbd> turn (or drag) · <kbd>S</kbd> back · <kbd>Shift</kbd> run · <kbd>Space</kbd> check · <kbd>M</kbd> map · scroll zoom
 </div>
+<div id="mapTitle" class="panel hidden">Campus map<small>Your checks and trail · <kbd>M</kbd> or <kbd>Esc</kbd> to return</small></div>
 <div id="toast"></div>
 <div id="banner" class="panel hidden"><div id="bannerText"></div><div class="hint" id="bannerHint"></div></div>
 <div id="tip" class="panel hidden"></div>
@@ -110,13 +121,13 @@
     <h1>Campus<br>Hot <span class="amp">&amp;</span> Cold</h1>
     <p class="lead">U of T St. George · Explore</p>
     <ol class="rules">
-      <li>Walk the campus paths to find the hidden <b>zone</b>. You get a few hot/cold checks, so spend them wisely.</li>
+      <li>Walk around campus to find the hidden <b>zone</b>. You get a few hot/cold checks, so spend them wisely.</li>
       <li>Inside the zone, pick a hint <b>blind</b>: easy, normal or hard. Harder hints score more.</li>
       <li>Click the building you think it is. Fewer guesses and shorter walks score more.</li>
     </ol>
     <div class="controls">
-      <span><kbd>W</kbd> walk</span><span><kbd>A</kbd><kbd>D</kbd> turn at paths</span><span><kbd>S</kbd> turn around</span>
-      <span><kbd>Shift</kbd> run</span><span><kbd>Space</kbd> check</span>
+      <span><kbd>W</kbd> walk</span><span><kbd>A</kbd><kbd>D</kbd> turn</span><span><kbd>S</kbd> back</span>
+      <span><kbd>Shift</kbd> run</span><span><kbd>Space</kbd> check</span><span><kbd>M</kbd> map</span><span>Scroll to zoom</span>
     </div>
     <!-- Difficulty selector: the start request already sends { difficulty }. See the team task "Difficulty levels". -->
     <div id="difficulty" data-value="normal" class="controls">Difficulty: Normal</div>
@@ -162,27 +173,29 @@
 <script>
 "use strict";
 const params = new URLSearchParams(location.search);
-const PIX = Math.min(1, Math.max(0.15, Number(params.get('pix')) || 0.28));
+const PIX = Math.min(1, Math.max(0.15, Number(params.get('pix')) || 0.3));
 const DEBUG = params.get('debug') === '1';
 const $ = id => document.getElementById(id);
 const HEAT_COLORS = { hot: '#ff4d2e', warm: '#ff9f1c', cool: '#4cc9f0', cold: '#6f8cff' };
 const TREND_TEXT = { first: '', warmer: '▲ Warmer', same: '■ Same', colder: '▼ Colder' };
-const WALK_SPEED = 5.8, RUN_SPEED = 8.3, TURN_RATE = 110;
-const FOLLOW = { zoom: 19.1, pitch: 64 };
+const WALK_SPEED = 7.5, RUN_SPEED = 12, BACK_SPEED = 4.5, TURN_RATE = 150;
+const ZOOM_MIN = 17, ZOOM_MAX = 20.6;
+// Must match CampusPackLoader.CELL_METRES and GeoPoint's metres per degree in Java.
+const CELL = 1.5, BODY = 0.6, M_LAT = Math.PI * 6371000 / 180;
+let M_LON = M_LAT * Math.cos(43.663 * Math.PI / 180);
 
-// ---------- geometry (metres around campus, fine at this scale) ----------
-let M_LAT = 111320, M_LON = 111320 * Math.cos(43.663 * Math.PI / 180);
+// ---------- geometry (metres around campus) ----------
 const bearingOf = (a, b) => (Math.atan2((b[0] - a[0]) * M_LON, (b[1] - a[1]) * M_LAT) * 180 / Math.PI + 360) % 360;
 const distOf = (a, b) => Math.hypot((b[0] - a[0]) * M_LON, (b[1] - a[1]) * M_LAT);
-const angDiff = (a, b) => { const d = Math.abs(((a - b) % 360 + 540) % 360 - 180); return d; };
+const angDiff = (a, b) => Math.abs(((a - b) % 360 + 540) % 360 - 180);
 const approach = (from, to, maxStep) => {
   const d = ((to - from) % 360 + 540) % 360 - 180;
   return Math.abs(d) <= maxStep ? to : (from + Math.sign(d) * maxStep + 360) % 360;
 };
-const lerpPt = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+const moveBy = (p, east, north) => [p[0] + east / M_LON, p[1] + north / M_LAT];
 const offsetPt = (p, bearing, metres) => {
   const r = bearing * Math.PI / 180;
-  return [p[0] + Math.sin(r) * metres / M_LON, p[1] + Math.cos(r) * metres / M_LAT];
+  return moveBy(p, Math.sin(r) * metres, Math.cos(r) * metres);
 };
 const local = (p, heading, x, y) => offsetPt(offsetPt(p, heading, y), heading + 90, x);
 const circle = (c, radius, n = 48) => Array.from({ length: n + 1 }, (_, i) => offsetPt(c, i * 360 / n, radius));
@@ -191,12 +204,57 @@ const box = (p, heading, x0, x1, y0, y1, z0, z1, color) => ({ type: 'Feature', p
   geometry: { type: 'Polygon', coordinates: [[local(p, heading, x0, y0), local(p, heading, x1, y0), local(p, heading, x1, y1),
     local(p, heading, x0, y1), local(p, heading, x0, y0)]] } });
 
+// ---------- walkability grid (same rule as Java's OpenSpace) ----------
+const grid = {};
+function buildGrid(bounds, buildingList) {
+  grid.west = bounds.west; grid.south = bounds.south;
+  grid.cols = Math.ceil((bounds.east - bounds.west) * M_LON / CELL);
+  grid.rows = Math.ceil((bounds.north - bounds.south) * M_LAT / CELL);
+  grid.blocked = new Uint8Array(grid.cols * grid.rows);
+  for (const b of buildingList) {
+    if (b.flat) continue;
+    for (const polygon of b.outline) {
+      const outer = polygon[0];
+      let minLon = Infinity, maxLon = -Infinity, minLat = Infinity, maxLat = -Infinity;
+      for (const [lon, lat] of outer) { minLon = Math.min(minLon, lon); maxLon = Math.max(maxLon, lon); minLat = Math.min(minLat, lat); maxLat = Math.max(maxLat, lat); }
+      const c0 = Math.max(0, colOf(minLon)), c1 = Math.min(grid.cols - 1, colOf(maxLon));
+      const r0 = Math.max(0, rowOf(minLat)), r1 = Math.min(grid.rows - 1, rowOf(maxLat));
+      for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) {
+        const centre = [grid.west + (c + 0.5) * CELL / M_LON, grid.south + (r + 0.5) * CELL / M_LAT];
+        if (inRing(outer, centre) && !polygon.slice(1).some(hole => inRing(hole, centre))) grid.blocked[r * grid.cols + c] = 1;
+      }
+    }
+  }
+}
+const colOf = lon => Math.floor((lon - grid.west) * M_LON / CELL);
+const rowOf = lat => Math.floor((lat - grid.south) * M_LAT / CELL);
+function inRing(ring, p) {
+  let hit = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const a = ring[i], b = ring[j];
+    if ((a[1] > p[1]) !== (b[1] > p[1]) && p[0] < (b[0] - a[0]) * (p[1] - a[1]) / (b[1] - a[1]) + a[0]) hit = !hit;
+  }
+  return hit;
+}
+function isOpen(p) {
+  const c = colOf(p[0]), r = rowOf(p[1]);
+  return c >= 0 && r >= 0 && c < grid.cols && r < grid.rows && !grid.blocked[r * grid.cols + c];
+}
+/** The avatar's body (a little wider than the server's check) must stay clear, so the server never refuses a move. */
+const bodyClear = p => isOpen(p) && isOpen(moveBy(p, BODY, 0)) && isOpen(moveBy(p, -BODY, 0)) && isOpen(moveBy(p, 0, BODY)) && isOpen(moveBy(p, 0, -BODY));
+function segmentClear(a, b) {
+  const n = Math.max(1, Math.ceil(distOf(a, b) / 0.3));
+  for (let i = 1; i <= n; i++) if (!bodyClear([a[0] + (b[0] - a[0]) * i / n, a[1] + (b[1] - a[1]) * i / n])) return false;
+  return true;
+}
+
 // ---------- state ----------
-let pack, nodes, adj, buildings = new Map(), map;
+let pack, map, buildings = new Map(), named = [];
 const game = {
   phase: 'loading', pos: null, heading: 0, camBearing: 0, keys: {}, walked: 0, startedAt: 0, zoneAt: 0,
-  checksLeft: 0, checkCount: 0, zone: null, zoneBuildings: new Set(), guessed: new Set(), hover: null,
-  result: null, sending: false, lastSent: '', walkPhase: 0, autopilot: null, flying: false,
+  checksLeft: 0, checkCount: 0, zone: null, zoneBuildings: new Set(), guessed: new Set(), hover: null, target: null,
+  result: null, sending: false, pending: [], lastPushed: null, trail: [], walkPhase: 0, autopilot: null,
+  followZoom: 19, mapView: false, dragX: null, orbiting: false,
 };
 window.game = game;
 
@@ -206,6 +264,41 @@ async function api(action, body = {}) {
   let data = {};
   try { data = await response.json(); } catch (e) { data = { error: 'Bad response.' }; }
   return { status: response.status, body: data };
+}
+
+// ---------- pixel facade textures ----------
+function facade(kind) {
+  const size = 32, c = document.createElement('canvas');
+  c.width = c.height = size;
+  const g = c.getContext('2d');
+  const px = (x, y, w, h, color) => { g.fillStyle = color; g.fillRect(x, y, w, h); };
+  if (kind === 'brick') {
+    px(0, 0, size, size, '#b8674c');
+    for (let y = 0; y < size; y += 4) { px(0, y, size, 1, '#8f4b36'); for (let x = (y / 4) % 2 ? 0 : 4; x < size; x += 8) px(x, y, 1, 4, '#8f4b36'); }
+    for (const [x, y] of [[4, 6], [20, 6], [4, 21], [20, 21]]) { px(x - 1, y - 1, 9, 9, '#e9d8b4'); px(x, y, 7, 7, '#2e3a5c'); px(x, y, 3, 3, '#5c74a8'); }
+  } else if (kind === 'stone') {
+    px(0, 0, size, size, '#d8c49a');
+    for (let y = 0; y < size; y += 8) { px(0, y, size, 1, '#b8a47c'); for (let x = (y / 8) % 2 ? 0 : 8; x < size; x += 16) px(x, y, 1, 8, '#b8a47c'); }
+    for (const x of [5, 21]) { px(x, 4, 6, 10, '#3b3550'); px(x + 1, 3, 4, 1, '#3b3550'); px(x, 20, 6, 9, '#3b3550'); px(x + 1, 21, 2, 3, '#6b6890'); }
+  } else if (kind === 'glass') {
+    px(0, 0, size, size, '#6f93ad');
+    for (let i = 0; i < size; i += 8) { px(i, 0, 1, size, '#3e566b'); px(0, i, size, 1, '#3e566b'); }
+    px(2, 2, 4, 2, '#b9d6e8'); px(18, 10, 4, 2, '#b9d6e8'); px(10, 26, 4, 2, '#b9d6e8');
+  } else {
+    px(0, 0, size, size, '#bdb6a8');
+    for (const y of [5, 21]) { px(0, y, size, 6, '#4b5060'); for (let x = 3; x < size; x += 8) px(x, y, 1, 6, '#bdb6a8'); px(2, y + 1, 3, 1, '#8a93ab'); }
+    px(0, 15, size, 1, '#a39c8f');
+  }
+  return g.getImageData(0, 0, size, size);
+}
+function textureFor(b) {
+  const landmark = b.category;
+  const hash = (b.id * 2654435761) >>> 0;
+  if (b.height >= 40 || landmark === 'Teaching' && b.height >= 25) return 'glass';
+  if (landmark === 'College' || landmark === 'Library' || landmark === 'Campus life') return hash % 3 === 0 ? 'stone' : 'brick';
+  if (landmark === 'Residence') return 'brick';
+  if (b.height >= 18) return hash % 2 ? 'concrete' : 'brick';
+  return ['brick', 'stone', 'brick', 'concrete'][hash % 4];
 }
 
 // ---------- map ----------
@@ -236,39 +329,40 @@ function initMap() {
   return new Promise(resolve => map.on('load', resolve));
 }
 
+const lineWidth = (low, high) => ['interpolate', ['exponential', 2], ['zoom'],
+  15, ['*', low, ['coalesce', ['get', 'scale'], 1]], 19, ['*', high, ['coalesce', ['get', 'scale'], 1]]];
+
 function addGameLayers() {
-  // All buildings come from the campus pack (not the tile layer) so highlights match them exactly.
+  for (const kind of ['brick', 'stone', 'glass', 'concrete']) map.addImage('tex-' + kind, facade(kind), { pixelRatio: 1 });
 
   map.addSource('walkways', { type: 'geojson', data: fc(pack.walkways.edges.map(([a, b]) => ({ type: 'Feature', properties: {},
-    geometry: { type: 'LineString', coordinates: [nodes[a], nodes[b]] } }))) });
+    geometry: { type: 'LineString', coordinates: [pack.walkways.nodes[a], pack.walkways.nodes[b]] } }))) });
   map.addLayer({ id: 'walkways', type: 'line', source: 'walkways', layout: { 'line-cap': 'round', 'line-join': 'round' },
-    paint: { 'line-color': '#f3e9c6', 'line-width': ['interpolate', ['exponential', 2], ['zoom'], 15, 1, 19, 7], 'line-opacity': 0.95 } });
-
-  map.addSource('branches', { type: 'geojson', data: fc([]) });
-  map.addLayer({ id: 'branches', type: 'line', source: 'branches', layout: { 'line-cap': 'round' },
-    paint: { 'line-color': ['get', 'color'], 'line-width': ['interpolate', ['exponential', 2], ['zoom'], 17, 4, 19, 16] } });
+    paint: { 'line-color': '#f3e9c6', 'line-width': ['interpolate', ['exponential', 2], ['zoom'], 15, 1, 19, 6], 'line-opacity': 0.9 } });
 
   map.addSource('routes', { type: 'geojson', data: fc([]) });
   map.addLayer({ id: 'routes', type: 'line', source: 'routes', layout: { 'line-cap': 'round', 'line-join': 'round' },
-    paint: { 'line-color': ['get', 'color'],
-      'line-width': ['*', ['coalesce', ['get', 'scale'], 1], ['interpolate', ['exponential', 2], ['zoom'], 15, 3, 19, 14]] } });
+    paint: { 'line-color': ['get', 'color'], 'line-width': lineWidth(3, 14) } });
 
   map.addSource('zone', { type: 'geojson', data: fc([]) });
-  map.addLayer({ id: 'zone-floor', type: 'fill', source: 'zone', filter: ['==', ['get', 'kind'], 'floor'],
-    paint: { 'fill-color': '#ffd23f', 'fill-opacity': 0.18 } });
-  map.addLayer({ id: 'zone-ring', type: 'line', source: 'zone', filter: ['==', ['get', 'kind'], 'floor'],
-    paint: { 'line-color': '#ffd23f', 'line-width': 4, 'line-dasharray': [2, 1] } });
+  map.addLayer({ id: 'zone-floor', type: 'fill', source: 'zone', paint: { 'fill-color': '#ffd23f', 'fill-opacity': 0.18 } });
+  map.addLayer({ id: 'zone-ring', type: 'line', source: 'zone', paint: { 'line-color': '#ffd23f', 'line-width': 4, 'line-dasharray': [2, 1] } });
 
-  const features = pack.buildings.map(b => ({ type: 'Feature', id: b.id,
-    properties: { h: b.height, base: b.minHeight, name: b.name || '' },
-    geometry: { type: 'MultiPolygon', coordinates: b.outline } }));
-  map.addSource('buildings', { type: 'geojson', data: fc(features) });
-  const state = k => ['boolean', ['feature-state', k], false];
+  map.addSource('check-rings', { type: 'geojson', data: fc([]) });
+  map.addLayer({ id: 'check-rings', type: 'line', source: 'check-rings', paint: { 'line-color': ['get', 'color'], 'line-width': 4 } });
+
+  map.addSource('buildings', { type: 'geojson', data: fc(pack.buildings.map(b => ({ type: 'Feature', id: b.id,
+    properties: { h: b.height, base: b.minHeight, tex: 'tex-' + textureFor(b) },
+    geometry: { type: 'MultiPolygon', coordinates: b.outline } }))) });
   map.addLayer({ id: 'buildings', type: 'fill-extrusion', source: 'buildings', paint: {
     'fill-extrusion-height': ['get', 'h'], 'fill-extrusion-base': ['get', 'base'], 'fill-extrusion-vertical-gradient': false,
-    'fill-extrusion-color': ['case',
-      state('target'), '#ffd23f', state('wrong'), '#4a5578', state('hover'), '#fff3b0', state('candidate'), '#8fe0cc',
-      ['interpolate', ['linear'], ['get', 'h'], 0, '#ecd8ad', 20, '#dda070', 60, '#b9675b', 150, '#7b4a6e']] } });
+    'fill-extrusion-pattern': ['get', 'tex'] } });
+
+  // Highlights: a coloured shell just outside each highlighted building, so it shows over the texture.
+  map.addSource('highlights', { type: 'geojson', data: fc([]) });
+  map.addLayer({ id: 'highlights', type: 'fill-extrusion', source: 'highlights', paint: {
+    'fill-extrusion-height': ['get', 'top'], 'fill-extrusion-base': ['get', 'base'], 'fill-extrusion-color': ['get', 'color'],
+    'fill-extrusion-vertical-gradient': false } });
 
   for (const id of ['markers', 'beacon', 'avatar']) {
     map.addSource(id, { type: 'geojson', data: fc([]) });
@@ -276,135 +370,149 @@ function addGameLayers() {
       'fill-extrusion-color': ['get', 'color'], 'fill-extrusion-height': ['get', 'top'], 'fill-extrusion-base': ['get', 'base'],
       'fill-extrusion-vertical-gradient': false, 'fill-extrusion-opacity': id === 'beacon' ? 0.6 : 1 } });
   }
-  map.addSource('check-rings', { type: 'geojson', data: fc([]) });
-  map.addLayer({ id: 'check-rings', type: 'line', source: 'check-rings', paint: { 'line-color': ['get', 'color'], 'line-width': 4 } }, 'buildings');
+  // Map-view symbols: constant-size dots for checks and the player.
+  map.addSource('dots', { type: 'geojson', data: fc([]) });
+  map.addLayer({ id: 'dots', type: 'circle', source: 'dots', paint: {
+    'circle-radius': ['get', 'r'], 'circle-color': ['get', 'color'], 'circle-stroke-color': '#1b1f3a', 'circle-stroke-width': 3 } });
+  map.setLayoutProperty('dots', 'visibility', 'none');
 
   map.on('mousemove', 'buildings', onHover);
   map.on('mouseleave', 'buildings', () => setHover(null));
   map.on('click', 'buildings', onBuildingClick);
+  map.on('render', placeLabels);
+}
+
+// ---------- highlights ----------
+function shell(b, color) {
+  const ring0 = b.outline[0][0];
+  const xs = ring0.map(p => p[0] * M_LON), ys = ring0.map(p => p[1] * M_LAT);
+  const radius = Math.max(4, (Math.max(...xs) - Math.min(...xs) + Math.max(...ys) - Math.min(...ys)) / 4);
+  const k = 1 + 0.6 / radius, c = b.center;
+  const grow = ring => ring.map(([lon, lat]) => [c[0] + (lon - c[0]) * k, c[1] + (lat - c[1]) * k]);
+  return { type: 'Feature', properties: { color, base: b.minHeight, top: b.height + 0.6 },
+    geometry: { type: 'MultiPolygon', coordinates: b.outline.map(polygon => polygon.map(grow)) } };
+}
+function refreshHighlights() {
+  const features = [];
+  for (const id of game.zoneBuildings) {
+    if (id === game.target) continue;
+    const color = game.guessed.has(id) ? '#4a5578' : id === game.hover ? '#fff3b0' : '#8fe0cc';
+    features.push(shell(buildings.get(id), color));
+  }
+  if (game.target != null) features.push(shell(buildings.get(game.target), '#ffd23f'));
+  map.getSource('highlights').setData(fc(features));
+}
+
+// ---------- name labels ----------
+const labelPool = [];
+function placeLabels() {
+  const layer = $('labels');
+  const zoom = map.getZoom();
+  const show = game.phase !== 'title' && game.phase !== 'loading' && zoom >= 16.6 && !game.mapView;
+  let used = 0;
+  if (show) {
+    const { width, height } = map.getCanvas().getBoundingClientRect();
+    const pitch = map.getPitch() * Math.PI / 180;
+    const centre = map.getCenter();
+    const ppm = 512 * Math.pow(2, zoom) / (40075016.686 * Math.cos(centre.lat * Math.PI / 180));
+    const here = [centre.lng, centre.lat];
+    const candidates = named.map(b => ({ b, d: distOf(b.center, here) })).filter(x => x.d < 700).sort((a, b) => a.d - b.d);
+    const placed = [];
+    for (const { b } of candidates) {
+      if (used >= 28) break;
+      const p = map.project(b.center);
+      const y = p.y - b.height * ppm * Math.sin(pitch) - 6;
+      if (p.x < -50 || p.x > width + 50 || y < 20 || y > height - 10) continue;
+      const w = b.name.length * 7.2 + 12, h = 16;
+      const rect = [p.x - w / 2, y - h, p.x + w / 2, y];
+      if (placed.some(r => rect[0] < r[2] && rect[2] > r[0] && rect[1] < r[3] && rect[3] > r[1])) continue;
+      placed.push(rect);
+      let el = labelPool[used];
+      if (!el) { el = document.createElement('div'); labelPool.push(el); layer.append(el); }
+      if (el.textContent !== b.name) el.textContent = b.name;
+      el.className = b.id === game.target ? 'target' : game.zoneBuildings.has(b.id) && game.phase === 'guess' ? 'zone' : '';
+      el.style.transform = `translate(${Math.round(rect[0])}px, ${Math.round(rect[1])}px)`;
+      el.style.display = '';
+      used++;
+    }
+  }
+  for (let i = used; i < labelPool.length; i++) labelPool[i].style.display = 'none';
 }
 
 // ---------- avatar ----------
 function avatarFeatures(p, heading) {
   const S = 2.4, swing = Math.sin(game.walkPhase) * 0.28 * S;
   const parts = [
-    [-0.42, -0.06, -0.2 + swing, 0.2 + swing, 0, 0.95, '#2b3a67'],     // left leg
-    [0.06, 0.42, -0.2 - swing, 0.2 - swing, 0, 0.95, '#2b3a67'],       // right leg
-    [-0.55, 0.55, -0.3, 0.3, 0.95, 2.15, '#e94f37'],                   // jacket
-    [-0.42, 0.42, -0.62, -0.3, 1.15, 2.0, '#f2c14e'],                  // backpack
-    [-0.36, 0.36, -0.3, 0.3, 2.15, 2.85, '#f5c9a0'],                   // head
-    [-0.4, 0.4, -0.36, 0.55, 2.85, 3.08, '#1e3765'],                   // cap with brim
+    [-0.42, -0.06, -0.2 + swing, 0.2 + swing, 0, 0.95, '#2b3a67'],
+    [0.06, 0.42, -0.2 - swing, 0.2 - swing, 0, 0.95, '#2b3a67'],
+    [-0.55, 0.55, -0.3, 0.3, 0.95, 2.15, '#e94f37'],
+    [-0.42, 0.42, -0.62, -0.3, 1.15, 2.0, '#f2c14e'],
+    [-0.36, 0.36, -0.3, 0.3, 2.15, 2.85, '#f5c9a0'],
+    [-0.4, 0.4, -0.36, 0.55, 2.85, 3.08, '#1e3765'],
   ];
   const shadow = box(p, heading, -0.9 * S, 0.9 * S, -0.9 * S, 0.9 * S, 0, 0.05, '#00000055');
   return [shadow, ...parts.map(([x0, x1, y0, y1, z0, z1, c]) => box(p, heading, x0 * S, x1 * S, y0 * S, y1 * S, z0 * S, z1 * S, c))];
 }
-const posPoint = pos => lerpPt(nodes[pos.from], nodes[pos.to], pos.fraction);
 
-// ---------- movement along the footpath graph ----------
-function edgeLength(a, b) { return distOf(nodes[a], nodes[b]); }
-function atNode(pos) { return pos.fraction <= 1e-6 ? pos.from : pos.fraction >= 1 - 1e-6 ? pos.to : -1; }
-
-function bestEdgeFrom(node, heading, exclude) {
-  let best = -1, bestAngle = 999;
-  for (const next of adj[node]) {
-    if (next === exclude) continue;
-    const angle = angDiff(heading, bearingOf(nodes[node], nodes[next]));
-    if (angle < bestAngle) { bestAngle = angle; best = next; }
-  }
-  return { next: best, angle: bestAngle };
-}
-
+// ---------- free movement ----------
 function step(dt) {
   const k = game.keys;
+  if (game.autopilot) return autopilotStep(dt);
   if (k.left) game.heading = (game.heading - TURN_RATE * dt + 360) % 360;
   if (k.right) game.heading = (game.heading + TURN_RATE * dt) % 360;
-  if (game.autopilot) return autopilotStep(dt);
-  if (!k.fwd) { game.walkPhase *= 0.8; return; }
-  let pos = game.pos, remaining = (k.run ? RUN_SPEED : WALK_SPEED) * dt;
-  const here = atNode(pos);
-  if (here >= 0) {
-    // Standing on a junction or dead end: leave along the path closest to where you face.
-    const { next, angle } = bestEdgeFrom(here, game.heading, -1);
-    if (next < 0 || angle > 100) return;
-    pos = { from: here, to: next, fraction: 0 };
-  } else if (angDiff(game.heading, bearingOf(nodes[pos.from], nodes[pos.to])) > 90) {
-    pos = { from: pos.to, to: pos.from, fraction: 1 - pos.fraction };
+  const speed = k.fwd ? (k.run ? RUN_SPEED : WALK_SPEED) : k.back ? -BACK_SPEED : 0;
+  if (!speed) { game.walkPhase *= 0.8; return; }
+  const r = game.heading * Math.PI / 180, d = speed * dt;
+  const east = Math.sin(r) * d, north = Math.cos(r) * d, p = game.pos;
+  // Full step, else slide along the wall on whichever axis is free.
+  const options = [[east, north], [east, 0], [0, north]];
+  for (const [e, n] of options) {
+    if (Math.abs(e) + Math.abs(n) < 1e-4) continue;
+    const q = moveBy(p, e, n);
+    if (segmentClear(p, q)) { game.pos = q; break; }
   }
-  while (remaining > 1e-6) {
-    const length = edgeLength(pos.from, pos.to) || 0.01;
-    const left = (1 - pos.fraction) * length;
-    if (remaining < left) { pos = { ...pos, fraction: pos.fraction + remaining / length }; remaining = 0; break; }
-    remaining -= left;
-    const node = pos.to, came = pos.from;
-    const options = adj[node].filter(n => n !== came);
-    let next;
-    if (options.length === 0) { pos = { from: came, to: node, fraction: 1 }; break; }
-    if (options.length === 1) next = options[0];
-    else {
-      const choice = bestEdgeFrom(node, game.heading, came);
-      if (choice.angle > 100) { pos = { from: came, to: node, fraction: 1 }; break; }
-      next = choice.next;
-    }
-    pos = { from: node, to: next, fraction: 0 };
+  if (game.pos !== p) {
+    game.walkPhase += dt * (k.run ? 15 : 11);
+    recordStep();
   }
-  game.pos = pos;
-  game.walkPhase += dt * (k.run ? 14 : 10);
-  if (!k.left && !k.right) game.heading = approach(game.heading, bearingOf(nodes[pos.from], nodes[pos.to]), 140 * dt);
 }
 
-/** Debug only: walks a node route at walking speed (used by automated visual tests). */
+/** Debug only: follows the server's shortest route at running pace. */
 function autopilotStep(dt) {
   const ap = game.autopilot;
   let remaining = RUN_SPEED * dt;
-  while (remaining > 1e-6 && ap.i < ap.route.length - 1) {
-    const a = ap.route[ap.i], b = ap.route[ap.i + 1];
-    const length = edgeLength(a, b) || 0.01;
-    const left = (1 - ap.f) * length;
-    if (remaining < left) { ap.f += remaining / length; remaining = 0; }
-    else { remaining -= left; ap.i++; ap.f = 0; }
+  while (remaining > 1e-6 && ap.i < ap.route.length) {
+    const target = ap.route[ap.i], d = distOf(game.pos, target);
+    if (d <= remaining) { game.pos = target; ap.i++; remaining -= d; }
+    else { const t = remaining / d; game.pos = [game.pos[0] + (target[0] - game.pos[0]) * t, game.pos[1] + (target[1] - game.pos[1]) * t]; remaining = 0; }
+    if (ap.i < ap.route.length) game.heading = approach(game.heading, bearingOf(game.pos, ap.route[ap.i]), 400 * dt);
   }
-  if (ap.i >= ap.route.length - 1) { game.pos = { from: ap.route[ap.i - 1], to: ap.route[ap.i], fraction: 1 }; game.autopilot = null; return; }
-  game.pos = { from: ap.route[ap.i], to: ap.route[ap.i + 1], fraction: ap.f };
-  game.heading = approach(game.heading, bearingOf(nodes[game.pos.from], nodes[game.pos.to]), 200 * dt);
-  game.walkPhase += dt * 10;
+  if (ap.i >= ap.route.length) game.autopilot = null;
+  game.walkPhase += dt * 15;
+  recordStep();
 }
 
-/** The junction ahead (following simple path chains up to 30 m) and its branches, as arrows on the ground. */
-function branchFeatures() {
-  let { from, to, fraction } = game.pos;
-  if (angDiff(game.heading, bearingOf(nodes[from], nodes[to])) > 90) [from, to, fraction] = [to, from, 1 - fraction];
-  let travelled = (1 - fraction) * edgeLength(from, to);
-  let prev = from, node = to;
-  for (let hops = 0; hops < 40 && travelled < 30; hops++) {
-    const options = adj[node].filter(n => n !== prev);
-    if (options.length !== 1) break;
-    travelled += edgeLength(node, options[0]);
-    prev = node; node = options[0];
+function recordStep() {
+  if (!game.lastPushed || distOf(game.lastPushed, game.pos) >= 0.75) {
+    game.pending.push(game.pos);
+    game.trail.push(game.pos);
+    game.lastPushed = game.pos;
   }
-  const options = adj[node].filter(n => n !== prev);
-  if (travelled > 30 || options.length < 2) return [];
-  const chosen = bestEdgeFrom(node, game.heading, prev).next;
-  return options.map(n => {
-    const b = bearingOf(nodes[node], nodes[n]);
-    const tip = offsetPt(nodes[node], b, 10), base = offsetPt(nodes[node], b, 2.5);
-    return { type: 'Feature', properties: { color: n === chosen ? '#ffd23f' : '#ffffff' },
-      geometry: { type: 'MultiLineString', coordinates: [[base, tip], [offsetPt(tip, b + 145, 3.5), tip, offsetPt(tip, b - 145, 3.5)]] } };
-  });
 }
 
 // ---------- server sync ----------
 async function syncPosition() {
-  if (game.phase !== 'walk' || game.sending) return;
-  const p = game.pos, key = `${p.from},${p.to},${p.fraction.toFixed(5)}`;
-  if (key === game.lastSent) return;
+  if (game.phase !== 'walk' || game.sending || game.pending.length === 0) return;
   game.sending = true;
+  const batch = game.pending.splice(0, 64);
   try {
-    const r = await api('move', { from: p.from, to: p.to, fraction: p.fraction });
+    const r = await api('move', { path: batch });
     if (r.status === 409) {
-      game.pos = r.body.position; game.autopilot = null;
-      toast('Whoa!', 'cold', 'Stay on the paths.');
+      console.warn('Move refused:', r.body.error, 'batch', batch.length);
+      game.pos = r.body.point; game.pending = []; game.lastPushed = game.pos; game.autopilot = null;
+      game.walked = r.body.metresWalked;
+      toast('Whoa!', 'cold', 'Too fast or through a wall.');
     } else if (r.status === 200) {
-      game.lastSent = key;
       game.walked = r.body.metresWalked;
       if (r.body.zoneReached) enterZone(r.body.zone);
     }
@@ -413,15 +521,16 @@ async function syncPosition() {
 
 // ---------- checks ----------
 async function doCheck() {
-  if (game.phase !== 'walk') return;
+  if (game.phase !== 'walk' || game.mapView) return;
   if (game.checksLeft <= 0) { toast('No checks', 'cold', 'Keep exploring.'); return; }
+  while (game.sending) await new Promise(r => setTimeout(r, 20));
   await syncPosition();
   const r = await api('check');
   if (r.status !== 200) { toast('Hmm', 'cold', r.body.error || 'Could not check.'); return; }
   const { heat, trend, point, checksRemaining } = r.body;
   game.checksLeft = checksRemaining;
   game.checkCount++;
-  addCheckMarker(point, heat, game.checkCount);
+  addCheckMarker(point, heat);
   toast(heat.toUpperCase(), heat, TREND_TEXT[trend] || '');
   flashVignette(HEAT_COLORS[heat]);
   const li = document.createElement('li');
@@ -431,30 +540,51 @@ async function doCheck() {
   renderHud();
 }
 
-const markerFeatures = [], ringFeatures = [];
-function addCheckMarker(point, heat, n) {
+const markerFeatures = [], ringFeatures = [], checkDots = [];
+function addCheckMarker(point, heat) {
   const color = HEAT_COLORS[heat];
   // A thin flagpole with a heat-coloured flag, so it never hides the avatar standing at the spot.
   markerFeatures.push(box(point, 0, -0.3, 0.3, -0.3, 0.3, 0, 8, '#fff8e7'), box(point, 0, 0.3, 3.2, -0.25, 0.25, 5.6, 7.8, color));
   ringFeatures.push({ type: 'Feature', properties: { color }, geometry: { type: 'LineString', coordinates: circle(point, 9, 24) } });
+  checkDots.push({ type: 'Feature', properties: { color, r: 9 }, geometry: { type: 'Point', coordinates: point } });
   map.getSource('markers').setData(fc(markerFeatures));
   map.getSource('check-rings').setData(fc(ringFeatures));
 }
 
+// ---------- full map view (M) ----------
+function toggleMapView(force) {
+  if (game.phase !== 'walk') return;
+  const open = force ?? !game.mapView;
+  if (open === game.mapView) return;
+  game.mapView = open;
+  game.keys = {};
+  $('mapTitle').classList.toggle('hidden', !open);
+  map.setLayoutProperty('dots', 'visibility', open ? 'visible' : 'none');
+  if (open) {
+    map.getSource('dots').setData(fc([...checkDots,
+      { type: 'Feature', properties: { color: '#fff8e7', r: 7 }, geometry: { type: 'Point', coordinates: game.pos } }]));
+    map.getSource('routes').setData(fc(game.trail.length > 1 ? [{ type: 'Feature', properties: { color: '#ff5fa2', scale: 0.6 },
+      geometry: { type: 'LineString', coordinates: game.trail } }] : []));
+    const b = pack.bounds;
+    map.fitBounds([[b.west, b.south], [b.east, b.north]], { padding: 40, pitch: 0, bearing: 0, duration: 900 });
+  } else {
+    map.getSource('routes').setData(fc([]));
+    map.flyTo({ center: offsetPt(game.pos, game.camBearing, 6), zoom: game.followZoom, pitch: pitchFor(game.followZoom),
+      bearing: game.camBearing, duration: 700 });
+  }
+}
+const pitchFor = zoom => 50 + (zoom - ZOOM_MIN) * 4;
+
 // ---------- stage two ----------
 function enterZone(zone) {
   if (game.phase !== 'walk') return;
+  toggleMapView(false);
   game.phase = 'zone'; game.zone = zone; game.zoneAt = performance.now(); game.keys = {}; game.autopilot = null;
   hide('help');
-  map.getSource('branches').setData(fc([]));
-  map.getSource('zone').setData(fc([{ type: 'Feature', properties: { kind: 'floor' },
+  map.getSource('zone').setData(fc([{ type: 'Feature', properties: {},
     geometry: { type: 'Polygon', coordinates: [circle(zone.centre, zone.radius, 64)] } }]));
-  for (const b of pack.buildings) {
-    if (distOf(b.center || [b.lon, b.lat], zone.centre) <= zone.radius) {
-      game.zoneBuildings.add(b.id);
-      map.setFeatureState({ source: 'buildings', id: b.id }, { candidate: true });
-    }
-  }
+  for (const b of pack.buildings) if (distOf(b.center, zone.centre) <= zone.radius) game.zoneBuildings.add(b.id);
+  refreshHighlights();
   toast('ZONE FOUND', 'warm', 'Choose a hint card.');
   flyTo({ center: zone.centre, zoom: 17.5, pitch: 55, bearing: game.camBearing, duration: 2600 }).then(() => {
     show('hintScreen');
@@ -469,9 +599,8 @@ async function chooseHint(level, card) {
   game.phase = 'hint';
   game.hint = r.body;
   game.zoneBuildings = new Set(r.body.zoneBuildings);
-  for (const c of document.querySelectorAll('.hintcard')) {
-    c.classList.add(c === card ? 'flipped' : 'faded');
-  }
+  refreshHighlights();
+  for (const c of document.querySelectorAll('.hintcard')) c.classList.add(c === card ? 'flipped' : 'faded');
   card.innerHTML = `<div><div class="lvl">${level.toUpperCase()} ×${r.body.multiplier}</div><p class="text"></p></div>`;
   card.querySelector('.text').textContent = r.body.hint;
   $('toGuess').classList.remove('hidden');
@@ -487,9 +616,9 @@ function startGuessing() {
 }
 
 function setHover(id) {
-  if (game.hover != null) map.setFeatureState({ source: 'buildings', id: game.hover }, { hover: false });
+  if (game.hover === id) return;
   game.hover = id;
-  if (id != null) map.setFeatureState({ source: 'buildings', id }, { hover: true });
+  refreshHighlights();
 }
 
 function onHover(e) {
@@ -513,11 +642,10 @@ async function onBuildingClick(e) {
     const r = await api('guess', { buildingId: f.id });
     if (r.status !== 200) { toast('Hmm', 'cold', r.body.error); return; }
     game.guessed.add(f.id);
-    setHover(null); $('tip').classList.add('hidden');
-    if (!r.body.correct) {
-      map.setFeatureState({ source: 'buildings', id: f.id }, { wrong: true, candidate: false });
-      toast('NOPE', 'cold', r.body.message);
-    }
+    game.hover = null;
+    $('tip').classList.add('hidden');
+    refreshHighlights();
+    if (!r.body.correct) toast('NOPE', 'cold', r.body.message);
     if (r.body.result) finish(r.body.result, r.body.saveError);
     else $('bannerText').textContent = `Not that one. ${r.body.guessesRemaining} guesses left.`;
   } finally { game.busy = false; }
@@ -526,14 +654,14 @@ async function onBuildingClick(e) {
 // ---------- reveal, results, replay ----------
 async function finish(result, saveError) {
   game.phase = 'done'; game.result = result;
-  hide('banner');
+  hide('banner'); hide('log'); hide('help');
   const t = result.target;
-  for (const id of game.zoneBuildings) map.setFeatureState({ source: 'buildings', id }, { candidate: false });
-  map.setFeatureState({ source: 'buildings', id: t.buildingId }, { target: true, wrong: false });
+  game.target = t.buildingId;
+  game.zoneBuildings = new Set([...game.zoneBuildings].filter(id => game.guessed.has(id)));
+  refreshHighlights();
   const roof = buildings.get(t.buildingId)?.height || 10;
   map.getSource('beacon').setData(fc([box(t.centre, 0, -3, 3, -3, 3, roof + 1, roof + 120, '#ffd23f')]));
   toast(result.won ? 'FOUND IT!' : 'IT WAS…', result.won ? 'hot' : 'cool', t.name);
-  hide('log'); hide('help');
   // Look down steeply so the gold roof shows even when taller neighbours stand in front.
   await flyTo({ center: t.centre, zoom: 18.2, pitch: 48, bearing: (game.camBearing + 40) % 360, duration: 3200 });
   orbit(t.centre);
@@ -586,8 +714,7 @@ async function replay() {
   if (!r) return;
   game.orbiting = false;
   const z = game.zone;
-  const all = [...r.route, ...r.shortestRoute, ...(z ? [offsetPt(z.centre, 0, z.radius), offsetPt(z.centre, 180, z.radius),
-    offsetPt(z.centre, 90, z.radius), offsetPt(z.centre, 270, z.radius)] : [])];
+  const all = [...r.route, ...r.shortestRoute, ...(z ? [0, 90, 180, 270].map(b => offsetPt(z.centre, b, z.radius)) : [])];
   const lons = all.map(p => p[0]), lats = all.map(p => p[1]);
   map.fitBounds([[Math.min(...lons), Math.min(...lats)], [Math.max(...lons), Math.max(...lats)]],
     { padding: { top: 60, bottom: 90, left: 60, right: Math.min(420, innerWidth / 2) }, pitch: 35, bearing: 0, duration: 1800 });
@@ -614,17 +741,30 @@ async function startRound() {
   if (r.status !== 200) { game.phase = 'title'; $('loading').textContent = r.body.error || 'Could not start. Retry.'; return; }
   hide('title');
   game.orbiting = false;
-  game.pos = r.body.position;
+  game.pos = r.body.point;
+  game.lastPushed = game.pos;
+  game.trail = [game.pos];
   game.checksLeft = r.body.checksRemaining;
   pack.guessLimit = r.body.guessLimit;
-  game.heading = bearingOf(nodes[game.pos.from], nodes[game.pos.to]);
+  game.heading = openestHeading(game.pos);
   game.camBearing = game.heading;
   game.startedAt = performance.now();
   renderHud();
   for (const id of ['hud', 'log', 'compass', 'help']) show(id);
-  await flyTo({ center: posPoint(game.pos), zoom: FOLLOW.zoom, pitch: FOLLOW.pitch, bearing: game.heading, duration: 3200 });
+  await flyTo({ center: offsetPt(game.pos, game.heading, 6), zoom: game.followZoom, pitch: pitchFor(game.followZoom), bearing: game.heading, duration: 3200 });
   game.phase = 'walk';
   toast('FIND THE ZONE', 'warm', r.body.message);
+}
+
+/** Face the direction with the most open ground ahead, so the first step isn't into a wall. */
+function openestHeading(p) {
+  let best = 0, bestRun = -1;
+  for (let h = 0; h < 360; h += 15) {
+    let run = 0;
+    while (run < 60 && isOpen(offsetPt(p, h, run + 1))) run++;
+    if (run > bestRun) { bestRun = run; best = h; }
+  }
+  return best;
 }
 
 function resetRound() { location.reload(); }
@@ -634,13 +774,11 @@ let last = performance.now();
 function frame(now) {
   const dt = Math.min(0.1, (now - last) / 1000);
   last = now;
-  if (game.phase === 'walk') {
+  if (game.phase === 'walk' && !game.mapView) {
     step(dt);
-    game.camBearing = approach(game.camBearing, game.heading, Math.max(30, angDiff(game.camBearing, game.heading) * 3.2) * dt);
-    const here = posPoint(game.pos);
-    map.jumpTo({ center: offsetPt(here, game.camBearing, 6), bearing: game.camBearing, pitch: FOLLOW.pitch, zoom: FOLLOW.zoom });
-    map.getSource('avatar').setData(fc(avatarFeatures(here, game.heading)));
-    map.getSource('branches').setData(fc(branchFeatures()));
+    game.camBearing = approach(game.camBearing, game.heading, Math.max(40, angDiff(game.camBearing, game.heading) * 4) * dt);
+    map.jumpTo({ center: offsetPt(game.pos, game.camBearing, 6), bearing: game.camBearing, pitch: pitchFor(game.followZoom), zoom: game.followZoom });
+    map.getSource('avatar').setData(fc(avatarFeatures(game.pos, game.heading)));
     renderHud();
   } else if (game.phase === 'title' && game.orbiting) {
     map.jumpTo({ bearing: map.getBearing() + dt * 4 });
@@ -689,22 +827,31 @@ function flyTo(options) {
   return new Promise(resolve => { map.once('moveend', resolve); map.flyTo({ ...options, essential: true }); });
 }
 
-const KEYMAP = { KeyW: 'fwd', ArrowUp: 'fwd', KeyA: 'left', ArrowLeft: 'left', KeyD: 'right', ArrowRight: 'right',
-  ShiftLeft: 'run', ShiftRight: 'run' };
+const KEYMAP = { KeyW: 'fwd', ArrowUp: 'fwd', KeyS: 'back', ArrowDown: 'back', KeyA: 'left', ArrowLeft: 'left',
+  KeyD: 'right', ArrowRight: 'right', ShiftLeft: 'run', ShiftRight: 'run' };
 addEventListener('keydown', e => {
   if (e.code === 'Enter' && game.phase === 'title') { startRound(); return; }
   if (game.phase !== 'walk') return;
+  if (e.code === 'KeyM' && !e.repeat) { toggleMapView(); e.preventDefault(); return; }
+  if (e.code === 'Escape') { toggleMapView(false); return; }
+  if (game.mapView) return;
   if (KEYMAP[e.code]) { game.keys[KEYMAP[e.code]] = true; e.preventDefault(); }
-  if ((e.code === 'KeyS' || e.code === 'ArrowDown') && !e.repeat) {
-    game.heading = (game.heading + 180) % 360;
-    const p = game.pos;
-    if (atNode(p) < 0) game.pos = { from: p.to, to: p.from, fraction: 1 - p.fraction };
-    e.preventDefault();
-  }
   if (e.code === 'Space' && !e.repeat) { doCheck(); e.preventDefault(); }
 });
 addEventListener('keyup', e => { if (KEYMAP[e.code]) game.keys[KEYMAP[e.code]] = false; });
 addEventListener('blur', () => (game.keys = {}));
+// Scroll to zoom the follow camera; drag to turn.
+addEventListener('wheel', e => {
+  if (game.phase !== 'walk' || game.mapView) return;
+  game.followZoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, game.followZoom - e.deltaY * 0.0025));
+}, { passive: true });
+addEventListener('pointerdown', e => { if (game.phase === 'walk' && !game.mapView && e.target.tagName === 'CANVAS') game.dragX = e.clientX; });
+addEventListener('pointermove', e => {
+  if (game.dragX == null) return;
+  game.heading = (game.heading + (e.clientX - game.dragX) * 0.3 + 360) % 360;
+  game.dragX = e.clientX;
+});
+addEventListener('pointerup', () => (game.dragX = null));
 $('startBtn').addEventListener('click', startRound);
 $('toGuess').addEventListener('click', startGuessing);
 $('replayBtn').addEventListener('click', replay);
@@ -719,48 +866,33 @@ for (const card of document.querySelectorAll('.hintcard')) {
 (async () => {
   const [packResponse] = await Promise.all([fetch('/pack.json'), initMap()]);
   pack = await packResponse.json();
-  nodes = pack.walkways.nodes;
-  adj = nodes.map(() => []);
-  for (const [a, b] of pack.walkways.edges) { adj[a].push(b); adj[b].push(a); }
-  for (const b of pack.buildings) { b.center = [b.lon, b.lat]; buildings.set(b.id, b); }
-  M_LON = 111320 * Math.cos((pack.bounds.north + pack.bounds.south) / 2 * Math.PI / 180);
+  M_LON = M_LAT * Math.cos((pack.bounds.north + pack.bounds.south) / 2 * Math.PI / 180);
+  const categories = new Map(pack.landmarks.map(l => [l.building, l.category]));
+  for (const b of pack.buildings) {
+    b.center = [b.lon, b.lat];
+    b.category = categories.get(b.id);
+    buildings.set(b.id, b);
+  }
+  named = pack.buildings.filter(b => b.name);
+  buildGrid(pack.bounds, pack.buildings);
   addGameLayers();
   setInteractive(false);
   game.phase = 'title';
   game.orbiting = true;
   $('loading').textContent = '';
-  setInterval(syncPosition, 250);
+  setInterval(syncPosition, 150);
   requestAnimationFrame(frame);
 
   if (DEBUG) {
-    // Automated visual tests: walk to the zone with the server's debug info. Never enabled in normal play.
+    // Automated visual tests only: walk the server's shortest route to the zone. Never enabled in normal play.
     game.debugWalkToZone = async () => {
-      const zone = (await (await fetch('/api/debug')).json()).zone;
-      const startNode = atNode(game.pos) >= 0 ? atNode(game.pos) : game.pos.from;
-      const route = shortestNodes(startNode, n => distOf(nodes[n], zone.centre) <= zone.radius - 5);
-      game.autopilot = { route, i: 0, f: 0 };
-      return route.length;
+      while (game.sending || game.pending.length) await new Promise(r => setTimeout(r, 50));
+      const info = await (await fetch('/api/debug')).json();
+      game.autopilot = { route: info.route.slice(1), i: 0 };
+      return info.route.length;
     };
-    game.shortestNodes = shortestNodes;
   }
 })();
-
-function shortestNodes(source, goal) {
-  const dist = new Float64Array(nodes.length).fill(Infinity), prev = new Int32Array(nodes.length).fill(-1);
-  dist[source] = 0;
-  const queue = [[0, source]];
-  while (queue.length) {
-    queue.sort((a, b) => b[0] - a[0]);
-    const [d, n] = queue.pop();
-    if (d > dist[n]) continue;
-    if (goal(n)) { const out = []; for (let at = n; at !== -1; at = prev[at]) out.unshift(at); return out; }
-    for (const m of adj[n]) {
-      const nd = d + edgeLength(n, m);
-      if (nd < dist[m]) { dist[m] = nd; prev[m] = n; queue.push([nd, m]); }
-    }
-  }
-  return [source];
-}
 </script>
 </body>
 </html>

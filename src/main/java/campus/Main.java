@@ -91,10 +91,14 @@ public final class Main {
                         ExpeditionResultRepository.DISABLED, clock, presenter),
                 presenter);
         int port = Integer.getInteger("campus.explore.port", 0);
+        // Debug only: the hidden zone and a shortest route to it, so automated visual tests can walk there.
         Supplier<Map<String, Object>> debug = Boolean.getBoolean("campus.explore.debug") ? () ->
-                session.current().map(round -> Map.<String, Object>of("zone", Map.of(
-                        "centre", point(round.zoneForDiagnostics().centre()),
-                        "radius", round.zoneForDiagnostics().radiusMetres()))).orElse(Map.of()) : null;
+                session.current().map(round -> Map.<String, Object>of(
+                        "zone", Map.of("centre", point(round.zoneForDiagnostics().centre()),
+                                "radius", round.zoneForDiagnostics().radiusMetres()),
+                        "route", map.openSpace().shortestRoute(round.position(), round.zoneForDiagnostics()::contains)
+                                .map(route -> route.points().stream().map(Main::point).toList())
+                                .orElse(List.of()))).orElse(Map.of()) : null;
         return new ExploreWebServer(controller, CampusPackLoader.raw(CampusPackLoader.ST_GEORGE), port, debug);
     }
 
