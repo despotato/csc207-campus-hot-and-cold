@@ -31,7 +31,8 @@ public sealed interface ExploreResponse {
      * {@code result} is set when a failed final search ended the round.
      */
     record Checked(GeoPoint point, Expedition.Heat heat, Expedition.Trend trend, int checksRemaining,
-                   boolean finalSearch, ZoneView zone, Finished finished) implements ExploreResponse { }
+                   boolean finalSearch, ZoneView zone, Finished finished, int number, Integer temperature,
+                   Integer change) implements ExploreResponse { }
 
     record HintChosen(Expedition.HintLevel level, double multiplier, String hint, List<Integer> zoneBuildings)
             implements ExploreResponse { }

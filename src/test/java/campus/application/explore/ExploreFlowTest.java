@@ -124,6 +124,9 @@ class ExploreFlowTest {
         ExploreViewModel checked = call("check", Map.of());
         assertEquals("checked", checked.body().get("type"));
         assertEquals(5, checked.body().get("checksRemaining"));
+        assertEquals(1, checked.body().get("number"));
+        assertTrue(checked.body().get("temperature") instanceof Integer, "a whole-degree temperature");
+        assertNull(checked.body().get("change"), "nothing to compare the first check with");
         assertFalse(Json.write(checked.body()).contains("metres"), "exact distance hidden");
 
         assertEquals(400, call("guess", Map.of("buildingId", 1)).status(), "can't guess before the zone");

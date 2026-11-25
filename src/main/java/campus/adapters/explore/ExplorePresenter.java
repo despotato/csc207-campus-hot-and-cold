@@ -87,6 +87,7 @@ public final class ExplorePresenter implements ExploreOutputBoundary {
         body.put("type", "checked");
         body.put("point", point(checked.point()));
         body.put("checksRemaining", checked.checksRemaining());
+        body.put("number", checked.number());
         body.put("finalSearch", checked.finalSearch());
         body.put("zoneFound", checked.zone() != null);
         if (checked.zone() != null) {
@@ -97,7 +98,9 @@ public final class ExplorePresenter implements ExploreOutputBoundary {
         } else {
             body.put("heat", name(checked.heat()));
             body.put("trend", name(checked.trend()));
-            body.put("message", label(checked.heat()) + trendText(checked.trend())
+            body.put("temperature", checked.temperature());
+            body.put("change", checked.change());
+            body.put("message", checked.temperature() + "°C. " + label(checked.heat()) + trendText(checked.trend())
                     + (checked.checksRemaining() == 0 ? " No checks left: your next search is final." : ""));
         }
         if (checked.finished() != null) {
@@ -138,7 +141,7 @@ public final class ExplorePresenter implements ExploreOutputBoundary {
         body.put("shortestRoute", result.shortestRoute().stream().map(ExplorePresenter::point).toList());
         body.put("checks", result.checks().stream().map(check -> Map.of("point", point(check.point()),
                 "heat", check.inZone() ? "zone" : name(check.heat()), "trend", name(check.trend()),
-                "metres", round(check.metresToZone()))).toList());
+                "temperature", check.temperature(), "metres", round(check.metresToZone()))).toList());
         if (result.summary() != null) {
             Map<String, Object> summary = new LinkedHashMap<>();
             summary.put("title", result.summary().title());

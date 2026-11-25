@@ -23,12 +23,12 @@ public final class Expedition {
     /** The target sits at most this far from the zone centre, so the centre never gives it away exactly. */
     static final double MAX_ZONE_OFFSET = 50;
     /** A fast sprint with slack for network jitter; anything quicker is treated as teleporting. */
-    static final double MAX_SPEED = 30;
+    static final double MAX_SPEED = 40;
     static final double SPEED_SLACK_SECONDS = 0.75;
-    static final double MAX_STEP = 90;
+    static final double MAX_STEP = 120;
     static final int MAX_POINTS_PER_MOVE = 64;
     /** Fast travel costs the time walking the route would take at the page's walking speed. */
-    static final double TRAVEL_SPEED = 18;
+    static final double TRAVEL_SPEED = 28;
     /** Every zone offers a real choice: enough proper buildings, several of them named. */
     static final int MIN_ZONE_BUILDINGS = 5;
     static final int MIN_NAMED_ZONE_BUILDINGS = 3;
@@ -55,7 +55,15 @@ public final class Expedition {
     }
 
     /** {@code inZone} is true for the check that found the zone. */
-    public record Check(GeoPoint point, Heat heat, Trend trend, double metresToZone, boolean inZone) { }
+    public record Check(GeoPoint point, Heat heat, Trend trend, double metresToZone, boolean inZone) {
+        /**
+         * The check as a temperature: 40°C at the zone, one degree cooler per 20 m, never below -10°C.
+         * Whole degrees, so it narrows the distance to about 20 m without giving it exactly.
+         */
+        public int temperature() {
+            return (int) Math.max(-10, Math.min(40, Math.round(40 - metresToZone / 20)));
+        }
+    }
 
     /**
      * Out of {@link #MAX_SCORE}: route (400 at {@link #FULL_ROUTE_EFFICIENCY} or better, scaled below; the shortest

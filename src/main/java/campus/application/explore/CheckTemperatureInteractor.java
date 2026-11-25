@@ -31,13 +31,18 @@ public final class CheckTemperatureInteractor implements CheckTemperatureInputBo
         try {
             if (expedition.checksRemaining() > 0) {
                 Expedition.Check check = expedition.check(clock.instant());
-                // The exact distance stays hidden; only the band, trend, and whether this is the zone.
+                // The exact distance stays hidden: the band, a whole-degree temperature, and the change since last.
+                var checks = expedition.checks();
+                Integer change = checks.size() < 2 ? null
+                        : check.temperature() - checks.get(checks.size() - 2).temperature();
                 output.present(new ExploreResponse.Checked(check.point(), check.heat(), check.trend(),
-                        expedition.checksRemaining(), false, zone(expedition), null));
+                        expedition.checksRemaining(), false, zone(expedition), null, checks.size(),
+                        check.temperature(), change));
             } else {
                 boolean found = expedition.finalSearch(clock.instant());
                 output.present(new ExploreResponse.Checked(expedition.position(), null, null, 0, true,
-                        found ? zone(expedition) : null, found ? null : finisher.finish(expedition)));
+                        found ? zone(expedition) : null, found ? null : finisher.finish(expedition),
+                        expedition.checksUsed() + 1, null, null));
             }
         } catch (IllegalStateException exception) {
             output.present(new ExploreResponse.Failed(exception.getMessage()));

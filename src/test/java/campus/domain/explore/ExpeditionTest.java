@@ -135,7 +135,7 @@ class ExpeditionTest {
         assertEquals(Expedition.Stage.FIND_ZONE, round.stage());
         assertThrows(IllegalArgumentException.class, () -> round.travelTo(at(1000, 20), T0.plusSeconds(2)),
                 "can't travel into a building");
-        assertEquals(1 + Math.round(round.metresWalked() / 18), round.secondsElapsed(T0.plusSeconds(1)),
+        assertEquals(1 + Math.round(round.metresWalked() / 28), round.secondsElapsed(T0.plusSeconds(1)),
                 "the trip costs the time walking it would take");
     }
 
@@ -156,7 +156,11 @@ class ExpeditionTest {
         assertEquals(Expedition.Trend.WARMER, second.trend());
         assertEquals(Expedition.Heat.COLD, second.heat()); // 600 m away
         Instant later = walk(round, List.of(at(490, 126), at(510, 126), at(720, 75)), time);
-        assertEquals(Expedition.Heat.WARM, round.check(later).heat()); // 280 m away
+        Expedition.Check warm = round.check(later);
+        assertEquals(Expedition.Heat.WARM, warm.heat()); // 280 m away
+        assertEquals(26, warm.temperature(), "40°C at the zone, a degree cooler per 20 m");
+        assertEquals(10, second.temperature(), "600 m away");
+        assertEquals(-10, first.temperature(), "about 1 km away: floored at -10°C");
         while (round.checksRemaining() > 0) {
             round.check(later);
         }
