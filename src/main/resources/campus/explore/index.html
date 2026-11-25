@@ -203,6 +203,8 @@
 const params = new URLSearchParams(location.search);
 const PIX = Math.min(1, Math.max(0.15, Number(params.get('pix')) || 0.3));
 const DEBUG = params.get('debug') === '1';
+// Without the Java server (e.g. on GitHub Pages) the page plays with an in-browser copy of the rules.
+const STATIC = params.get('static') === '1' || !['127.0.0.1', 'localhost'].includes(location.hostname);
 const $ = id => document.getElementById(id);
 const HEAT_COLORS = { hot: '#ff4d2e', warm: '#ff9f1c', cool: '#4cc9f0', cold: '#6f8cff' };
 const TREND_TEXT = { first: '', warmer: '▲ Warmer', same: '■ Same', colder: '▼ Colder' };
@@ -317,6 +319,7 @@ window.game = game;
 
 async function api(action, body = {}) {
   if (action !== 'start') body = { ...body, round: game.roundId };
+  if (STATIC) return LocalRules.handle(action, body);
   const response = await fetch('/api/' + action, { method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body) });
   let data = {};
@@ -1133,6 +1136,278 @@ $('tutBack').addEventListener('click', () => showTutorial(tutorialStep - 1));
 $('tutNext').addEventListener('click', () => tutorialStep === TUTORIAL.length - 1 ? (closeTutorial(), startRound()) : showTutorial(tutorialStep + 1));
 $('tutClose').addEventListener('click', closeTutorial);
 
+// ---------- static mode: the game rules in the browser (mirrors the Java domain) ----------
+const LocalRules = (() => {
+  const CHECKS = 6, RADIUS = 90, MIN_START = 450, MAX_START = 900, GUESSES = 3, GUESS_POINTS = [250, 150, 75];
+  const MULT = { easy: 1, normal: 1.5, hard: 2 };
+  let round = null, openCells = null;
+  const ok = body => ({ status: 200, body });
+  const fail = (error, status = 400) => ({ status, body: { type: 'error', error } });
+  const inZone = (z, p) => distOf(z.centre, p) <= z.radius;
+  const zoneBuildings = z => pack.buildings.filter(b => inZone(z, b.center));
+
+  function cells() {
+    if (!openCells) {
+      openCells = [];
+      for (let r = 0; r < grid.rows; r += 3) for (let c = 0; c < grid.cols; c += 3)
+        if (!grid.blocked[r * grid.cols + c]) openCells.push([grid.west + (c + 0.5) * CELL / M_LON, grid.south + (r + 0.5) * CELL / M_LAT]);
+    }
+    return openCells;
+  }
+
+  /** 8-way grid search from start to the nearest cell satisfying goal, then corner-cutting where clear. */
+  function shortestRoute(start, goal) {
+    const n = grid.cols * grid.rows, cost = new Float32Array(n).fill(Infinity), prev = new Int32Array(n).fill(-1);
+    const s0 = rowOf(start[1]) * grid.cols + colOf(start[0]);
+    if (!isOpen(start)) return null;
+    const heap = [[0, s0]];
+    const push = item => { heap.push(item); let i = heap.length - 1; while (i) { const p = (i - 1) >> 1; if (heap[p][0] <= heap[i][0]) break; [heap[p], heap[i]] = [heap[i], heap[p]]; i = p; } };
+    const pop = () => { const top = heap[0], last = heap.pop(); if (heap.length) { heap[0] = last; let i = 0; for (;;) { const l = 2 * i + 1, r = l + 1; let m = i; if (l < heap.length && heap[l][0] < heap[m][0]) m = l; if (r < heap.length && heap[r][0] < heap[m][0]) m = r; if (m === i) break; [heap[m], heap[i]] = [heap[i], heap[m]]; i = m; } } return top; };
+    cost[s0] = 0;
+    const centreOf = cell => [grid.west + (cell % grid.cols + 0.5) * CELL / M_LON, grid.south + (Math.floor(cell / grid.cols) + 0.5) * CELL / M_LAT];
+    let found = -1;
+    while (heap.length) {
+      const [d, cell] = pop();
+      if (d > cost[cell]) continue;
+      if (goal(centreOf(cell))) { found = cell; break; }
+      const c = cell % grid.cols, r = (cell - c) / grid.cols;
+      for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
+        const cc = c + dc, rr = r + dr;
+        if ((!dr && !dc) || cc < 0 || rr < 0 || cc >= grid.cols || rr >= grid.rows || grid.blocked[rr * grid.cols + cc]) continue;
+        if (dr && dc && (grid.blocked[r * grid.cols + cc] || grid.blocked[rr * grid.cols + c])) continue;
+        const next = rr * grid.cols + cc, nd = d + (dr && dc ? Math.SQRT2 : 1) * CELL;
+        if (nd < cost[next]) { cost[next] = nd; prev[next] = cell; push([nd, next]); }
+      }
+    }
+    if (found < 0) return null;
+    const path = [];
+    for (let cell = found; cell !== s0; cell = prev[cell]) path.unshift(centreOf(cell));
+    path.unshift(start);
+    const smooth = [path[0]];
+    let anchor = path[0];
+    for (let i = 2; i < path.length; i++) if (!chordClear(anchor, path[i])) { anchor = path[i - 1]; smooth.push(anchor); }
+    if (path.length > 1) smooth.push(path[path.length - 1]);
+    let metres = 0;
+    for (let i = 1; i < smooth.length; i++) metres += distOf(smooth[i - 1], smooth[i]);
+    return { points: smooth, metres };
+  }
+
+  function start() {
+    const open = cells();
+    for (let attempt = 0; attempt < 200; attempt++) {
+      const target = pack.landmarks[Math.floor(Math.random() * pack.landmarks.length)];
+      const building = buildings.get(target.building);
+      const zone = { centre: offsetPt(building.center, Math.random() * 360, Math.random() * 50), radius: RADIUS };
+      const choices = zoneBuildings(zone).filter(b => b.height >= 4);
+      if (choices.length < 5 || choices.filter(b => b.name).length < 3) continue;
+      const starts = open.filter(p => { const d = distOf(p, zone.centre); return d >= MIN_START && d <= MAX_START; });
+      if (!starts.length) continue;
+      const startPoint = starts[Math.floor(Math.random() * starts.length)];
+      const route = shortestRoute(startPoint, p => inZone(zone, p));
+      if (!route) continue;
+      round = { id: String(Date.now()) + Math.random().toString(16).slice(2), target, building, zone, pos: startPoint,
+        start: startPoint, walked: 0, track: [startPoint], checks: [], guesses: [], stage: 'find', hint: null,
+        startedAt: Date.now(), zoneAt: null, shortest: route, won: false, fact: null };
+      return ok({ type: 'started', roundId: round.id, campus: pack.campus, point: startPoint, checksRemaining: CHECKS,
+        guessLimit: GUESSES, difficulty: 'normal', message: `Find the zone. Check inside it to know you're there. ${CHECKS} checks.` });
+    }
+    return fail('Could not set up a round. Please retry.');
+  }
+
+  function walkTo(points) {
+    for (const p of points) {
+      round.walked += distOf(round.pos, p);
+      round.pos = p;
+      if (distOf(round.track[round.track.length - 1], p) >= 3) round.track.push(p);
+    }
+  }
+
+  function move(body) {
+    if (round.stage !== 'find') return fail('Movement ends once you reach the zone.');
+    let at = round.pos;
+    for (const p of body.path || []) {
+      if (!chordClear(at, p)) return { status: 409, body: { type: 'rejected', error: "You can't walk through buildings.", point: round.pos, metresWalked: Math.round(round.walked) } };
+      at = p;
+    }
+    walkTo(body.path || []);
+    return ok({ type: 'moved', metresWalked: Math.round(round.walked) });
+  }
+
+  function travel(body) {
+    if (round.stage !== 'find') return fail('Movement ends once you reach the zone.');
+    const to = body.to;
+    if (!isOpen(to)) return fail("You can't travel into a building.");
+    const route = shortestRoute(round.pos, p => distOf(p, to) <= CELL);
+    if (!route) return fail("You can't get there on foot.");
+    const before = round.track.length;
+    const points = [...route.points.slice(1), to], steps = [];
+    let at = round.pos;
+    for (const p of points) { const n = Math.max(1, Math.ceil(distOf(at, p) / 2)); for (let i = 1; i <= n; i++) steps.push([at[0] + (p[0] - at[0]) * i / n, at[1] + (p[1] - at[1]) * i / n]); at = p; }
+    walkTo(steps);
+    return ok({ type: 'travelled', point: round.pos, path: round.track.slice(before), metresWalked: Math.round(round.walked) });
+  }
+
+  function check() {
+    if (round.stage !== 'find') return fail('Checks are only used while finding the zone.');
+    const here = round.pos, d = distOf(here, round.zone.centre);
+    const zoneView = { centre: round.zone.centre, radius: round.zone.radius };
+    if (round.checks.length >= CHECKS) {
+      if (inZone(round.zone, here)) { round.stage = 'identify'; round.zoneAt = Date.now(); return ok({ type: 'checked', point: here, checksRemaining: 0, finalSearch: true, zoneFound: true, zone: zoneView }); }
+      round.stage = 'finished';
+      return ok({ type: 'checked', point: here, checksRemaining: 0, finalSearch: true, zoneFound: false, ...finished() });
+    }
+    if (inZone(round.zone, here)) {
+      round.checks.push({ point: here, heat: 'zone', trend: 'first', metres: Math.round(d) });
+      round.stage = 'identify'; round.zoneAt = Date.now();
+      return ok({ type: 'checked', point: here, checksRemaining: CHECKS - round.checks.length, finalSearch: false, zoneFound: true, zone: zoneView });
+    }
+    const heat = d < 150 ? 'hot' : d < 300 ? 'warm' : d < 500 ? 'cool' : 'cold';
+    const last = round.checks[round.checks.length - 1];
+    const trend = !last ? 'first' : Math.abs(d - last.metres) < 5 ? 'same' : d < last.metres ? 'warmer' : 'colder';
+    round.checks.push({ point: here, heat, trend, metres: d });
+    return ok({ type: 'checked', point: here, heat, trend, checksRemaining: CHECKS - round.checks.length, finalSearch: false, zoneFound: false });
+  }
+
+  // --- hints: easy = what you can see, normal = what students know, hard = campus history ---
+  const factCache = new Map();
+  const GENERIC = new Set('hall college building library centre center house university toronto residence faculty school theatre information technology science sciences studies laboratories laboratory campus student students services management innovation chemical physical engineering health rare book stadium arena tower facility central exams with from the and for'.split(' '));
+  const distinctive = name => [...new Set(name.toLowerCase().split(/[^\p{L}]+/u).filter(w => w.length >= 4 && !GENERIC.has(w)))];
+  const givesAway = (text, name) => text.toLowerCase().includes(name.toLowerCase()) || distinctive(name).some(w => new RegExp(`\\b${w}\\b`, 'i').test(text));
+  const FACTUAL = /\b(1[6-9]\d\d|20\d\d|built|designed|named|opened|architect|founded|houses|home to|originally|renovat\w*|construct\w*|style|storey|floors?|students|collection|donat\w*|film\w*|demolish\w*|expan\w*|tower|gothic|brutalis\w*|modernis\w*|victorian)\b/i;
+  const HISTORY = /\b(built|designed|architect\w*|named (for|after)|founded|originally|former\w*|opened|construct\w*|demolish\w*|renovat\w*|donat\w*|century|war|heritage|first|oldest|replaced|moved)\b/gi;
+  function sentences(text) {
+    const body = (text || '').split('\n').map(l => l.trim()).filter(l => /[.!?"')]$/.test(l)).join(' ');
+    const flat = body.replace(/\s+/g, ' ').replace(/\b(St|Mt|Dr|Mr|Mrs|Ms|Jr|Sr|No|ca|c)\.\s/g, '$1§ ').replace(/\b([A-Z])\. /g, '$1§ ');
+    return flat.split(/(?<=[a-z0-9)\]"'%][.!?])\s+(?=[A-Z"(])/).map(x => x.replace(/§/g, '.').trim());
+  }
+  function redact(sentence, name) {
+    if (sentence.length < 45 || sentence.length > 260 || !FACTUAL.test(sentence) || sentence.includes('may refer to')) return null;
+    let out = sentence.replace(new RegExp(name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), 'this building');
+    for (const w of distinctive(name)) out = out.replace(new RegExp(`\\b${w}('s)?\\b`, 'gi'), '____');
+    out = out.replace(/(____\s*)+/g, '____ ').trim();
+    return givesAway(out, name) ? null : out;
+  }
+  const wiki = q => fetch('https://en.wikipedia.org/w/api.php?origin=*&format=json&' + q).then(r => r.ok ? r.json() : null).catch(() => null);
+  async function facts(title, name) {
+    const key = title + '|' + name;
+    if (factCache.has(key)) return factCache.get(key);
+    const titles = new Set(title ? [title] : []);
+    const search = await wiki('action=query&list=search&srlimit=3&srsearch=' + encodeURIComponent(`"${name}" Toronto`));
+    for (const hit of search?.query?.search || []) titles.add(hit.title);
+    const known = [], obscure = [];
+    let own = !!title;
+    for (const t of [...titles].slice(0, 3)) {
+      const page = await wiki('action=query&prop=extracts&explaintext=1&exsectionformat=plain&redirects=1&titles=' + encodeURIComponent(t));
+      const text = Object.values(page?.query?.pages || {})[0]?.extract;
+      sentences(text).forEach((sentence, i) => {
+        if (!own && !sentence.toLowerCase().includes(name.toLowerCase())) return;
+        const fact = redact(sentence, name);
+        if (fact) (own && i < 4 ? known : obscure).push(fact);
+      });
+      own = false;
+    }
+    const score = f => (f.match(HISTORY) || []).length * 4 + (f.match(/\b(1[6-9]\d\d|20\d\d)\b/g) || []).length * 3;
+    obscure.sort((a, b) => score(b) - score(a));
+    const result = [...new Set([...known, ...obscure])].slice(0, 12);
+    if (result.length) factCache.set(key, result);
+    return result;
+  }
+  function appearance() {
+    const b = round.building, list = zoneBuildings(round.zone);
+    const taller = list.filter(o => o.height > b.height + 0.5).length, shorter = list.filter(o => o.height < b.height - 0.5).length;
+    const rank = !taller ? 'the tallest' : !shorter ? 'the shortest' : taller === 1 ? 'the second-tallest' : taller === 2 ? 'the third-tallest' : 'a mid-height one';
+    const floors = Math.max(1, Math.round(b.height / 3.66));
+    return `It's ${rank} of the ${list.length} buildings in the zone: a ${floors}-storey ${b.material} building${b.courtyard ? ' with a courtyard' : ''}.`;
+  }
+  function history() {
+    const b = round.building;
+    if (b.formerName && !givesAway(b.formerName, round.target.name)) return `It used to be known as the ${b.formerName}.`;
+    if (b.built) return `It was built in ${b.built}.`;
+    if (b.architect) return `It was designed by ${b.architect}.`;
+    return `It stands about ${Math.max(1, Math.round(b.height / 3.66))} storeys tall.`;
+  }
+  async function hint(body) {
+    if (round.stage === 'finished') return fail('This round is over.');
+    if (round.stage !== 'identify') return fail('Check inside the zone to find it first.');
+    if (round.hint) return fail('You already chose a hint.');
+    const level = String(body.level || '').toLowerCase();
+    if (!MULT[level]) return fail('Choose easy, normal, or hard.');
+    const t = round.target, category = t.category.toLowerCase(), article = /^[aeiou]/.test(category) ? 'an ' : 'a ';
+    let text;
+    if (level === 'easy') text = appearance();
+    else {
+      const list = (await facts(t.wikipedia, t.name)).filter(f => !givesAway(f, t.name));
+      const fact = list.length ? (level === 'normal' || list.length === 1 ? list[0] : list[1]) : null;
+      text = level === 'normal' ? `It's ${article}${category} building. ` + (fact || `Its name starts with "${t.name[0].toUpperCase()}".`) : fact || history();
+    }
+    round.hint = level;
+    return ok({ type: 'hint', level, multiplier: MULT[level], hint: text, zoneBuildings: zoneBuildings(round.zone).map(b => b.id) });
+  }
+
+  async function guess(body) {
+    if (round.stage === 'finished') return fail('This round is over.');
+    if (round.stage !== 'identify') return fail('Check inside the zone to find it first.');
+    if (!round.hint) return fail('Choose a hint first.');
+    const b = buildings.get(body.buildingId);
+    if (!b) return fail('Unknown building.');
+    if (!inZone(round.zone, b.center)) return fail('That building is outside the zone.');
+    if (round.guesses.includes(b.id)) return fail('You already guessed that building.');
+    round.guesses.push(b.id);
+    round.won = b.id === round.building.id;
+    if (round.won || round.guesses.length === GUESSES) round.stage = 'finished';
+    const remaining = GUESSES - round.guesses.length;
+    return ok({ type: 'guessed', buildingId: b.id, correct: round.won, guessesRemaining: remaining,
+      message: round.won ? "That's it!" : round.stage === 'finished' ? 'Out of guesses.' : `Not this one. ${remaining} guesses left.`,
+      ...(round.stage === 'finished' ? await finishedAsync() : {}) });
+  }
+
+  function score() {
+    const found = round.zoneAt != null, efficiency = round.walked > 0 ? Math.min(1, round.shortest.metres / round.walked) : 0;
+    const route = found ? Math.round(400 * efficiency) : 0;
+    const guessPts = round.won ? GUESS_POINTS[round.guesses.length - 1] : 0, multiplier = MULT[round.hint] || 1;
+    const hintBonus = Math.round(guessPts * (multiplier - 1));
+    const checkBonus = found ? Math.round(100 * (CHECKS - round.checks.length) / CHECKS) : 0;
+    return { route, efficiency: Math.round(efficiency * 100), guess: guessPts, hintBonus, checkBonus, multiplier,
+      total: route + guessPts + hintBonus + checkBonus, max: 1000 };
+  }
+  function finished(summary = null) {
+    const t = round.target;
+    return { result: { won: round.won, target: { name: t.name, category: t.category, buildingId: round.building.id, centre: round.building.center },
+      score: score(), metresWalked: Math.round(round.walked), shortestMetres: Math.round(round.shortest.metres),
+      secondsToZone: round.zoneAt ? Math.round((round.zoneAt - round.startedAt) / 1000) : null,
+      zone: { centre: round.zone.centre, radius: round.zone.radius }, checksUsed: round.checks.length,
+      guessesUsed: round.guesses.length, hintLevel: round.hint, route: round.track, shortestRoute: round.shortest.points,
+      checks: round.checks, summary } };
+  }
+  async function finishedAsync() {
+    let summary = null;
+    if (round.target.wikipedia) {
+      const r = await fetch('https://en.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(round.target.wikipedia.replace(/ /g, '_')))
+        .then(x => x.ok ? x.json() : null).catch(() => null);
+      if (r?.extract) summary = { title: r.title, extract: r.extract, image: r.thumbnail?.source?.startsWith('https://') ? r.thumbnail.source : null,
+        url: r.content_urls?.desktop?.page || null };
+    }
+    return finished(summary);
+  }
+
+  return {
+    /** Debug only: the shortest route from where you stand into the zone. */
+    debugRoute: () => DEBUG && round ? shortestRoute(round.pos, p => inZone(round.zone, p))?.points || [] : [],
+    async handle(action, body) {
+      if (action === 'start') return start();
+      if (!round || body.round !== round.id) return fail('This round has ended or was replaced. Start a new round.');
+      switch (action) {
+        case 'move': return move(body);
+        case 'travel': return travel(body);
+        case 'check': { const r = check(); if (r.body.result) Object.assign(r.body, await finishedAsync()); return r; }
+        case 'hint': return hint(body);
+        case 'guess': return guess(body);
+        default: return fail('Unknown action.', 404);
+      }
+    },
+  };
+})();
+
 // ---------- start ----------
 async function startRound() {
   if (game.phase !== 'title') return;
@@ -1307,7 +1582,7 @@ for (const card of document.querySelectorAll('.hintcard')) {
 
 // ---------- boot ----------
 (async () => {
-  const [packResponse] = await Promise.all([fetch('/pack.json'), initMap()]);
+  const [packResponse] = await Promise.all([fetch('pack.json'), initMap()]);
   pack = await packResponse.json();
   M_LON = M_LAT * Math.cos((pack.bounds.north + pack.bounds.south) / 2 * Math.PI / 180);
   const categories = new Map(pack.landmarks.map(l => [l.building, l.category]));
@@ -1332,7 +1607,7 @@ for (const card of document.querySelectorAll('.hintcard')) {
     // Automated visual tests only: walk the server's shortest route to the zone. Never enabled in normal play.
     game.debugWalkToZone = async () => {
       while (game.sending || game.pending.length) await new Promise(r => setTimeout(r, 50));
-      const info = await (await fetch('/api/debug')).json();
+      const info = STATIC ? { route: LocalRules.debugRoute() } : await (await fetch('/api/debug')).json();
       game.autopilot = { route: info.route.slice(1), i: 0 };
       return info.route.length;
     };
