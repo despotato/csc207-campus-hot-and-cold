@@ -93,6 +93,12 @@ LANDMARKS = [
     ("w258167657", "Goldring Centre", "Athletics", "Goldring Centre for High Performance Sport"),
 ]
 
+# The player's avatar for this campus. CHANGE THIS FOR EVERY UNIVERSITY: each campus pack names its own mascot,
+# picks a body the explore page can draw ("beaver"; anything else falls back to a student), and its school colours.
+# Keep it an original pixel design in the school's colours rather than copying official mascot artwork.
+MASCOT = {"name": "True Blue", "species": "beaver", "school": "University of Toronto",
+          "colors": {"fur": "#7a4a2a", "belly": "#b98a5e", "dark": "#3e2a1c", "primary": "#1e3765", "secondary": "#ffffff"}}
+
 # Open-air landmarks highlighted at ground level instead of as a raised block.
 FLAT = {"w6147259"}
 
@@ -339,6 +345,7 @@ def main(src, dst, green_src=None):
         "campus": "University of Toronto — St. George",
         "bounds": {"south": 43.6565, "west": -79.4040, "north": 43.6695, "east": -79.3875},
         "attribution": "Building outlines and paths © OpenStreetMap contributors (ODbL)",
+        "mascot": MASCOT,
         "landmarks": landmarks,
         "buildings": buildings,
         "walkways": {"nodes": coords, "edges": sorted(edges)},

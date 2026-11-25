@@ -213,7 +213,8 @@ Dependencies point inward: entities import nothing from outer layers, and use ca
 - For visual testing, run headless with a fixed port and debug info:
   `java -Djava.awt.headless=true -Dcampus.explore.port=8790 -Dcampus.explore.debug=true -jar target/campus-hot-and-cold-0.2.0.jar`,
   then open `http://127.0.0.1:8790/?debug=1`. Debug mode adds `game.debugWalkToZone()` in the browser console.
-- `python3 tools/build_pack.py <overpass.json> src/main/resources/campus/packs/st-george.json` regenerates the campus pack. The curated landmark list is at the top of the script.
+- `python3 tools/build_pack.py <buildings.json> src/main/resources/campus/packs/st-george.json [greenery.json]` regenerates the campus pack from Overpass exports. The curated landmark list is at the top of the script.
+- **Mascot per university:** each campus pack names the player's avatar in `MASCOT` (see `tools/build_pack.py`): a name, a body the page can draw (`beaver`, otherwise a student) and school colours. U of T plays as True Blue the beaver, an original pixel design in school colours. Change it for every university's pack.
 
 ## November 13 milestone
 
