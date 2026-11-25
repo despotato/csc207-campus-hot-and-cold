@@ -220,6 +220,7 @@ Dependencies point inward: entities import nothing from outer layers, and use ca
   `java -Djava.awt.headless=true -Dcampus.explore.port=8790 -Dcampus.explore.debug=true -jar target/campus-hot-and-cold-0.2.0.jar`,
   then open `http://127.0.0.1:8790/?debug=1`. Debug mode adds `game.debugWalkToZone()` in the browser console.
 - `python3 tools/build_pack.py <buildings.json> src/main/resources/campus/packs/st-george.json [greenery.json]` regenerates the campus pack from Overpass exports. The curated landmark list is at the top of the script.
+- **Adding a campus:** follow [`docs/ADD_A_CAMPUS.md`](docs/ADD_A_CAMPUS.md), a step-by-step prompt you can hand to a coding agent (or follow yourself).
 - **Mascot per university:** each campus pack names the player's avatar in `MASCOT` (see `tools/build_pack.py`): a name, a body the page can draw (`beaver`, otherwise a student) and school colours. U of T plays as True Blue the beaver, an original pixel design in school colours. Change it for every university's pack.
 
 ## November 13 milestone
