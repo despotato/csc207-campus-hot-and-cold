@@ -140,7 +140,7 @@
 <section id="title" class="screen">
   <div class="card panel">
     <h1>Campus<br>Hot <span class="amp">&amp;</span> Cold</h1>
-    <p class="lead">U of T St. George · Explore</p>
+    <p class="lead">U of T St. George · Explore<span id="mascotLine"></span></p>
     <ol class="rules">
       <li>Walk around campus to find the hidden <b>zone</b>. You get a few hot/cold checks; a check made inside the zone finds it.</li>
       <li>Inside the zone, pick a hint <b>blind</b>: easy, normal or hard. Harder hints score more.</li>
@@ -712,7 +712,13 @@ function placeLabels() {
 }
 
 // ---------- avatar ----------
+/** The player's avatar: the campus pack's mascot (see tools/build_pack.py MASCOT), or a student by default. */
 function avatarFeatures(p, heading) {
+  const mascot = pack?.mascot;
+  return mascot?.species === 'beaver' ? beaverFeatures(p, heading, mascot.colors) : studentFeatures(p, heading);
+}
+
+function studentFeatures(p, heading) {
   const S = 2.4, swing = Math.sin(game.walkPhase) * 0.28 * S;
   const parts = [
     [-0.42, -0.06, -0.2 + swing, 0.2 + swing, 0, 0.95, '#2b3a67'],
@@ -724,6 +730,30 @@ function avatarFeatures(p, heading) {
   ];
   const shadow = box(p, heading, -0.9 * S, 0.9 * S, -0.9 * S, 0.9 * S, 0, 0.05, '#00000055');
   return [shadow, ...parts.map(([x0, x1, y0, y1, z0, z1, c]) => box(p, heading, x0 * S, x1 * S, y0 * S, y1 * S, z0 * S, z1 * S, c))];
+}
+
+/** An original blocky beaver in school colours: toque, scarf, buck teeth, and a wagging paddle tail. */
+function beaverFeatures(p, heading, c) {
+  const S = 2.4, swing = Math.sin(game.walkPhase) * 0.18, wag = Math.sin(game.walkPhase * 0.5) * 0.08;
+  const parts = [
+    [-0.45, -0.15, -0.1 + swing, 0.25 + swing, 0, 0.25, c.dark],       // feet
+    [0.15, 0.45, -0.1 - swing, 0.25 - swing, 0, 0.25, c.dark],
+    [-0.35, 0.35, -1.25, -0.45, 0.15 + wag, 0.33 + wag, c.dark],       // paddle tail
+    [-0.55, 0.55, -0.45, 0.4, 0.25, 1.45, c.fur],                      // body
+    [-0.4, 0.4, 0.4, 0.46, 0.4, 1.28, c.belly],                        // belly
+    [-0.58, 0.58, -0.48, 0.44, 1.28, 1.45, c.primary],                 // scarf
+    [-0.42, 0.42, -0.25, 0.55, 1.45, 2.15, c.fur],                     // head
+    [-0.25, 0.25, 0.55, 0.8, 1.5, 1.85, c.belly],                      // snout
+    [-0.1, 0.1, 0.8, 0.86, 1.74, 1.86, '#1b1b1b'],                     // nose
+    [-0.1, 0.1, 0.7, 0.82, 1.36, 1.5, '#ffffff'],                      // buck teeth
+    [-0.3, -0.15, 0.55, 0.58, 1.86, 1.98, '#1b1b1b'],                  // eyes
+    [0.15, 0.3, 0.55, 0.58, 1.86, 1.98, '#1b1b1b'],
+    [-0.46, 0.46, -0.3, 0.6, 2.12, 2.42, c.primary],                   // toque
+    [-0.47, 0.47, -0.31, 0.61, 2.12, 2.2, c.secondary],                // toque stripe
+    [-0.12, 0.12, 0.05, 0.25, 2.42, 2.6, c.secondary],                 // pom-pom
+  ];
+  const shadow = box(p, heading, -0.9 * S, 0.9 * S, -1.2 * S, 0.9 * S, 0, 0.05, '#00000055');
+  return [shadow, ...parts.map(([x0, x1, y0, y1, z0, z1, col]) => box(p, heading, x0 * S, x1 * S, y0 * S, y1 * S, z0 * S, z1 * S, col))];
 }
 
 // ---------- free movement ----------
@@ -1609,6 +1639,7 @@ for (const card of document.querySelectorAll('.hintcard')) {
     buildings.set(b.id, b);
   }
   named = pack.buildings.filter(b => b.name);
+  if (pack.mascot) $('mascotLine').textContent = ` · Play as ${pack.mascot.name} the ${pack.mascot.species}`;
   landmarkBuildings = named.filter(b => b.category);
   ORIGIN = [(pack.bounds.west + pack.bounds.east) / 2, (pack.bounds.south + pack.bounds.north) / 2];
   buildGrid(pack.bounds, pack.buildings);
