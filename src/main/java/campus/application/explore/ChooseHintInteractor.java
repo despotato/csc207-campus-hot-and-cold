@@ -4,6 +4,7 @@ import campus.domain.explore.CampusMap;
 import campus.domain.explore.Expedition;
 
 import java.util.Objects;
+import java.util.UUID;
 
 public final class ChooseHintInteractor implements ChooseHintInputBoundary {
     private final ExpeditionSession session;
@@ -21,10 +22,10 @@ public final class ChooseHintInteractor implements ChooseHintInputBoundary {
     }
 
     @Override
-    public void execute(Expedition.HintLevel level) {
-        Expedition expedition = session.current().orElse(null);
+    public void execute(UUID roundId, Expedition.HintLevel level) {
+        Expedition expedition = session.current(roundId).orElse(null);
         if (expedition == null) {
-            output.present(new ExploreResponse.Failed("Start a round first."));
+            output.present(new ExploreResponse.Failed(ExpeditionSession.STALE));
             return;
         }
         if (level == null) {

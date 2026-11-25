@@ -1,5 +1,8 @@
 package campus.application.explore;
 
+import java.util.UUID;
+
 public interface CheckTemperatureInputBoundary {
-    void execute();
+    /** Spends a check here; with none left, makes the final search. */
+    void execute(UUID roundId);
 }

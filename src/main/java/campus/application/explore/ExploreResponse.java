@@ -5,18 +5,18 @@ import campus.domain.explore.GeoPoint;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
-/** Output data for the explore use cases. Nothing here leaks the target before the round ends. */
+/** Output data for the explore use cases. Nothing here leaks the target or zone before they're found. */
 public sealed interface ExploreResponse {
-    record Started(String campus, GeoPoint start, int checksRemaining, int guessLimit, String difficulty)
-            implements ExploreResponse { }
+    record Started(UUID roundId, String campus, GeoPoint start, int checksRemaining, int guessLimit,
+                   String difficulty) implements ExploreResponse { }
 
-    record Moved(double metresWalked, long elapsedSeconds, boolean zoneReached, ZoneView zone)
-            implements ExploreResponse { }
+    record Moved(double metresWalked, long elapsedSeconds) implements ExploreResponse { }
 
     /** Fast travel finished at {@code position}, walking {@code path} (charged as walked distance). */
-    record Travelled(GeoPoint position, List<GeoPoint> path, double metresWalked, long elapsedSeconds,
-                     boolean zoneReached, ZoneView zone) implements ExploreResponse {
+    record Travelled(GeoPoint position, List<GeoPoint> path, double metresWalked, long elapsedSeconds)
+            implements ExploreResponse {
         public Travelled {
             path = List.copyOf(path);
         }
@@ -25,17 +25,20 @@ public sealed interface ExploreResponse {
     /** A move was refused; the player stays at {@code position}. */
     record Rejected(String message, GeoPoint position, double metresWalked) implements ExploreResponse { }
 
-    record Checked(GeoPoint point, Expedition.Heat heat, Expedition.Trend trend, int checksRemaining)
-            implements ExploreResponse { }
+    /**
+     * A check (or, with none left, the final search). {@code zone} is set when it found the zone;
+     * {@code result} is set when a failed final search ended the round.
+     */
+    record Checked(GeoPoint point, Expedition.Heat heat, Expedition.Trend trend, int checksRemaining,
+                   boolean finalSearch, ZoneView zone, Finished finished) implements ExploreResponse { }
 
     record HintChosen(Expedition.HintLevel level, double multiplier, String hint, List<Integer> zoneBuildings)
             implements ExploreResponse { }
 
-    /** {@code saveError} is set only when saving a finished round failed. */
-    record Guessed(int buildingId, boolean correct, int guessesRemaining, Result result, String saveError)
+    record Guessed(int buildingId, boolean correct, int guessesRemaining, Finished finished)
             implements ExploreResponse {
-        public Optional<Result> finished() {
-            return Optional.ofNullable(result);
+        public Optional<Finished> result() {
+            return Optional.ofNullable(finished);
         }
     }
 
@@ -43,10 +46,14 @@ public sealed interface ExploreResponse {
 
     record ZoneView(GeoPoint centre, double radiusMetres) { }
 
+    /** The end of a round: the reveal, plus {@code saveError} when saving it failed. */
+    record Finished(Result result, String saveError) { }
+
+    /** {@code hintLevel} and {@code secondsToZone} are null when the zone was never found. */
     record Result(boolean won, String targetName, String category, int targetBuildingId, GeoPoint targetCentre,
                   int routePoints, double efficiency, int identifyPoints, double multiplier, int score,
-                  double metresWalked, double shortestMetres, long secondsToZone, int checksUsed,
-                  int guessesUsed, Expedition.HintLevel hintLevel, List<GeoPoint> route,
+                  double metresWalked, double shortestMetres, Long secondsToZone, int checksUsed,
+                  int guessesUsed, Expedition.HintLevel hintLevel, ZoneView zone, List<GeoPoint> route,
                   List<GeoPoint> shortestRoute, List<Expedition.Check> checks, LandmarkSummary summary) { }
 
     /** Optional extra information about the target from an external source. */

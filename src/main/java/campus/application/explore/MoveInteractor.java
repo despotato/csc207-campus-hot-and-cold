@@ -7,6 +7,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 public final class MoveInteractor implements MoveInputBoundary {
     private final Clock clock;
@@ -20,10 +21,10 @@ public final class MoveInteractor implements MoveInputBoundary {
     }
 
     @Override
-    public void execute(List<GeoPoint> path) {
-        Expedition expedition = session.current().orElse(null);
+    public void execute(UUID roundId, List<GeoPoint> path) {
+        Expedition expedition = session.current(roundId).orElse(null);
         if (expedition == null) {
-            output.present(new ExploreResponse.Failed("Start a round first."));
+            output.present(new ExploreResponse.Failed(ExpeditionSession.STALE));
             return;
         }
         try {
@@ -33,11 +34,7 @@ public final class MoveInteractor implements MoveInputBoundary {
                     expedition.metresWalked()));
             return;
         }
-        boolean reached = expedition.stage() != Expedition.Stage.FIND_ZONE;
-        long elapsed = Duration.between(expedition.startedAt(),
-                expedition.zoneReachedAt().orElse(clock.instant())).toSeconds();
-        output.present(new ExploreResponse.Moved(expedition.metresWalked(), elapsed, reached,
-                expedition.revealedZone().map(zone -> new ExploreResponse.ZoneView(zone.centre(),
-                        zone.radiusMetres())).orElse(null)));
+        output.present(new ExploreResponse.Moved(expedition.metresWalked(),
+                Duration.between(expedition.startedAt(), clock.instant()).toSeconds()));
     }
 }

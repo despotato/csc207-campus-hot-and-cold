@@ -70,6 +70,17 @@ class ExpeditionTest {
         return time;
     }
 
+    /** Walks the route into the zone and checks there, which is how the zone is found. */
+    static Instant reachZone(Expedition round, Instant time) {
+        time = walk(round, ROUTE, time).plusSeconds(1);
+        assertTrue(round.check(time).inZone());
+        return time;
+    }
+
+    static Instant reachZone(Expedition round) {
+        return reachZone(round, T0);
+    }
+
     @Test void openSpaceBlocksBuildingsButNotCourtyards() {
         List<List<GeoPoint>> ring = new ArrayList<>(square(50, 50, 30));
         ring.addAll(square(50, 50, 10)); // courtyard
@@ -126,47 +137,74 @@ class ExpeditionTest {
                 "can't travel into a building");
     }
 
-    @Test void fastTravelThroughTheZoneStopsAtItsEdge() {
+    @Test void fastTravelIntoTheZoneIsAlsoSilent() {
         Expedition round = round();
-        round.travelTo(at(1200, 180), T0.plusSeconds(1));
-        assertEquals(Expedition.Stage.IDENTIFY, round.stage());
-        assertTrue(round.zoneForDiagnostics().contains(round.position()));
-        assertTrue(round.position().distanceTo(at(1000, 75)) > 85, "stopped at the edge, not the far side");
+        round.travelTo(at(930, 78), T0.plusSeconds(1));
+        assertEquals(Expedition.Stage.FIND_ZONE, round.stage());
+        assertTrue(round.check(T0.plusSeconds(2)).inZone());
     }
 
     @Test void checksGiveHeatAndTrendAndAreLimited() {
         Expedition round = round();
-        Expedition.Check first = round.check();
+        Expedition.Check first = round.check(T0);
         assertEquals(Expedition.Heat.COLD, first.heat());
         assertEquals(Expedition.Trend.FIRST, first.trend());
         Instant time = walk(round, List.of(at(400, 75)), T0);
-        Expedition.Check second = round.check();
+        Expedition.Check second = round.check(time);
         assertEquals(Expedition.Trend.WARMER, second.trend());
         assertEquals(Expedition.Heat.COLD, second.heat()); // 600 m away
-        walk(round, List.of(at(490, 126), at(510, 126), at(720, 75)), time);
-        assertEquals(Expedition.Heat.WARM, round.check().heat()); // 280 m away
+        Instant later = walk(round, List.of(at(490, 126), at(510, 126), at(720, 75)), time);
+        assertEquals(Expedition.Heat.WARM, round.check(later).heat()); // 280 m away
         while (round.checksRemaining() > 0) {
-            round.check();
+            round.check(later);
         }
-        assertThrows(IllegalStateException.class, round::check);
+        assertThrows(IllegalStateException.class, () -> round.check(later));
         assertEquals(Expedition.Stage.FIND_ZONE, round.stage(), "Out of checks: keep exploring without feedback");
     }
 
-    @Test void enteringTheZoneStartsStageTwoAndRevealsTheZoneOnly() {
+    @Test void walkingIntoTheZoneIsSilentUntilACheckThere() {
         Expedition round = round();
-        assertTrue(round.revealedZone().isEmpty());
         Instant time = walk(round, ROUTE, T0);
+        assertEquals(Expedition.Stage.FIND_ZONE, round.stage(), "entering the zone isn't announced");
+        assertTrue(round.revealedZone().isEmpty());
+        Expedition.Check check = round.check(time);
+        assertTrue(check.inZone());
         assertEquals(Expedition.Stage.IDENTIFY, round.stage());
         assertTrue(round.revealedZone().isPresent());
         assertTrue(round.revealedTarget().isEmpty());
         assertEquals(time, round.zoneReachedAt().orElseThrow());
         assertThrows(IllegalStateException.class, () -> round.moveAlong(List.of(at(915, 78)), time.plusSeconds(2)));
-        assertThrows(IllegalStateException.class, round::check);
+        assertThrows(IllegalStateException.class, () -> round.check(time));
+    }
+
+    @Test void finalSearchInsideTheZoneFindsIt() {
+        Expedition round = round();
+        while (round.checksRemaining() > 0) {
+            round.check(T0);
+        }
+        Instant time = walk(round, ROUTE, T0);
+        assertThrows(IllegalStateException.class, () -> round.check(time));
+        assertTrue(round.finalSearch(time));
+        assertEquals(Expedition.Stage.IDENTIFY, round.stage());
+    }
+
+    @Test void finalSearchOutsideTheZoneEndsTheRound() {
+        Expedition round = round();
+        assertThrows(IllegalStateException.class, () -> round.finalSearch(T0), "checks come first");
+        while (round.checksRemaining() > 0) {
+            round.check(T0);
+        }
+        Instant time = walk(round, List.of(at(300, 75)), T0);
+        assertFalse(round.finalSearch(time));
+        assertEquals(Expedition.Stage.FINISHED, round.stage());
+        assertEquals("Target Hall", round.revealedTarget().orElseThrow().name());
+        assertEquals(0, round.score().total(), "never found the zone");
+        assertThrows(IllegalStateException.class, () -> round.chooseHint(HintLevel.EASY), "round is over");
     }
 
     @Test void hintMustBeChosenBlindBeforeGuessingAndOnlyOnce() {
         Expedition round = round();
-        walk(round, ROUTE, T0);
+        reachZone(round);
         assertThrows(IllegalStateException.class, () -> round.guess(1));
         assertEquals("It's a library building, and its name starts with \"T\".", round.chooseHint(HintLevel.EASY));
         assertThrows(IllegalStateException.class, () -> round.chooseHint(HintLevel.HARD));
@@ -175,27 +213,28 @@ class ExpeditionTest {
     @Test void hardHintGivesDirectionWithinZone() {
         CampusMap map = campus();
         Expedition round = new Expedition(map, map.landmarks().getFirst(), new Zone(at(960, 75), 90), START, T0);
-        walk(round, List.of(at(490, 126), at(510, 126), at(872, 78)), T0);
+        Instant time = walk(round, List.of(at(490, 126), at(510, 126), at(872, 78)), T0);
+        assertTrue(round.check(time).inZone());
         assertEquals("It's in the east part of the zone.", round.chooseHint(HintLevel.HARD));
     }
 
     @Test void hardHintCanUseAnOutsideClueButNeverOneNamingTheTarget() {
         Expedition round = round();
-        walk(round, ROUTE, T0);
+        reachZone(round);
         assertEquals("Built in ____ as a library.", round.chooseHint(HintLevel.HARD,
                 target -> Optional.of("Built in ____ as a library.")));
         Expedition leaky = round();
-        walk(leaky, ROUTE, T0);
+        reachZone(leaky);
         assertEquals("It's near the middle of the zone.", leaky.chooseHint(HintLevel.HARD,
                 target -> Optional.of("Target Hall opened in 1900.")), "falls back when the clue names it");
         Expedition easy = round();
-        walk(easy, ROUTE, T0);
+        reachZone(easy);
         assertTrue(easy.chooseHint(HintLevel.EASY, target -> Optional.of("ignored")).startsWith("It's a library"));
     }
 
     @Test void guessesMustBeInsideTheZoneAndDistinct() {
         Expedition round = round();
-        walk(round, ROUTE, T0);
+        reachZone(round);
         round.chooseHint(HintLevel.NORMAL);
         assertThrows(IllegalArgumentException.class, () -> round.guess(5), "Far Hall is outside the zone");
         assertThrows(IllegalArgumentException.class, () -> round.guess(99));
@@ -209,7 +248,7 @@ class ExpeditionTest {
 
     @Test void scoreRewardsEfficiencyHarderHintsAndFewerGuesses() {
         Expedition direct = round();
-        walk(direct, ROUTE, T0);
+        reachZone(direct);
         direct.chooseHint(HintLevel.HARD);
         direct.guess(1);
         Expedition.Score best = direct.score();
@@ -218,7 +257,7 @@ class ExpeditionTest {
 
         Expedition detour = round();
         Instant time = walk(detour, List.of(at(200, 75), at(0, 75)), T0); // 400 m wasted
-        walk(detour, ROUTE, time);
+        reachZone(detour, time);
         detour.chooseHint(HintLevel.EASY);
         detour.guess(4);
         detour.guess(1);
@@ -230,7 +269,7 @@ class ExpeditionTest {
 
     @Test void threeWrongGuessesEndTheRoundWithNoIdentifyPoints() {
         Expedition round = round();
-        walk(round, ROUTE, T0);
+        reachZone(round);
         round.chooseHint(HintLevel.NORMAL);
         assertFalse(round.guess(2));
         assertFalse(round.guess(3));

@@ -38,7 +38,7 @@ public final class StartExpeditionInteractor implements StartExpeditionInputBoun
             return;
         }
         session.start(expedition);
-        output.present(new ExploreResponse.Started(map.name(), expedition.start(), expedition.checksRemaining(),
-                Expedition.GUESS_LIMIT, difficulty.name()));
+        output.present(new ExploreResponse.Started(expedition.id(), map.name(), expedition.start(),
+                expedition.checksRemaining(), Expedition.GUESS_LIMIT, difficulty.name()));
     }
 }

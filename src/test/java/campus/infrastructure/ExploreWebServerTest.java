@@ -6,7 +6,9 @@ import campus.application.explore.CheckTemperatureInteractor;
 import campus.application.explore.ChooseHintInteractor;
 import campus.application.explore.ExpeditionSession;
 import campus.application.explore.GuessBuildingInteractor;
+import campus.application.explore.ExpeditionResultRepository;
 import campus.application.explore.LandmarkInfoGateway;
+import campus.application.explore.RoundFinisher;
 import campus.application.explore.MoveInteractor;
 import campus.application.explore.StartExpeditionInteractor;
 import campus.application.explore.TravelInteractor;
@@ -33,11 +35,12 @@ class ExploreWebServerTest {
         var session = new ExpeditionSession();
         var presenter = new ExplorePresenter();
         var clock = Clock.systemUTC();
+        var finisher = new RoundFinisher(LandmarkInfoGateway.NONE, ExpeditionResultRepository.DISABLED, clock);
         var controller = new ExploreController(
                 new StartExpeditionInteractor(TestCampus.map(), new Random(1), clock, session, presenter),
-                new MoveInteractor(clock, session, presenter), new TravelInteractor(clock, session, presenter), new CheckTemperatureInteractor(session, presenter),
-                new ChooseHintInteractor(session, presenter),
-                new GuessBuildingInteractor(session, LandmarkInfoGateway.NONE, presenter), presenter);
+                new MoveInteractor(clock, session, presenter), new TravelInteractor(clock, session, presenter), new CheckTemperatureInteractor(clock, session, finisher, presenter),
+                new ChooseHintInteractor(session, presenter), new GuessBuildingInteractor(session, finisher, presenter),
+                presenter);
         server = new ExploreWebServer(controller, "{\"version\":2}", 0, null);
     }
 
@@ -71,7 +74,8 @@ class ExploreWebServerTest {
         var started = send(post("start", "{}"));
         assertEquals(200, started.statusCode());
         assertEquals("started", Json.object(Json.parse(started.body())).get("type"));
-        var checked = send(post("check", ""));
+        String round = (String) Json.object(Json.parse(started.body())).get("roundId");
+        var checked = send(post("check", "{\"round\":\"" + round + "\"}"));
         assertEquals("checked", Json.object(Json.parse(checked.body())).get("type"));
     }
 

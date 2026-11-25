@@ -48,20 +48,37 @@ class ExploreFlowTest {
         controller = new ExploreController(
                 new StartExpeditionInteractor(map, new Random(3), clock, session, presenter),
                 new MoveInteractor(clock, session, presenter), new TravelInteractor(clock, session, presenter),
-                new CheckTemperatureInteractor(session, presenter),
+                new CheckTemperatureInteractor(clock, session, finisher(info), presenter),
                 new ChooseHintInteractor(session, presenter),
-                new GuessBuildingInteractor(session, info, new ExpeditionResultRepository() {
-                    @Override
-                    public void save(java.util.UUID id, String campus, Instant at, String difficulty,
-                                     ExploreResponse.Result result) throws java.io.IOException {
-                        if (failSave) throw new java.io.IOException("disk full");
-                        saved.add(campus + "|" + difficulty + "|" + result.targetName() + "|" + result.score());
-                    }
-                }, clock, presenter), presenter);
+                new GuessBuildingInteractor(session, finisher(info), presenter), presenter);
     }
 
+    private RoundFinisher finisher(LandmarkInfoGateway info) {
+        return new RoundFinisher(info, new ExpeditionResultRepository() {
+            @Override
+            public void save(java.util.UUID id, String campus, Instant at, String difficulty,
+                             ExploreResponse.Result result) throws java.io.IOException {
+                if (failSave) {
+                    throw new java.io.IOException("disk full");
+                }
+                saved.add(campus + "|" + difficulty + "|" + result.targetName() + "|" + result.score());
+            }
+        }, clock);
+    }
+
+    private String roundId;
+
+    /** Sends an action as the browser does, tagged with the current round's ID. */
     private ExploreViewModel call(String action, Map<String, Object> fields) {
-        return controller.handle(action, fields);
+        Map<String, Object> request = new java.util.HashMap<>(fields);
+        if (roundId != null && !request.containsKey("round")) {
+            request.put("round", roundId);
+        }
+        ExploreViewModel model = controller.handle(action, request);
+        if ("started".equals(model.body().get("type"))) {
+            roundId = (String) model.body().get("roundId");
+        }
+        return model;
     }
 
     @SuppressWarnings("unchecked")
@@ -83,13 +100,12 @@ class ExploreFlowTest {
                 clock.now = clock.now.plusSeconds(1);
                 last = call("move", Map.of("path", List.of(List.of(next.longitude(), next.latitude()))));
                 assertEquals(200, last.status(), () -> "move rejected");
-                if (Boolean.TRUE.equals(last.body().get("zoneReached"))) {
-                    return last;
-                }
             }
             here = target;
         }
-        return last;
+        assertNull(last.body().get("zone"), "walking in doesn't reveal the zone");
+        clock.now = clock.now.plusSeconds(1);
+        return call("check", Map.of());
     }
 
     @Test void fullRoundFromStartToRevealWithoutLeakingTheTarget() {
@@ -107,7 +123,7 @@ class ExploreFlowTest {
         assertEquals(400, call("guess", Map.of("buildingId", 1)).status(), "can't guess before the zone");
 
         ExploreViewModel reached = walkToZone();
-        assertEquals(true, reached.body().get("zoneReached"));
+        assertEquals(true, reached.body().get("zoneFound"));
         assertNotNull(reached.body().get("zone"));
         assertFalse(Json.write(reached.body()).contains("Target Hall"));
 
@@ -161,13 +177,25 @@ class ExploreFlowTest {
         assertEquals(400, call("travel", Map.of("to", "nowhere")).status());
     }
 
+    @Test void aStaleTabCannotActOnANewerRound() {
+        call("start", Map.of());
+        String first = roundId;
+        call("start", Map.of());
+        ExploreViewModel stale = call("check", Map.of("round", first));
+        assertEquals(400, stale.status());
+        assertEquals(ExpeditionSession.STALE, stale.body().get("error"));
+        assertEquals(200, call("check", Map.of()).status(), "the current round still works");
+        assertEquals(400, controller.handle("check", Map.of()).status(), "a round ID is required");
+    }
+
     @Test void onlyKnownDifficultiesCanStartARound() {
         assertEquals(400, call("start", Map.of("difficulty", "nightmare")).status());
         assertEquals(200, call("start", Map.of("difficulty", "NORMAL")).status());
     }
 
     @Test void badInputIsRejectedWithoutChangingTheRound() {
-        assertEquals(400, call("check", Map.of()).status(), "no round yet");
+        assertEquals(400, call("check", Map.of("round", java.util.UUID.randomUUID().toString())).status(),
+                "no round yet");
         call("start", Map.of());
         GeoPoint far = session.current().orElseThrow().position().offset(90, 400);
         ExploreViewModel teleport = call("move", Map.of("path", List.of(List.of(far.longitude(), far.latitude()))));

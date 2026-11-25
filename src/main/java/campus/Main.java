@@ -19,6 +19,7 @@ import campus.application.explore.ExpeditionSession;
 import campus.application.explore.GuessBuildingInteractor;
 import campus.application.explore.LandmarkClueGateway;
 import campus.application.explore.MoveInteractor;
+import campus.application.explore.RoundFinisher;
 import campus.application.explore.StartExpeditionInteractor;
 import campus.application.explore.TravelInteractor;
 import campus.domain.Campus;
@@ -81,16 +82,17 @@ public final class Main {
         var session = new ExpeditionSession();
         var presenter = new ExplorePresenter();
         var clock = Clock.systemUTC();
+        // Team task: replace DISABLED with a file-backed result repository.
+        var finisher = new RoundFinisher(new WikipediaSummaryGateway(client),
+                ExpeditionResultRepository.DISABLED, clock);
         var controller = new ExploreController(
                 new StartExpeditionInteractor(map, RandomGenerator.getDefault(), clock, session, presenter),
                 new MoveInteractor(clock, session, presenter),
                 new TravelInteractor(clock, session, presenter),
-                new CheckTemperatureInteractor(session, presenter),
+                new CheckTemperatureInteractor(clock, session, finisher, presenter),
                 // Team task: replace NONE with a Wikipedia clue gateway.
                 new ChooseHintInteractor(session, LandmarkClueGateway.NONE, presenter),
-                // Team task: replace DISABLED with a file-backed result repository.
-                new GuessBuildingInteractor(session, new WikipediaSummaryGateway(client),
-                        ExpeditionResultRepository.DISABLED, clock, presenter),
+                new GuessBuildingInteractor(session, finisher, presenter),
                 presenter);
         int port = Integer.getInteger("campus.explore.port", 0);
         // Debug only: the hidden zone and a shortest route to it, so automated visual tests can walk there.

@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.UUID;
 
 /**
  * Converts raw request fields from the browser into use-case calls. Returns the presenter's
@@ -48,11 +49,11 @@ public final class ExploreController {
             switch (action) {
                 case "start" -> start.execute(Difficulty.named(
                         fields.get("difficulty") instanceof String name ? name : Difficulty.NORMAL.name()));
-                case "move" -> move.execute(path(fields.get("path")));
-                case "travel" -> travel.execute(path(List.of(fields.get("to"))).getFirst());
-                case "check" -> check.execute();
-                case "hint" -> hint.execute(level(fields.get("level")));
-                case "guess" -> guess.execute(integer(fields, "buildingId"));
+                case "move" -> move.execute(round(fields), path(fields.get("path")));
+                case "travel" -> travel.execute(round(fields), path(List.of(fields.get("to"))).getFirst());
+                case "check" -> check.execute(round(fields));
+                case "hint" -> hint.execute(round(fields), level(fields.get("level")));
+                case "guess" -> guess.execute(round(fields), integer(fields, "buildingId"));
                 default -> {
                     return new ExploreViewModel(404, Map.of("type", "error", "error", "Unknown action."));
                 }
@@ -77,6 +78,17 @@ public final class ExploreController {
             points.add(new GeoPoint(lat.doubleValue(), lon.doubleValue()));
         }
         return points;
+    }
+
+    private static UUID round(Map<String, Object> fields) {
+        if (fields.get("round") instanceof String id) {
+            try {
+                return UUID.fromString(id);
+            } catch (IllegalArgumentException ignored) {
+                // Fall through.
+            }
+        }
+        throw new IllegalArgumentException("Missing or invalid round.");
     }
 
     private static HintLevel level(Object value) {

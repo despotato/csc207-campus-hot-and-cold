@@ -6,6 +6,7 @@ import campus.domain.explore.GeoPoint;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.Objects;
+import java.util.UUID;
 
 public final class TravelInteractor implements TravelInputBoundary {
     private final Clock clock;
@@ -19,10 +20,10 @@ public final class TravelInteractor implements TravelInputBoundary {
     }
 
     @Override
-    public void execute(GeoPoint destination) {
-        Expedition expedition = session.current().orElse(null);
+    public void execute(UUID roundId, GeoPoint destination) {
+        Expedition expedition = session.current(roundId).orElse(null);
         if (expedition == null) {
-            output.present(new ExploreResponse.Failed("Start a round first."));
+            output.present(new ExploreResponse.Failed(ExpeditionSession.STALE));
             return;
         }
         int before = expedition.track().size();
@@ -32,13 +33,8 @@ public final class TravelInteractor implements TravelInputBoundary {
             output.present(new ExploreResponse.Failed(exception.getMessage()));
             return;
         }
-        boolean reached = expedition.stage() != Expedition.Stage.FIND_ZONE;
-        long elapsed = Duration.between(expedition.startedAt(),
-                expedition.zoneReachedAt().orElse(clock.instant())).toSeconds();
         var track = expedition.track();
         output.present(new ExploreResponse.Travelled(expedition.position(), track.subList(before, track.size()),
-                expedition.metresWalked(), elapsed, reached,
-                expedition.revealedZone().map(zone -> new ExploreResponse.ZoneView(zone.centre(),
-                        zone.radiusMetres())).orElse(null)));
+                expedition.metresWalked(), Duration.between(expedition.startedAt(), clock.instant()).toSeconds()));
     }
 }

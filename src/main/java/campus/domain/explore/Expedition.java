@@ -49,7 +49,8 @@ public final class Expedition {
         }
     }
 
-    public record Check(GeoPoint point, Heat heat, Trend trend, double metresToZone) { }
+    /** {@code inZone} is true for the check that found the zone. */
+    public record Check(GeoPoint point, Heat heat, Trend trend, double metresToZone, boolean inZone) { }
 
     public record Score(int routePoints, double efficiency, int identifyPoints, double multiplier, int total) { }
 
@@ -168,18 +169,12 @@ public final class Expedition {
             if (next.distanceTo(track.getLast()) >= 3) {
                 track.add(next);
             }
-            if (zone.contains(next)) {
-                track.add(next);
-                stage = Stage.IDENTIFY;
-                zoneReachedAt = now;
-                return;
-            }
         }
     }
 
     /**
      * Fast travel from the campus map. The trip is charged as the shortest walk on open ground, so it
-     * scores exactly like walking that route; if the route crosses into the zone the trip stops there.
+     * scores exactly like walking that route.
      */
     public void travelTo(GeoPoint destination, Instant now) {
         requireStage(Stage.FIND_ZONE, "Movement ends once you reach the zone.");
@@ -203,34 +198,59 @@ public final class Expedition {
                 if (step.distanceTo(track.getLast()) >= 3) {
                     track.add(step);
                 }
-                if (zone.contains(step)) {
-                    track.add(step);
-                    stage = Stage.IDENTIFY;
-                    zoneReachedAt = now;
-                    return;
-                }
             }
             at = next;
         }
     }
 
-    /** Spends one temperature check at the current spot. */
-    public Check check() {
+    /**
+     * Spends one temperature check at the current spot. Walking into the zone isn't announced: a check made
+     * inside it reports that you're in the zone and starts stage two.
+     */
+    public Check check(Instant now) {
         requireStage(Stage.FIND_ZONE, "Checks are only used while finding the zone.");
         if (checksRemaining() == 0) {
-            throw new IllegalStateException("No checks remaining. Keep exploring.");
+            throw new IllegalStateException("No checks remaining. Search here when you think you're in the zone.");
         }
         GeoPoint here = position;
         double distance = here.distanceTo(zone.centre());
+        if (zone.contains(here)) {
+            Check found = new Check(here, Heat.HOT, Trend.FIRST, distance, true);
+            checks.add(found);
+            confirmZone(now);
+            return found;
+        }
         Heat heat = distance < 150 ? Heat.HOT : distance < 300 ? Heat.WARM : distance < 500 ? Heat.COOL : Heat.COLD;
         Trend trend = Trend.FIRST;
         if (!checks.isEmpty()) {
             double change = distance - checks.getLast().metresToZone();
             trend = Math.abs(change) < 5 ? Trend.SAME : change < 0 ? Trend.WARMER : Trend.COLDER;
         }
-        Check check = new Check(here, heat, trend, distance);
+        Check check = new Check(here, heat, trend, distance, false);
         checks.add(check);
         return check;
+    }
+
+    /**
+     * With no checks left, one final search: inside the zone it starts stage two; anywhere else the
+     * round ends. Returns true if the zone was found.
+     */
+    public boolean finalSearch(Instant now) {
+        requireStage(Stage.FIND_ZONE, "The final search is only for finding the zone.");
+        if (checksRemaining() > 0) {
+            throw new IllegalStateException("Use a check first; the final search is for when they run out.");
+        }
+        if (zone.contains(position)) {
+            confirmZone(now);
+            return true;
+        }
+        stage = Stage.FINISHED;
+        return false;
+    }
+
+    private void confirmZone(Instant now) {
+        stage = Stage.IDENTIFY;
+        zoneReachedAt = now;
     }
 
     /** Commits to a hint difficulty before seeing it, then reveals the hint. */
@@ -243,7 +263,7 @@ public final class Expedition {
      * (for example a redacted encyclopedia sentence) instead of its direction within the zone.
      */
     public String chooseHint(HintLevel level, Function<CampusLandmark, Optional<String>> outsideClue) {
-        requireStage(Stage.IDENTIFY, "Reach the zone before choosing a hint.");
+        requireIdentifying();
         if (hintLevel != null) {
             throw new IllegalStateException("You already chose a hint.");
         }
@@ -274,7 +294,7 @@ public final class Expedition {
 
     /** Guesses a building inside the zone. Returns true if it is the target. */
     public boolean guess(int buildingId) {
-        requireStage(Stage.IDENTIFY, "Reach the zone before guessing.");
+        requireIdentifying();
         if (hintLevel == null) {
             throw new IllegalStateException("Choose a hint first.");
         }
@@ -296,7 +316,7 @@ public final class Expedition {
 
     public Score score() {
         double efficiency = metresWalked <= 0 ? 0 : Math.min(1, shortestToZone / metresWalked);
-        int routePoints = stage == Stage.FIND_ZONE ? 0 : (int) Math.round(500 * efficiency);
+        int routePoints = zoneReachedAt == null ? 0 : (int) Math.round(500 * efficiency);
         int base = won ? new int[]{300, 200, 100}[guesses.size() - 1] : 0;
         double multiplier = hintLevel == null ? 1 : hintLevel.multiplier();
         int identifyPoints = (int) Math.round(base * multiplier);
@@ -311,6 +331,13 @@ public final class Expedition {
         }
         String[] names = {"north", "north-east", "east", "south-east", "south", "south-west", "west", "north-west"};
         return "It's in the " + names[(int) Math.round(centre.bearingTo(building) / 45) % 8] + " part of the zone.";
+    }
+
+    private void requireIdentifying() {
+        if (stage == Stage.FINISHED) {
+            throw new IllegalStateException("This round is over.");
+        }
+        requireStage(Stage.IDENTIFY, "Check inside the zone to find it first.");
     }
 
     private void requireStage(Stage expected, String message) {
@@ -336,9 +363,9 @@ public final class Expedition {
     public Instant startedAt() { return startedAt; }
     public Optional<Instant> zoneReachedAt() { return Optional.ofNullable(zoneReachedAt); }
 
-    /** The zone is shown to the player only after they have walked into it. */
+    /** The zone is shown to the player once a check inside it has found it, or when the round is over. */
     public Optional<Zone> revealedZone() {
-        return stage == Stage.FIND_ZONE ? Optional.empty() : Optional.of(zone);
+        return zoneReachedAt != null || stage == Stage.FINISHED ? Optional.of(zone) : Optional.empty();
     }
 
     /** The target is revealed only when the round is over. */
