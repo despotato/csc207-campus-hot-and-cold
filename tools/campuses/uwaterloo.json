@@ -1,0 +1,394 @@
+{
+  "id": "uwaterloo",
+  "name": "University of Waterloo — Main campus",
+  "timezone": "America/Toronto",
+  "bounds": {
+    "south": 43.464,
+    "west": -80.555,
+    "north": 43.478,
+    "east": -80.532
+  },
+  "mascot": {
+    "name": "King Warrior",
+    "species": "lion",
+    "school": "University of Waterloo",
+    "colors": {
+      "fur": "#EAAB00",
+      "belly": "#FED34C",
+      "dark": "#000000",
+      "primary": "#FED34C",
+      "secondary": "#FFFFFF"
+    }
+  },
+  "flat": [],
+  "dailyFrom": "2026-11-01",
+  "landmarks": [
+    {
+      "osm": "w43250626",
+      "name": "Dana Porter Library",
+      "category": "Library",
+      "wikipedia": null
+    },
+    {
+      "osm": "w43250588",
+      "name": "Ron Eydt Village",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w43250609",
+      "name": "Minota Hagey Residence",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w45845764",
+      "name": "Eby Hall",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w143668849",
+      "name": "Beck Hall",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w382872689",
+      "name": "Claudette Millar Hall",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w148285604",
+      "name": "Mackenzie King Village",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w143668848",
+      "name": "UW Place Grand Commons",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w141712445",
+      "name": "Student Village 1 Central Complex",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w141712434",
+      "name": "West 2",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w293219222",
+      "name": "West 1",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w182922417",
+      "name": "North 3",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w293225024",
+      "name": "South 2",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w102691857",
+      "name": "United College Graduate Apartments",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w440380006",
+      "name": "St. Jerome's University Residence Buildings",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w43250608",
+      "name": "United College",
+      "category": "College",
+      "wikipedia": null
+    },
+    {
+      "osm": "w43250610",
+      "name": "Conrad Grebel University College",
+      "category": "College",
+      "wikipedia": null
+    },
+    {
+      "osm": "w1246717243",
+      "name": "Renison University College",
+      "category": "College",
+      "wikipedia": null
+    },
+    {
+      "osm": "w43250612",
+      "name": "St. Jerome's University",
+      "category": "College",
+      "wikipedia": null
+    },
+    {
+      "osm": "w43250604",
+      "name": "Engineering 2",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w43250605",
+      "name": "Engineering 3",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w43250607",
+      "name": "J. R. Coutts Engineering Lecture Hall",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w43250619",
+      "name": "Arts Lecture Hall",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w43250620",
+      "name": "Ira G. Needles Hall",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w43250621",
+      "name": "Modern Languages",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w43250624",
+      "name": "J. G. Hagey Hall of the Humanities",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w43250628",
+      "name": "Biology 2",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w43250629",
+      "name": "Earth Sciences & Chemistry",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w43250630",
+      "name": "Mathematics & Computer",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w43250631",
+      "name": "Physics",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w43250632",
+      "name": "Biology 1",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w43250634",
+      "name": "Chemistry 2",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w43250635",
+      "name": "Carl A. Pollock Hall",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w43250638",
+      "name": "School of Optometry & Vision Science",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w43250643",
+      "name": "B.C. Matthews Hall",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w48359806",
+      "name": "Environment 2",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w48359807",
+      "name": "Environment 1",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w51125806",
+      "name": "Engineering 5",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w130348900",
+      "name": "Tatham Centre",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w147379102",
+      "name": "Douglas Wright Engineering Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w154056255",
+      "name": "Energy Research Centre",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w158807251",
+      "name": "Engineering 6",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w167411346",
+      "name": "Environment 3",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w182091547",
+      "name": "Mike & Ophelia Lazaridis Quantum-Nano Centre",
+      "category": "Teaching",
+      "wikipedia": "Mike & Ophelia Lazaridis Quantum-Nano Centre"
+    },
+    {
+      "osm": "w188703119",
+      "name": "Centre for Environmental and Information Technology",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w370204260",
+      "name": "Science Teaching Complex",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w382735686",
+      "name": "Pearl Sullivan Engineering Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w382726586",
+      "name": "Applied Health Sciences Expansion Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w1342934521",
+      "name": "Mathematics 3",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "r8765264",
+      "name": "William G. Davis Computer Research Centre",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w43250627",
+      "name": "Student Life Centre",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w43250637",
+      "name": "South Campus Hall",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w43250640",
+      "name": "Federation Hall",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w43250611",
+      "name": "Health Services",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w43250617",
+      "name": "University Club",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w43250641",
+      "name": "Central Services Building",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w43250646",
+      "name": "East Campus Hall",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w145890265",
+      "name": "Graduate House",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w43250596",
+      "name": "Physical Activities Complex",
+      "category": "Athletics",
+      "wikipedia": null
+    },
+    {
+      "osm": "w43250639",
+      "name": "Columbia Icefield",
+      "category": "Athletics",
+      "wikipedia": null
+    },
+    {
+      "osm": "w692358718",
+      "name": "Feridun Hamdullahpur Field House",
+      "category": "Athletics",
+      "wikipedia": null
+    }
+  ],
+  "dailyStartInsideBounds": true
+}

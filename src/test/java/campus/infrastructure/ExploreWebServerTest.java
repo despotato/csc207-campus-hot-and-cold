@@ -69,9 +69,13 @@ class ExploreWebServerTest {
         assertTrue(page.body().contains("Campus Hot"));
         var index = send(HttpRequest.newBuilder(server.address().resolve("/packs/index.json")));
         assertTrue(index.body().contains("\"st-george.json\""));
+        assertTrue(index.body().contains("\"uwaterloo.json\""));
         var pack = send(HttpRequest.newBuilder(server.address().resolve("/packs/st-george.json")));
         assertEquals(200, pack.statusCode());
         assertTrue(pack.body().contains("\"daily\""));
+        var waterloo = send(HttpRequest.newBuilder(server.address().resolve("/packs/uwaterloo.json")));
+        assertEquals(200, waterloo.statusCode());
+        assertTrue(waterloo.body().contains("\"Dana Porter Library\""));
         assertEquals(404, send(HttpRequest.newBuilder(server.address().resolve("/packs/secret.json"))).statusCode(),
                 "only packs listed in the index are served");
         assertEquals(404, send(HttpRequest.newBuilder(server.address().resolve("/secret"))).statusCode());

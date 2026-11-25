@@ -50,7 +50,7 @@ class CampusPackLoaderTest {
 
     @Test void catalogListsCampusesAndLoadsTheirDailyPuzzles() throws Exception {
         var catalog = new PackCatalog();
-        assertEquals(List.of("st-george"), catalog.campusIds());
+        assertEquals(List.of("st-george", "uwaterloo"), catalog.campusIds());
         CampusMap map = catalog.campus("st-george").orElseThrow();
         assertEquals("America/Toronto", map.timezone().getId());
         var date = java.time.LocalDate.of(2026, 11, 25);
@@ -58,6 +58,22 @@ class CampusPackLoaderTest {
         assertTrue(map.openSpace().isOpen(daily.start()));
         assertTrue(daily.shortestToZone() > 300);
         assertTrue(catalog.campus("nowhere").isEmpty());
+    }
+
+    @Test void waterlooPackSupportsDailyAndRandomRounds() throws Exception {
+        CampusMap map = new PackCatalog().campus("uwaterloo").orElseThrow();
+        assertEquals("University of Waterloo — Main campus", map.name());
+        assertEquals("America/Toronto", map.timezone().getId());
+        assertEquals(61, map.landmarks().size());
+        assertTrue(map.landmarks().stream().anyMatch(l -> l.name().equals("Dana Porter Library")));
+        var daily = Expedition.daily(map, java.time.LocalDate.of(2026, 11, 25), Instant.EPOCH);
+        assertTrue(map.openSpace().isOpen(daily.start()), "daily start is outdoors");
+        assertTrue(daily.shortestToZone() > 300);
+        for (int seed = 0; seed < 10; seed++) {
+            Expedition round = Expedition.begin(map, new Random(seed), Instant.EPOCH);
+            assertTrue(map.openSpace().isOpen(round.start()), "random start is outdoors");
+            assertTrue(round.shortestToZone() > 300);
+        }
     }
 
     @Test void dailyAttemptsAreRecordedOncePerCampusAndDate(@org.junit.jupiter.api.io.TempDir java.nio.file.Path dir)

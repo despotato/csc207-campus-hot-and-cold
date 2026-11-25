@@ -6,6 +6,13 @@
       "short": "U of T St. George",
       "file": "st-george.json",
       "timezone": "America/Toronto"
+    },
+    {
+      "id": "uwaterloo",
+      "name": "University of Waterloo — Main campus",
+      "short": "UWaterloo",
+      "file": "uwaterloo.json",
+      "timezone": "America/Toronto"
     }
   ]
 }

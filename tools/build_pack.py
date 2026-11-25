@@ -207,7 +207,7 @@ def offset(p, bearing, dist, lat0):
     return [p[0] + math.sin(r) * dist / (m_lat * math.cos(math.radians(lat0))), p[1] + math.cos(r) * dist / m_lat]
 
 
-def daily_schedule(buildings, landmarks, coords, edges, lat0, campus_id, daily_from):
+def daily_schedule(buildings, landmarks, coords, edges, lat0, campus_id, daily_from, start_bounds=None):
     """Deterministic daily puzzles. Starts are footpath points on the main network, clear of buildings."""
     parent = list(range(len(coords)))
 
@@ -232,7 +232,16 @@ def daily_schedule(buildings, landmarks, coords, edges, lat0, campus_id, daily_f
             if min(xs) - 0.00005 <= p[0] <= max(xs) + 0.00005 and min(ys) - 0.00005 <= p[1] <= max(ys) + 0.00005:
                 return False   # within ~4 m of a building: keep starts comfortably outdoors
         return True
-    network = [coords[i] for i in range(len(coords)) if find(i) == main_root]
+    def within_bounds(p):
+        if start_bounds is None:
+            return True
+        # Leave enough room for the Java walkability grid to snap the start outdoors.
+        margin_lat = 15 / 111195
+        margin_lon = margin_lat / math.cos(math.radians(lat0))
+        return (start_bounds["west"] + margin_lon <= p[0] <= start_bounds["east"] - margin_lon
+                and start_bounds["south"] + margin_lat <= p[1] <= start_bounds["north"] - margin_lat)
+
+    network = [coords[i] for i in range(len(coords)) if find(i) == main_root and within_bounds(coords[i])]
     by_id = {b["id"]: b for b in buildings}
     schedule = {}
     for day in range(DAILY_DAYS):
@@ -336,7 +345,8 @@ def main(config_src, src, dst, green_src=None):
     if green_src:
         pack["trees"], pack["greens"] = greenery(green_src)
     pack["daily"] = daily_schedule(buildings, landmarks, coords, sorted(edges), lat0, config["id"],
-                                    datetime.date.fromisoformat(config["dailyFrom"]))
+                                    datetime.date.fromisoformat(config["dailyFrom"]),
+                                    bounds if config.get("dailyStartInsideBounds") else None)
     with open(dst, "w") as out:
         json.dump(pack, out, separators=(",", ":"), ensure_ascii=False)
     print(f"{len(landmarks)} landmarks, {len(buildings)} buildings, "
