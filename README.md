@@ -124,11 +124,11 @@ Use feature branches and pull requests. GitHub Actions runs `mvn verify` under a
 
 ## Explore mode (3D)
 
-Explore is the two-stage version of the game, played in a pixel-art 3D model of the real St. George campus. Run the app and click **Play Explore (3D)** in the launcher. It opens in your browser. **Classic mode** is the original six-guess game.
+Explore is the two-stage version of the game, played in a pixel-art 3D model of a real campus. Run the app and click **Play Explore (3D)** in the launcher. It opens in your browser. **Classic mode** is the original six-guess game.
 
 ### Campuses and modes
 
-- **University:** the start screen lists the campuses in `src/main/resources/campus/packs/index.json` (U of T St. George for now). Each campus is a data pack, so adding one needs no code changes; see *Development* below.
+- **University:** the start screen lists the campuses in `src/main/resources/campus/packs/index.json` (U of T St. George and UWaterloo). Each campus is a data pack; see *Development* below.
 - **Daily:** everyone gets the same puzzle each day (same target, zone and start, in the Java app and on the website), always on normal difficulty, with **one try**. The day changes at midnight campus time. The puzzles are generated ahead in the campus pack. The one-try rule is per player device: the Java app keeps a marker in `~/.campus-hot-and-cold/daily/`, the website uses browser storage. After a round, **Share** copies a spoiler-free result (score, check colours, guesses).
 - **Unlimited:** a fresh random round every time.
 
@@ -155,7 +155,7 @@ The game never sends the hidden zone, the target or exact distances to the brows
 |---|---|---|---|
 | Wikipedia REST API `page/summary` | Title, intro extract, thumbnail and link for the revealed landmark | `WikipediaSummaryGateway` → `GuessBuildingInteractor` at the end of a round | Public, keyless, reliable descriptions for real campus buildings. Failures just hide the card. |
 | MediaWiki Action API (`prop=coordinates`) | Landmark coordinates | Classic mode (`WikipediaLandmarkGateway`) | See *External API* above. |
-| OpenStreetMap (via `tools/build_pack.py`) | Building outlines, heights and footpaths for 76 hand-picked landmarks and 1,008 buildings | `src/main/resources/campus/packs/st-george.json`, loaded by `CampusPackLoader` | Accurate, openly licensed (ODbL) geometry. Curated offline so play needs no slow live queries. |
+| OpenStreetMap (via `tools/build_pack.py`) | Building outlines, heights and footpaths for curated landmarks | `src/main/resources/campus/packs/*.json`, loaded by `CampusPackLoader` | Accurate, openly licensed (ODbL) geometry. Curated offline so play needs no slow live queries. |
 | OpenFreeMap vector tiles + MapLibre GL | Ground, roads and parks for the 3D view | Browser page only | Keyless and free. Rendered at low resolution for the pixel look. |
 
 ### Architecture
