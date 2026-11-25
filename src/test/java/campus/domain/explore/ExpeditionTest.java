@@ -326,6 +326,13 @@ class ExpeditionTest {
         assertTrue(round.score().routePoints() > 0, "found the zone, so the route still scores");
     }
 
+    @Test void zonesAlwaysOfferSeveralRealBuildings() {
+        CampusMap map = campus();
+        assertTrue(Expedition.offersARealChoice(map, new Zone(at(1000, 75), 90)), "5 buildings, 4 named");
+        assertFalse(Expedition.offersARealChoice(map, new Zone(at(100, 140), 90)), "Far Hall stands alone");
+        assertFalse(Expedition.offersARealChoice(map, new Zone(at(1000, 75), 50)), "too few within 50 m");
+    }
+
     @Test void randomRoundsStartOnOpenGroundOutsideTheZone() {
         CampusMap map = campus();
         for (int seed = 0; seed < 10; seed++) {

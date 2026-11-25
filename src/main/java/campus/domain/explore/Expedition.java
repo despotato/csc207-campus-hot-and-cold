@@ -27,7 +27,10 @@ public final class Expedition {
     static final double SPEED_SLACK_SECONDS = 0.75;
     static final double MAX_STEP = 90;
     static final int MAX_POINTS_PER_MOVE = 64;
-    static final int MIN_ZONE_BUILDINGS = 4;
+    /** Every zone offers a real choice: enough proper buildings, several of them named. */
+    static final int MIN_ZONE_BUILDINGS = 5;
+    static final int MIN_NAMED_ZONE_BUILDINGS = 3;
+    static final double MIN_CHOICE_HEIGHT = 4;
 
     public enum Stage { FIND_ZONE, IDENTIFY, FINISHED }
 
@@ -133,7 +136,7 @@ public final class Expedition {
             Zone zone = new Zone(targetCentre.offset(random.nextDouble(360),
                     random.nextDouble(Math.min(MAX_ZONE_OFFSET, difficulty.zoneRadius() * 0.6))),
                     difficulty.zoneRadius());
-            if (map.buildingsIn(zone).size() < MIN_ZONE_BUILDINGS) {
+            if (!offersARealChoice(map, zone)) {
                 continue;
             }
             List<GeoPoint> starts = open.stream().filter(point -> {
@@ -150,6 +153,13 @@ public final class Expedition {
             }
         }
         throw new IllegalStateException("Could not set up a round on this campus.");
+    }
+
+    static boolean offersARealChoice(CampusMap map, Zone zone) {
+        List<Building> choices = map.buildingsIn(zone).stream()
+                .filter(building -> building.height() >= MIN_CHOICE_HEIGHT).toList();
+        return choices.size() >= MIN_ZONE_BUILDINGS
+                && choices.stream().filter(building -> building.name() != null).count() >= MIN_NAMED_ZONE_BUILDINGS;
     }
 
     /**

@@ -28,6 +28,7 @@ class WikipediaFactsGatewayTest {
             + "The building's construction began in 1968 on land once occupied by houses.";
     private static final String NEW_COLLEGE = "New College is a college of the University of Toronto.\nHistory\n"
             + "Wetmore Hall, built in 1969, was designed by the architects Fairfield and DuBois. "
+            + "The Wetmore family donated land for a different residence on Bloor Street in 1921. "
             + "The college has a library.";
 
     @BeforeEach void serve() throws Exception {

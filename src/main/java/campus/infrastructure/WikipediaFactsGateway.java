@@ -147,10 +147,9 @@ public final class WikipediaFactsGateway implements LandmarkFactsGateway {
         return LandmarkNames.givesAway(result, landmarkName) ? null : result.trim();
     }
 
+    /** Other articles only count when they use the building's full name (e.g. not just "graduate"). */
     private static boolean mentions(String sentence, String landmarkName) {
-        String lower = sentence.toLowerCase(Locale.ROOT);
-        return lower.contains(landmarkName.toLowerCase(Locale.ROOT))
-                || LandmarkNames.distinctiveWords(landmarkName).stream().anyMatch(lower::contains);
+        return sentence.toLowerCase(Locale.ROOT).contains(landmarkName.toLowerCase(Locale.ROOT));
     }
 
     private static final Pattern HISTORY = Pattern.compile("\\b(built|designed|architect\\w*|named (for|after)|founded"

@@ -1,6 +1,7 @@
 """Builds the St. George campus pack from an Overpass dump.
 
-Usage: python3 -I build_pack.py area.json out.json
+Usage: python3 -I build_pack.py area.json out.json [greenery.json]
+greenery.json (optional): trees (natural=tree nodes) and lawns/gardens/parks/pitches as an Overpass export.
 Landmarks are hand-picked below by OSM element; everything else is generated.
 """
 import json
@@ -260,7 +261,22 @@ def centre(outline):
             round(sum(p[0] * p[2] for p in parts) / total, 7))
 
 
-def main(src, dst):
+def greenery(src):
+    """Trees as points, and green areas (lawn, garden, park, pitch, wood) as polygons, for decoration."""
+    trees, greens = [], []
+    for e in json.load(open(src))["elements"]:
+        tags = e["tags"]
+        if e["type"] == "node" and tags.get("natural") == "tree":
+            trees.append([round(e["lon"], 6), round(e["lat"], 6)])
+            continue
+        kind = ("pitch" if tags.get("leisure") == "pitch" else "garden" if tags.get("leisure") == "garden"
+                else "wood" if tags.get("natural") in ("wood", "scrub") else "lawn")
+        for polygon in polygons(e):
+            greens.append({"kind": kind, "outline": [r6(r) for r in polygon]})
+    return trees, greens
+
+
+def main(src, dst, green_src=None):
     elements = json.load(open(src))["elements"]
     by_key = {key(e): e for e in elements}
     landmark_keys = {k for k, *_ in LANDMARKS}
@@ -327,6 +343,8 @@ def main(src, dst):
         "buildings": buildings,
         "walkways": {"nodes": coords, "edges": sorted(edges)},
     }
+    if green_src:
+        pack["trees"], pack["greens"] = greenery(green_src)
     with open(dst, "w") as out:
         json.dump(pack, out, separators=(",", ":"), ensure_ascii=False)
     print(f"{len(landmarks)} landmarks, {len(buildings)} buildings, "
@@ -334,4 +352,4 @@ def main(src, dst):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1], sys.argv[2])
+    main(sys.argv[1], sys.argv[2], sys.argv[3] if len(sys.argv) > 3 else None)
