@@ -142,8 +142,8 @@ class ExploreFlowTest {
         assertEquals(true, result.get("won"));
         assertEquals("Target Hall", map(result.get("target")).get("name"));
         Map<String, Object> score = map(result.get("score"));
-        assertEquals(150, score.get("guess"), "second guess");
-        assertEquals(150, score.get("hintBonus"), "hard doubles it");
+        assertEquals(200, score.get("guess"), "second guess");
+        assertEquals(200, score.get("hintBonus"), "hard doubles it");
         assertEquals(1000, score.get("max"));
         assertTrue(((Number) score.get("route")).intValue() >= 390, "walked the shortest route");
         assertFalse(((List<?>) result.get("shortestRoute")).isEmpty());

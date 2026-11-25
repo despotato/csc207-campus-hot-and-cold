@@ -27,6 +27,8 @@ public final class Expedition {
     static final double SPEED_SLACK_SECONDS = 0.75;
     static final double MAX_STEP = 90;
     static final int MAX_POINTS_PER_MOVE = 64;
+    /** Fast travel costs the time walking the route would take at the page's walking speed. */
+    static final double TRAVEL_SPEED = 18;
     /** Every zone offers a real choice: enough proper buildings, several of them named. */
     static final int MIN_ZONE_BUILDINGS = 5;
     static final int MIN_NAMED_ZONE_BUILDINGS = 3;
@@ -56,8 +58,9 @@ public final class Expedition {
     public record Check(GeoPoint point, Heat heat, Trend trend, double metresToZone, boolean inZone) { }
 
     /**
-     * Out of {@link #MAX_SCORE}: route efficiency (up to 400) + identification (250/150/75 for guess 1/2/3)
-     * + hint bonus (+0%, +50% or +100% of identification) + checks saved (up to 100).
+     * Out of {@link #MAX_SCORE}: route (400 at {@link #FULL_ROUTE_EFFICIENCY} or better, scaled below; the shortest
+     * route assumes you already knew where the zone was) + identification (250/200/150 for guess 1/2/3) + hint bonus
+     * (+0%, +50% or +100% of identification) + checks saved (up to 100; the check that finds the zone is free).
      */
     public record Score(int routePoints, double efficiency, int guessPoints, int hintBonus, int checkBonus,
                         double multiplier, int total) {
@@ -68,7 +71,8 @@ public final class Expedition {
 
     public static final int MAX_SCORE = 1000;
     static final int ROUTE_POINTS = 400;
-    static final int[] GUESS_POINTS = {250, 150, 75};
+    static final double FULL_ROUTE_EFFICIENCY = 0.8;
+    static final int[] GUESS_POINTS = {250, 200, 150};
     static final int CHECK_POINTS = 100;
 
     private final UUID id = UUID.randomUUID();
@@ -87,6 +91,7 @@ public final class Expedition {
     private GeoPoint position;
     private Instant lastMoveAt;
     private double metresWalked;
+    private double travelSeconds;
     private Stage stage = Stage.FIND_ZONE;
     private Instant zoneReachedAt;
     private HintLevel hintLevel;
@@ -209,6 +214,7 @@ public final class Expedition {
         double cell = ground.cellMetres();
         OpenSpace.Route route = ground.shortestRoute(position, point -> point.distanceTo(destination) <= cell)
                 .orElseThrow(() -> new IllegalArgumentException("You can't get there on foot."));
+        travelSeconds += route.metres() / TRAVEL_SPEED;
         List<GeoPoint> points = new java.util.ArrayList<>(route.points().subList(1, route.points().size()));
         points.add(destination);
         lastMoveAt = now;
@@ -350,13 +356,14 @@ public final class Expedition {
     public Score score() {
         boolean found = zoneReachedAt != null;
         double efficiency = metresWalked <= 0 ? 0 : Math.min(1, shortestToZone / metresWalked);
-        int routePoints = found ? (int) Math.round(ROUTE_POINTS * efficiency) : 0;
+        int routePoints = found ? (int) Math.round(ROUTE_POINTS * Math.min(1, efficiency / FULL_ROUTE_EFFICIENCY)) : 0;
         int guessPoints = won ? GUESS_POINTS[guesses.size() - 1] : 0;
         double multiplier = hintLevel == null ? 1 : hintLevel.multiplier();
         int hintBonus = (int) Math.round(guessPoints * (multiplier - 1));
-        // Checks still unused when the zone was found (the check that found it counts as used).
-        int checkBonus = found && difficulty.checks() > 0
-                ? (int) Math.round(CHECK_POINTS * (double) checksRemaining() / difficulty.checks()) : 0;
+        // Checks still unused when the zone was found, out of those you could have saved.
+        int saveable = difficulty.checks() - 1;
+        int checkBonus = found && saveable > 0
+                ? (int) Math.round(CHECK_POINTS * (double) Math.min(saveable, checksRemaining()) / saveable) : 0;
         return new Score(routePoints, efficiency, guessPoints, hintBonus, checkBonus, multiplier,
                 routePoints + guessPoints + hintBonus + checkBonus);
     }
@@ -420,6 +427,12 @@ public final class Expedition {
     public boolean isWon() { return won; }
     public Instant startedAt() { return startedAt; }
     public Optional<Instant> zoneReachedAt() { return Optional.ofNullable(zoneReachedAt); }
+
+    /** Seconds spent so far (or until the zone was found), counting fast-travel trips at walking pace. */
+    public long secondsElapsed(Instant now) {
+        Instant end = zoneReachedAt != null ? zoneReachedAt : now;
+        return Duration.between(startedAt, end).toSeconds() + Math.round(travelSeconds);
+    }
 
     /** The zone is shown to the player once a check inside it has found it, or when the round is over. */
     public Optional<Zone> revealedZone() {

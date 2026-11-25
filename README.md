@@ -130,16 +130,17 @@ Explore is the two-stage version of the game, played in a pixel-art 3D model of 
 
 **Stage 1: find the zone**
 - You start somewhere on campus, 450–900 m from a hidden 90 m zone. You walk a third-person avatar along real campus paths: <kbd>W</kbd>/<kbd>↑</kbd> walks, <kbd>A</kbd>/<kbd>D</kbd> turns at path junctions (yellow arrows show where you'll go), <kbd>S</kbd> turns around, and <kbd>Shift</kbd> runs.
-- Press <kbd>Space</kbd> to spend one of 6 temperature checks. You see **hot** (<150 m from the zone), **warm** (<300 m), **cool** (<500 m) or **cold**, and whether you're warmer or colder than at your last check. Each check leaves a coloured flag on the map. With no checks left you can still walk, just without feedback.
-- Distance walked (including backtracking) and time are shown at all times. Walking into the zone ends stage 1.
+- Press <kbd>Space</kbd> to spend one of 6 temperature checks. You see **hot** (<150 m from the zone), **warm** (<300 m), **cool** (<500 m) or **cold**, and whether you're warmer or colder than at your last check. Each check leaves a coloured flag. Walking into the zone is silent: a check made inside it finds the zone and ends stage 1. With no checks left, your next check is a final search: inside the zone it continues, anywhere else the round ends.
+- <kbd>M</kbd> opens the campus map with your checks and trail; clicking a spot travels there, charged as the shortest walk (distance and time).
+- Distance walked (including backtracking) and time are shown at all times.
 
 **Stage 2: guess the building**
-- The camera rises over the zone and its buildings light up. You pick one of three face-down hint cards: easy (category and first letter, ×1), normal (category, ×1.5) or hard (where in the zone it is, ×2). You only see the hint after choosing.
+- The camera rises over the zone and its buildings light up; drag or use the arrow keys to look around. You pick one of three face-down hint cards: **easy ×1** (what anyone can see: height rank, storeys, facade, courtyard), **normal ×1.5** (what students know: its category and best-known fact) or **hard ×2** (campus history: an obscure historical fact). You only see the hint after choosing. Facts come from Wikipedia with the building's name blanked out.
 - Hover a highlighted building to see its name, and click it to guess. You get 3 guesses.
 
 **Results**
 - The camera flies to the answer, which glows gold under a beacon. You see your score, the building's Wikipedia summary and photo (when it has an article), and a replay of your route drawn against the shortest walking route.
-- **Score** = 500 × (shortest route ÷ distance walked) + identification points (300 / 200 / 100 for a correct 1st / 2nd / 3rd guess) × the hint multiplier.
+- **Score** (out of 1000) = route (400 at 80% efficiency or better; the shortest route assumes you already knew the zone) + identification (250 / 200 / 150 for a correct 1st / 2nd / 3rd guess) + hint bonus (+0% / +50% / +100% for easy / normal / hard) + checks saved (up to 100; the check that finds the zone is free).
 
 The game never sends the hidden zone, the target or exact distances to the browser before the stage that reveals them. Moves are checked by Java for speed and path connectivity, so the page can't teleport or cut through buildings.
 

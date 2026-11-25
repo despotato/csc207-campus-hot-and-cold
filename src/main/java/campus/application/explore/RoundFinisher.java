@@ -5,7 +5,6 @@ import campus.domain.explore.Expedition;
 
 import java.io.IOException;
 import java.time.Clock;
-import java.time.Duration;
 import java.util.Objects;
 
 /**
@@ -44,8 +43,7 @@ public final class RoundFinisher {
         Expedition.Score score = expedition.score();
         ExploreResponse.LandmarkSummary summary = target.wikipediaTitle() == null ? null
                 : info.summary(target.wikipediaTitle()).orElse(null);
-        Long secondsToZone = expedition.zoneReachedAt()
-                .map(at -> Duration.between(expedition.startedAt(), at).toSeconds()).orElse(null);
+        Long secondsToZone = expedition.zoneReachedAt().isPresent() ? expedition.secondsElapsed(clock.instant()) : null;
         var zone = expedition.revealedZone().orElseThrow();
         return new ExploreResponse.Result(expedition.isWon(), target.name(), target.category(),
                 target.buildingId(), expedition.map().buildingOf(target).centre(), score.routePoints(),

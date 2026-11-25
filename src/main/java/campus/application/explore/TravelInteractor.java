@@ -4,7 +4,6 @@ import campus.domain.explore.Expedition;
 import campus.domain.explore.GeoPoint;
 
 import java.time.Clock;
-import java.time.Duration;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -35,6 +34,6 @@ public final class TravelInteractor implements TravelInputBoundary {
         }
         var track = expedition.track();
         output.present(new ExploreResponse.Travelled(expedition.position(), track.subList(before, track.size()),
-                expedition.metresWalked(), Duration.between(expedition.startedAt(), clock.instant()).toSeconds()));
+                expedition.metresWalked(), expedition.secondsElapsed(clock.instant())));
     }
 }

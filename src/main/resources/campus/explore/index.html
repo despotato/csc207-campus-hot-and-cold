@@ -900,6 +900,8 @@ async function travelTo(lngLat) {
     if (r.status !== 200) { toast('Not there', 'cold', r.body.error || 'Could not travel.'); return; }
     game.pos = r.body.point; game.lastPushed = game.pos; game.prevPos = game.pos; game.pending = [];
     game.trail.push(...r.body.path, game.pos);
+    // The trip costs the time walking it would take.
+    game.startedAt -= (r.body.metresWalked - game.walked) / WALK_SPEED * 1000;
     game.walked = r.body.metresWalked;
     game.heading = r.body.path.length ? bearingOf(r.body.path.at(-1), game.pos) || game.heading : game.heading;
     game.camBearing = game.heading;
@@ -1034,10 +1036,11 @@ function fillResults(r, saveError) {
   $('targetCat').textContent = r.target.category;
   const sc = r.score, ordinal = ['1st', '2nd', '3rd'][r.guessesUsed - 1];
   const lines = [
-    ['Route efficiency', r.secondsToZone == null ? 'Zone not found' : `${sc.efficiency}% of the shortest walk`, sc.route],
+    ['Route efficiency', r.secondsToZone == null ? 'Zone not found'
+      : `${sc.efficiency}% efficient: ${r.metresWalked} m walked, ${r.shortestMetres} m shortest`, sc.route],
     ['Identification', r.won ? `Correct on the ${ordinal} guess` : 'Not identified', sc.guess],
     ['Hint bonus', r.hintLevel ? `${r.hintLevel[0].toUpperCase() + r.hintLevel.slice(1)} hint ×${sc.multiplier}` : 'No hint', sc.hintBonus],
-    ['Checks saved', `${Math.max(0, r.checksUsed === undefined ? 0 : 6 - r.checksUsed)} of 6 unused`, sc.checkBonus],
+    ['Checks saved', r.secondsToZone == null ? 'Zone not found' : `${Math.max(0, 6 - r.checksUsed)} of 5 saveable (the finding check is free)`, sc.checkBonus],
   ];
   const tally = $('tally');
   tally.innerHTML = '';
@@ -1114,7 +1117,7 @@ const TUTORIAL = [
     'The map shows your checks and trail. Click a spot to travel there; the trip counts as the shortest walk, so travel wisely.'],
   ['Pick a hint blind', 'EASY ×1 what you can see<br>NORMAL ×1.5 what students know<br>HARD ×2 campus history',
     "In the zone, choose a face-down hint card. Harder hints are worth more. Then click the building you think it is. You get 3 guesses."],
-  ['Score out of 1000', 'Route up to 400 · guess 250/150/75<br>hint bonus up to +250 · checks saved up to 100',
+  ['Score out of 1000', 'Route up to 400 (full at 80% efficiency) · guess 250/200/150<br>hint bonus up to +250 · checks saved up to 100',
     'Walk efficiently, save checks, take harder hints and guess right first time. At the end you see the building, its story, and your route against the shortest one.'],
 ];
 let tutorialStep = 0;
@@ -1138,7 +1141,7 @@ $('tutClose').addEventListener('click', closeTutorial);
 
 // ---------- static mode: the game rules in the browser (mirrors the Java domain) ----------
 const LocalRules = (() => {
-  const CHECKS = 6, RADIUS = 90, MIN_START = 450, MAX_START = 900, GUESSES = 3, GUESS_POINTS = [250, 150, 75];
+  const CHECKS = 6, RADIUS = 90, MIN_START = 450, MAX_START = 900, GUESSES = 3, GUESS_POINTS = [250, 200, 150], FULL_ROUTE = 0.8;
   const MULT = { easy: 1, normal: 1.5, hard: 2 };
   let round = null, openCells = null;
   const ok = body => ({ status: 200, body });
@@ -1254,7 +1257,9 @@ const LocalRules = (() => {
     const points = [...route.points.slice(1), to], steps = [];
     let at = round.pos;
     for (const p of points) { const n = Math.max(1, Math.ceil(distOf(at, p) / 2)); for (let i = 1; i <= n; i++) steps.push([at[0] + (p[0] - at[0]) * i / n, at[1] + (p[1] - at[1]) * i / n]); at = p; }
+    const metresBefore = round.walked;
     walkTo(steps);
+    round.travelMs = (round.travelMs || 0) + (round.walked - metresBefore) / WALK_SPEED * 1000;
     return ok({ type: 'travelled', point: round.pos, path: round.track.slice(before), metresWalked: Math.round(round.walked) });
   }
 
@@ -1374,10 +1379,10 @@ const LocalRules = (() => {
 
   function score() {
     const found = round.zoneAt != null, efficiency = round.walked > 0 ? Math.min(1, round.shortest.metres / round.walked) : 0;
-    const route = found ? Math.round(400 * efficiency) : 0;
+    const route = found ? Math.round(400 * Math.min(1, efficiency / FULL_ROUTE)) : 0;
     const guessPts = round.won ? GUESS_POINTS[round.guesses.length - 1] : 0, multiplier = MULT[round.hint] || 1;
     const hintBonus = Math.round(guessPts * (multiplier - 1));
-    const checkBonus = found ? Math.round(100 * (CHECKS - round.checks.length) / CHECKS) : 0;
+    const checkBonus = found ? Math.round(100 * Math.min(CHECKS - 1, CHECKS - round.checks.length) / (CHECKS - 1)) : 0;
     return { route, efficiency: Math.round(efficiency * 100), guess: guessPts, hintBonus, checkBonus, multiplier,
       total: route + guessPts + hintBonus + checkBonus, max: 1000 };
   }
@@ -1385,7 +1390,7 @@ const LocalRules = (() => {
     const t = round.target;
     return { result: { won: round.won, target: { name: t.name, category: t.category, buildingId: round.building.id, centre: round.building.center },
       score: score(), metresWalked: Math.round(round.walked), shortestMetres: Math.round(round.shortest.metres),
-      secondsToZone: round.zoneAt ? Math.round((round.zoneAt - round.startedAt) / 1000) : null,
+      secondsToZone: round.zoneAt ? Math.round((round.zoneAt - round.startedAt + (round.travelMs || 0)) / 1000) : null,
       zone: { centre: round.zone.centre, radius: round.zone.radius }, checksUsed: round.checks.length,
       guessesUsed: round.guesses.length, hintLevel: round.hint, route: round.track, shortestRoute: round.shortest.points,
       checks: round.checks, summary } };

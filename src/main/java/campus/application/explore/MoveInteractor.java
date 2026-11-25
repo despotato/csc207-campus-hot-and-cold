@@ -4,7 +4,6 @@ import campus.domain.explore.Expedition;
 import campus.domain.explore.GeoPoint;
 
 import java.time.Clock;
-import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -35,6 +34,6 @@ public final class MoveInteractor implements MoveInputBoundary {
             return;
         }
         output.present(new ExploreResponse.Moved(expedition.metresWalked(),
-                Duration.between(expedition.startedAt(), clock.instant()).toSeconds()));
+                expedition.secondsElapsed(clock.instant())));
     }
 }

@@ -135,6 +135,8 @@ class ExpeditionTest {
         assertEquals(Expedition.Stage.FIND_ZONE, round.stage());
         assertThrows(IllegalArgumentException.class, () -> round.travelTo(at(1000, 20), T0.plusSeconds(2)),
                 "can't travel into a building");
+        assertEquals(1 + Math.round(round.metresWalked() / 18), round.secondsElapsed(T0.plusSeconds(1)),
+                "the trip costs the time walking it would take");
     }
 
     @Test void fastTravelIntoTheZoneIsAlsoSilent() {
@@ -280,12 +282,11 @@ class ExpeditionTest {
         direct.chooseHint(HintLevel.HARD);
         direct.guess(1);
         Expedition.Score best = direct.score();
-        assertTrue(best.routePoints() >= 390, () -> "nearly the shortest route: " + best.routePoints());
+        assertEquals(400, best.routePoints(), "near-shortest walk earns the full route points");
         assertEquals(250, best.guessPoints(), "first guess");
         assertEquals(250, best.hintBonus(), "hard doubles it");
-        assertEquals(83, best.checkBonus(), "5 of 6 checks saved");
-        assertEquals(best.routePoints() + 250 + 250 + 83, best.total());
-        assertTrue(best.total() <= Expedition.MAX_SCORE);
+        assertEquals(100, best.checkBonus(), "only the finding check used");
+        assertEquals(Expedition.MAX_SCORE, best.total(), "a perfect round scores exactly 1000");
 
         Expedition detour = round();
         Instant time = walk(detour, List.of(at(200, 75), at(0, 75)), T0); // 400 m wasted
@@ -296,10 +297,12 @@ class ExpeditionTest {
         detour.guess(4);
         detour.guess(1);
         Expedition.Score worse = detour.score();
-        assertEquals(Math.round(400 * detour.shortestToZone() / detour.metresWalked()), worse.routePoints());
-        assertEquals(150, worse.guessPoints(), "second guess");
-        assertEquals(75, worse.hintBonus(), "normal adds half");
-        assertEquals(50, worse.checkBonus(), "3 of 6 checks saved");
+        double efficiency = detour.shortestToZone() / detour.metresWalked();
+        assertEquals(Math.round(400 * Math.min(1, efficiency / 0.8)), worse.routePoints());
+        assertTrue(worse.routePoints() < 400, "a 400 m detour costs route points");
+        assertEquals(200, worse.guessPoints(), "second guess");
+        assertEquals(100, worse.hintBonus(), "normal adds half");
+        assertEquals(60, worse.checkBonus(), "3 of 5 saveable checks saved");
     }
 
     @Test void spendingTheOnlyCheckToFindTheZoneEarnsNoCheckBonus() {
@@ -309,7 +312,8 @@ class ExpeditionTest {
         reachZone(round);
         round.chooseHint(HintLevel.HARD);
         round.guess(1);
-        // The only check was spent finding the zone, so no check bonus: route + 250 + 250.
+        // The only check was spent finding the zone: nothing could be saved, so no check bonus.
+        assertEquals(0, round.score().checkBonus());
         assertEquals(round.score().routePoints() + 500, round.score().total());
     }
 
