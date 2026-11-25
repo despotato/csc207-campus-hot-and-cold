@@ -1,0 +1,766 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Campus Hot &amp; Cold — Explore</title>
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Silkscreen&display=swap" rel="stylesheet">
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<style>
+  :root {
+    --ink: #1b1f3a; --paper: #fff8e7; --hot: #ff4d2e; --warm: #ff9f1c; --cool: #4cc9f0; --cold: #6f8cff;
+    --gold: #ffd23f; --mint: #7fd6c2; --shadow: 0 4px 0 #0008;
+    --font: "Silkscreen", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #1b1f3a; color: var(--paper); font: 14px/1.35 var(--font); }
+  #map { position: fixed; inset: 0; }
+  #map canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
+  .maplibregl-ctrl-attrib { font: 10px system-ui, sans-serif; }
+  .panel { background: #1b1f3aee; border: 3px solid var(--paper); box-shadow: var(--shadow); padding: 10px 12px; }
+  .hidden { display: none !important; }
+  button { font: inherit; color: var(--ink); background: var(--gold); border: 3px solid var(--ink); box-shadow: 0 4px 0 var(--ink);
+    padding: 8px 14px; cursor: pointer; text-transform: uppercase; }
+  button:hover { filter: brightness(1.08); }
+  button:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
+  button.secondary { background: var(--paper); }
+  kbd { display: inline-block; min-width: 1.6em; padding: 0 4px; border: 2px solid var(--paper); border-bottom-width: 4px; text-align: center; font: inherit; }
+
+  /* HUD */
+  #hud { position: fixed; top: 12px; left: 12px; display: grid; gap: 4px; min-width: 190px; }
+  #hud .row { display: flex; justify-content: space-between; gap: 12px; }
+  #pips { display: flex; gap: 4px; }
+  #pips i { width: 14px; height: 14px; background: var(--gold); border: 2px solid var(--paper); }
+  #pips i.used { background: transparent; }
+  #log { position: fixed; top: 12px; right: 12px; width: 230px; max-height: 45vh; overflow: auto; }
+  #log h3, .title-sm { margin: 0 0 6px; font-size: 13px; color: var(--gold); }
+  #log ol { margin: 0; padding-left: 22px; }
+  #compass { position: fixed; right: 18px; bottom: 70px; width: 64px; height: 64px; border-radius: 50%;
+    border: 3px solid var(--paper); background: #1b1f3acc; display: grid; place-items: center; }
+  #needle { font-size: 18px; color: var(--hot); transition: transform 60ms linear; }
+  #help { position: fixed; left: 50%; bottom: 12px; transform: translateX(-50%); white-space: nowrap; font-size: 12px; }
+  #toast { position: fixed; left: 50%; top: 22%; transform: translateX(-50%); text-align: center; pointer-events: none;
+    font-size: 40px; text-shadow: 4px 4px 0 #000a; transition: opacity 300ms; }
+  #toast small { display: block; font-size: 16px; margin-top: 6px; }
+  #vignette { position: fixed; inset: 0; pointer-events: none; opacity: 0; transition: opacity 600ms; }
+  #banner { position: fixed; top: 12px; left: 50%; transform: translateX(-50%); max-width: min(680px, 92vw); text-align: center; }
+  #banner .hint { color: var(--gold); margin-top: 4px; }
+  #tip { position: fixed; pointer-events: none; padding: 4px 8px; font-size: 12px; transform: translate(12px, 12px); }
+
+  /* Screens */
+  .screen { position: fixed; inset: 0; display: grid; place-items: center; background: #1b1f3a66; padding: 16px; }
+  .card { max-width: 640px; width: 100%; }
+  h1 { font-size: clamp(28px, 6vw, 52px); line-height: 1; margin: 0 0 6px; color: var(--gold); text-shadow: 4px 4px 0 var(--hot); }
+  h1 .amp { font-family: Georgia, "Times New Roman", serif; font-style: italic; }
+  h2 { margin: 0 0 8px; color: var(--gold); }
+  .lead { margin: 0 0 14px; }
+  .rules { display: grid; gap: 6px; margin: 0 0 14px; padding-left: 20px; }
+  .controls { display: flex; flex-wrap: wrap; gap: 10px 18px; margin: 0 0 16px; font-size: 12px; }
+  #cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 12px 0; }
+  .hintcard { aspect-ratio: 3 / 4; display: grid; place-items: center; text-align: center; padding: 10px; background: var(--paper);
+    color: var(--ink); border: 3px solid var(--ink); box-shadow: 0 6px 0 var(--ink); cursor: pointer; transition: transform 180ms; }
+  .hintcard:hover { transform: translateY(-4px); }
+  .hintcard .back { font-size: 44px; }
+  .hintcard .lvl { font-size: 13px; }
+  .hintcard.flipped { background: var(--gold); cursor: default; transform: none; }
+  .hintcard.faded { opacity: .35; cursor: default; }
+  .hintcard .text { font-size: 13px; }
+  #results { position: fixed; top: 12px; right: 12px; width: min(380px, 94vw); max-height: calc(100vh - 24px); overflow: auto; }
+  #results .big { font-size: 34px; color: var(--gold); margin: 4px 0; }
+  #results table { width: 100%; border-collapse: collapse; margin: 8px 0; }
+  #results td { padding: 2px 0; } #results td:last-child { text-align: right; }
+  #wiki { display: grid; grid-template-columns: 88px 1fr; gap: 10px; margin-top: 10px; font-family: system-ui, sans-serif; font-size: 13px; }
+  #wiki img { width: 88px; height: 88px; object-fit: cover; image-rendering: pixelated; border: 2px solid var(--paper); }
+  #wiki a { color: var(--gold); }
+  .buttons { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  #legend { position: fixed; left: 12px; bottom: 44px; font-size: 12px; }
+  #legend span { display: inline-block; width: 18px; height: 6px; margin-right: 6px; vertical-align: middle; }
+  @media (max-width: 640px) {
+    #log { display: none; } #help { display: none; } #cards { grid-template-columns: 1fr; } .hintcard { aspect-ratio: auto; min-height: 90px; }
+  }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div id="vignette"></div>
+
+<div id="hud" class="panel hidden" aria-live="polite">
+  <div class="row"><span>Distance</span><b id="dist">0 m</b></div>
+  <div class="row"><span>Time</span><b id="time">00:00</b></div>
+  <div class="row"><span>Checks</span><span id="pips"></span></div>
+</div>
+<div id="log" class="panel hidden"><h3>Checks</h3><ol id="checks"></ol><p id="nochecks">None yet. Press <kbd>Space</kbd>.</p></div>
+<div id="compass" class="hidden" title="North"><span id="needle">▲N</span></div>
+<div id="help" class="panel hidden">
+  <kbd>W</kbd>/<kbd>↑</kbd> walk · <kbd>A</kbd><kbd>D</kbd>/<kbd>←</kbd><kbd>→</kbd> turn · <kbd>S</kbd>/<kbd>↓</kbd> turn around · <kbd>Shift</kbd> run · <kbd>Space</kbd> check
+</div>
+<div id="toast"></div>
+<div id="banner" class="panel hidden"><div id="bannerText"></div><div class="hint" id="bannerHint"></div></div>
+<div id="tip" class="panel hidden"></div>
+<div id="legend" class="panel hidden">
+  <div><span style="background:#ff5fa2"></span>Your route</div>
+  <div><span style="background:#4cf0d4"></span>Shortest route</div>
+</div>
+
+<section id="title" class="screen">
+  <div class="card panel">
+    <h1>Campus<br>Hot <span class="amp">&amp;</span> Cold</h1>
+    <p class="lead">U of T St. George · Explore</p>
+    <ol class="rules">
+      <li>Walk the campus paths to find the hidden <b>zone</b>. You get a few hot/cold checks, so spend them wisely.</li>
+      <li>Inside the zone, pick a hint <b>blind</b>: easy, normal or hard. Harder hints score more.</li>
+      <li>Click the building you think it is. Fewer guesses and shorter walks score more.</li>
+    </ol>
+    <div class="controls">
+      <span><kbd>W</kbd> walk</span><span><kbd>A</kbd><kbd>D</kbd> turn at paths</span><span><kbd>S</kbd> turn around</span>
+      <span><kbd>Shift</kbd> run</span><span><kbd>Space</kbd> check</span>
+    </div>
+    <!-- Difficulty selector: the start request already sends { difficulty }. See the team task "Difficulty levels". -->
+    <div id="difficulty" data-value="normal" class="controls">Difficulty: Normal</div>
+    <button id="startBtn" autofocus>Start <kbd>Enter</kbd></button>
+    <p id="loading">Loading campus…</p>
+  </div>
+</section>
+
+<section id="hintScreen" class="screen hidden">
+  <div class="card panel">
+    <h2>You found the zone!</h2>
+    <p class="lead">Pick one hint card. You won't see it until you choose. Harder hints multiply your identification points.</p>
+    <div id="cards">
+      <div class="hintcard" data-level="easy" tabindex="0" role="button"><div><div class="back">?</div><div class="lvl">Easy ×1</div></div></div>
+      <div class="hintcard" data-level="normal" tabindex="0" role="button"><div><div class="back">?</div><div class="lvl">Normal ×1.5</div></div></div>
+      <div class="hintcard" data-level="hard" tabindex="0" role="button"><div><div class="back">?</div><div class="lvl">Hard ×2</div></div></div>
+    </div>
+    <button id="toGuess" class="hidden">Find the building</button>
+  </div>
+</section>
+
+<aside id="results" class="panel hidden">
+  <div id="outcome" class="title-sm"></div>
+  <div class="big" id="targetName"></div>
+  <div id="targetCat"></div>
+  <table>
+    <tr><td>Route efficiency <span id="eff"></span></td><td id="routePts"></td></tr>
+    <tr><td>Identification <span id="mult"></span></td><td id="idPts"></td></tr>
+    <tr><td><b>Total</b></td><td><b id="total"></b></td></tr>
+  </table>
+  <table>
+    <tr><td>Walked</td><td id="walked"></td></tr>
+    <tr><td>Shortest route</td><td id="shortest"></td></tr>
+    <tr><td>Time to zone</td><td id="zoneTime"></td></tr>
+    <tr><td>Checks used</td><td id="checksUsed"></td></tr>
+    <tr><td>Guesses</td><td id="guessesUsed"></td></tr>
+  </table>
+  <p id="saveError" class="hidden"></p>
+  <div id="wiki" class="hidden"><img id="wikiImg" alt=""><div><b id="wikiTitle"></b><p id="wikiText"></p><a id="wikiLink" target="_blank" rel="noopener noreferrer">Read on Wikipedia ↗</a></div></div>
+  <div class="buttons"><button id="replayBtn" class="secondary">Replay route</button><button id="againBtn">Play again</button></div>
+</aside>
+
+<script>
+"use strict";
+const params = new URLSearchParams(location.search);
+const PIX = Math.min(1, Math.max(0.15, Number(params.get('pix')) || 0.28));
+const DEBUG = params.get('debug') === '1';
+const $ = id => document.getElementById(id);
+const HEAT_COLORS = { hot: '#ff4d2e', warm: '#ff9f1c', cool: '#4cc9f0', cold: '#6f8cff' };
+const TREND_TEXT = { first: '', warmer: '▲ Warmer', same: '■ Same', colder: '▼ Colder' };
+const WALK_SPEED = 5.8, RUN_SPEED = 8.3, TURN_RATE = 110;
+const FOLLOW = { zoom: 19.1, pitch: 64 };
+
+// ---------- geometry (metres around campus, fine at this scale) ----------
+let M_LAT = 111320, M_LON = 111320 * Math.cos(43.663 * Math.PI / 180);
+const bearingOf = (a, b) => (Math.atan2((b[0] - a[0]) * M_LON, (b[1] - a[1]) * M_LAT) * 180 / Math.PI + 360) % 360;
+const distOf = (a, b) => Math.hypot((b[0] - a[0]) * M_LON, (b[1] - a[1]) * M_LAT);
+const angDiff = (a, b) => { const d = Math.abs(((a - b) % 360 + 540) % 360 - 180); return d; };
+const approach = (from, to, maxStep) => {
+  const d = ((to - from) % 360 + 540) % 360 - 180;
+  return Math.abs(d) <= maxStep ? to : (from + Math.sign(d) * maxStep + 360) % 360;
+};
+const lerpPt = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+const offsetPt = (p, bearing, metres) => {
+  const r = bearing * Math.PI / 180;
+  return [p[0] + Math.sin(r) * metres / M_LON, p[1] + Math.cos(r) * metres / M_LAT];
+};
+const local = (p, heading, x, y) => offsetPt(offsetPt(p, heading, y), heading + 90, x);
+const circle = (c, radius, n = 48) => Array.from({ length: n + 1 }, (_, i) => offsetPt(c, i * 360 / n, radius));
+const fc = features => ({ type: 'FeatureCollection', features });
+const box = (p, heading, x0, x1, y0, y1, z0, z1, color) => ({ type: 'Feature', properties: { base: z0, top: z1, color },
+  geometry: { type: 'Polygon', coordinates: [[local(p, heading, x0, y0), local(p, heading, x1, y0), local(p, heading, x1, y1),
+    local(p, heading, x0, y1), local(p, heading, x0, y0)]] } });
+
+// ---------- state ----------
+let pack, nodes, adj, buildings = new Map(), map;
+const game = {
+  phase: 'loading', pos: null, heading: 0, camBearing: 0, keys: {}, walked: 0, startedAt: 0, zoneAt: 0,
+  checksLeft: 0, checkCount: 0, zone: null, zoneBuildings: new Set(), guessed: new Set(), hover: null,
+  result: null, sending: false, lastSent: '', walkPhase: 0, autopilot: null, flying: false,
+};
+window.game = game;
+
+async function api(action, body = {}) {
+  const response = await fetch('/api/' + action, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body) });
+  let data = {};
+  try { data = await response.json(); } catch (e) { data = { error: 'Bad response.' }; }
+  return { status: response.status, body: data };
+}
+
+// ---------- map ----------
+function buildStyle() {
+  return {
+    version: 8,
+    sources: { omt: { type: 'vector', url: 'https://tiles.openfreemap.org/planet',
+      attribution: '<a href="https://openfreemap.org">OpenFreeMap</a> © <a href="https://www.openmaptiles.org/">OpenMapTiles</a> Data © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' } },
+    sky: { 'sky-color': '#7ec8f0', 'horizon-color': '#f4d9a6', 'fog-color': '#c9b98f', 'sky-horizon-blend': 0.5, 'horizon-fog-blend': 0.6, 'fog-ground-blend': 0.85 },
+    layers: [
+      { id: 'bg', type: 'background', paint: { 'background-color': '#c9b98f' } },
+      { id: 'landcover', type: 'fill', source: 'omt', 'source-layer': 'landcover', paint: { 'fill-color': '#7dba58' } },
+      { id: 'park', type: 'fill', source: 'omt', 'source-layer': 'park', paint: { 'fill-color': '#6fae4f' } },
+      { id: 'water', type: 'fill', source: 'omt', 'source-layer': 'water', paint: { 'fill-color': '#3f7fd1' } },
+      { id: 'road', type: 'line', source: 'omt', 'source-layer': 'transportation',
+        filter: ['!', ['in', ['get', 'class'], ['literal', ['path', 'track']]]],
+        paint: { 'line-color': '#5b5566', 'line-width': ['interpolate', ['exponential', 2], ['zoom'], 14, 2, 19, 26] } },
+    ],
+  };
+}
+
+function initMap() {
+  map = new maplibregl.Map({
+    container: 'map', style: buildStyle(), pixelRatio: PIX, maxPitch: 78, center: [-79.3955, 43.6629], zoom: 15.6,
+    pitch: 60, bearing: -20, attributionControl: { compact: true }, fadeDuration: 0,
+    canvasContextAttributes: { antialias: false, preserveDrawingBuffer: DEBUG },
+  });
+  return new Promise(resolve => map.on('load', resolve));
+}
+
+function addGameLayers() {
+  // All buildings come from the campus pack (not the tile layer) so highlights match them exactly.
+
+  map.addSource('walkways', { type: 'geojson', data: fc(pack.walkways.edges.map(([a, b]) => ({ type: 'Feature', properties: {},
+    geometry: { type: 'LineString', coordinates: [nodes[a], nodes[b]] } }))) });
+  map.addLayer({ id: 'walkways', type: 'line', source: 'walkways', layout: { 'line-cap': 'round', 'line-join': 'round' },
+    paint: { 'line-color': '#f3e9c6', 'line-width': ['interpolate', ['exponential', 2], ['zoom'], 15, 1, 19, 7], 'line-opacity': 0.95 } });
+
+  map.addSource('branches', { type: 'geojson', data: fc([]) });
+  map.addLayer({ id: 'branches', type: 'line', source: 'branches', layout: { 'line-cap': 'round' },
+    paint: { 'line-color': ['get', 'color'], 'line-width': ['interpolate', ['exponential', 2], ['zoom'], 17, 4, 19, 16] } });
+
+  map.addSource('routes', { type: 'geojson', data: fc([]) });
+  map.addLayer({ id: 'routes', type: 'line', source: 'routes', layout: { 'line-cap': 'round', 'line-join': 'round' },
+    paint: { 'line-color': ['get', 'color'],
+      'line-width': ['*', ['coalesce', ['get', 'scale'], 1], ['interpolate', ['exponential', 2], ['zoom'], 15, 3, 19, 14]] } });
+
+  map.addSource('zone', { type: 'geojson', data: fc([]) });
+  map.addLayer({ id: 'zone-floor', type: 'fill', source: 'zone', filter: ['==', ['get', 'kind'], 'floor'],
+    paint: { 'fill-color': '#ffd23f', 'fill-opacity': 0.18 } });
+  map.addLayer({ id: 'zone-ring', type: 'line', source: 'zone', filter: ['==', ['get', 'kind'], 'floor'],
+    paint: { 'line-color': '#ffd23f', 'line-width': 4, 'line-dasharray': [2, 1] } });
+
+  const features = pack.buildings.map(b => ({ type: 'Feature', id: b.id,
+    properties: { h: b.height, base: b.minHeight, name: b.name || '' },
+    geometry: { type: 'MultiPolygon', coordinates: b.outline } }));
+  map.addSource('buildings', { type: 'geojson', data: fc(features) });
+  const state = k => ['boolean', ['feature-state', k], false];
+  map.addLayer({ id: 'buildings', type: 'fill-extrusion', source: 'buildings', paint: {
+    'fill-extrusion-height': ['get', 'h'], 'fill-extrusion-base': ['get', 'base'], 'fill-extrusion-vertical-gradient': false,
+    'fill-extrusion-color': ['case',
+      state('target'), '#ffd23f', state('wrong'), '#4a5578', state('hover'), '#fff3b0', state('candidate'), '#8fe0cc',
+      ['interpolate', ['linear'], ['get', 'h'], 0, '#ecd8ad', 20, '#dda070', 60, '#b9675b', 150, '#7b4a6e']] } });
+
+  for (const id of ['markers', 'beacon', 'avatar']) {
+    map.addSource(id, { type: 'geojson', data: fc([]) });
+    map.addLayer({ id, type: 'fill-extrusion', source: id, paint: {
+      'fill-extrusion-color': ['get', 'color'], 'fill-extrusion-height': ['get', 'top'], 'fill-extrusion-base': ['get', 'base'],
+      'fill-extrusion-vertical-gradient': false, 'fill-extrusion-opacity': id === 'beacon' ? 0.6 : 1 } });
+  }
+  map.addSource('check-rings', { type: 'geojson', data: fc([]) });
+  map.addLayer({ id: 'check-rings', type: 'line', source: 'check-rings', paint: { 'line-color': ['get', 'color'], 'line-width': 4 } }, 'buildings');
+
+  map.on('mousemove', 'buildings', onHover);
+  map.on('mouseleave', 'buildings', () => setHover(null));
+  map.on('click', 'buildings', onBuildingClick);
+}
+
+// ---------- avatar ----------
+function avatarFeatures(p, heading) {
+  const S = 2.4, swing = Math.sin(game.walkPhase) * 0.28 * S;
+  const parts = [
+    [-0.42, -0.06, -0.2 + swing, 0.2 + swing, 0, 0.95, '#2b3a67'],     // left leg
+    [0.06, 0.42, -0.2 - swing, 0.2 - swing, 0, 0.95, '#2b3a67'],       // right leg
+    [-0.55, 0.55, -0.3, 0.3, 0.95, 2.15, '#e94f37'],                   // jacket
+    [-0.42, 0.42, -0.62, -0.3, 1.15, 2.0, '#f2c14e'],                  // backpack
+    [-0.36, 0.36, -0.3, 0.3, 2.15, 2.85, '#f5c9a0'],                   // head
+    [-0.4, 0.4, -0.36, 0.55, 2.85, 3.08, '#1e3765'],                   // cap with brim
+  ];
+  const shadow = box(p, heading, -0.9 * S, 0.9 * S, -0.9 * S, 0.9 * S, 0, 0.05, '#00000055');
+  return [shadow, ...parts.map(([x0, x1, y0, y1, z0, z1, c]) => box(p, heading, x0 * S, x1 * S, y0 * S, y1 * S, z0 * S, z1 * S, c))];
+}
+const posPoint = pos => lerpPt(nodes[pos.from], nodes[pos.to], pos.fraction);
+
+// ---------- movement along the footpath graph ----------
+function edgeLength(a, b) { return distOf(nodes[a], nodes[b]); }
+function atNode(pos) { return pos.fraction <= 1e-6 ? pos.from : pos.fraction >= 1 - 1e-6 ? pos.to : -1; }
+
+function bestEdgeFrom(node, heading, exclude) {
+  let best = -1, bestAngle = 999;
+  for (const next of adj[node]) {
+    if (next === exclude) continue;
+    const angle = angDiff(heading, bearingOf(nodes[node], nodes[next]));
+    if (angle < bestAngle) { bestAngle = angle; best = next; }
+  }
+  return { next: best, angle: bestAngle };
+}
+
+function step(dt) {
+  const k = game.keys;
+  if (k.left) game.heading = (game.heading - TURN_RATE * dt + 360) % 360;
+  if (k.right) game.heading = (game.heading + TURN_RATE * dt) % 360;
+  if (game.autopilot) return autopilotStep(dt);
+  if (!k.fwd) { game.walkPhase *= 0.8; return; }
+  let pos = game.pos, remaining = (k.run ? RUN_SPEED : WALK_SPEED) * dt;
+  const here = atNode(pos);
+  if (here >= 0) {
+    // Standing on a junction or dead end: leave along the path closest to where you face.
+    const { next, angle } = bestEdgeFrom(here, game.heading, -1);
+    if (next < 0 || angle > 100) return;
+    pos = { from: here, to: next, fraction: 0 };
+  } else if (angDiff(game.heading, bearingOf(nodes[pos.from], nodes[pos.to])) > 90) {
+    pos = { from: pos.to, to: pos.from, fraction: 1 - pos.fraction };
+  }
+  while (remaining > 1e-6) {
+    const length = edgeLength(pos.from, pos.to) || 0.01;
+    const left = (1 - pos.fraction) * length;
+    if (remaining < left) { pos = { ...pos, fraction: pos.fraction + remaining / length }; remaining = 0; break; }
+    remaining -= left;
+    const node = pos.to, came = pos.from;
+    const options = adj[node].filter(n => n !== came);
+    let next;
+    if (options.length === 0) { pos = { from: came, to: node, fraction: 1 }; break; }
+    if (options.length === 1) next = options[0];
+    else {
+      const choice = bestEdgeFrom(node, game.heading, came);
+      if (choice.angle > 100) { pos = { from: came, to: node, fraction: 1 }; break; }
+      next = choice.next;
+    }
+    pos = { from: node, to: next, fraction: 0 };
+  }
+  game.pos = pos;
+  game.walkPhase += dt * (k.run ? 14 : 10);
+  if (!k.left && !k.right) game.heading = approach(game.heading, bearingOf(nodes[pos.from], nodes[pos.to]), 140 * dt);
+}
+
+/** Debug only: walks a node route at walking speed (used by automated visual tests). */
+function autopilotStep(dt) {
+  const ap = game.autopilot;
+  let remaining = RUN_SPEED * dt;
+  while (remaining > 1e-6 && ap.i < ap.route.length - 1) {
+    const a = ap.route[ap.i], b = ap.route[ap.i + 1];
+    const length = edgeLength(a, b) || 0.01;
+    const left = (1 - ap.f) * length;
+    if (remaining < left) { ap.f += remaining / length; remaining = 0; }
+    else { remaining -= left; ap.i++; ap.f = 0; }
+  }
+  if (ap.i >= ap.route.length - 1) { game.pos = { from: ap.route[ap.i - 1], to: ap.route[ap.i], fraction: 1 }; game.autopilot = null; return; }
+  game.pos = { from: ap.route[ap.i], to: ap.route[ap.i + 1], fraction: ap.f };
+  game.heading = approach(game.heading, bearingOf(nodes[game.pos.from], nodes[game.pos.to]), 200 * dt);
+  game.walkPhase += dt * 10;
+}
+
+/** The junction ahead (following simple path chains up to 30 m) and its branches, as arrows on the ground. */
+function branchFeatures() {
+  let { from, to, fraction } = game.pos;
+  if (angDiff(game.heading, bearingOf(nodes[from], nodes[to])) > 90) [from, to, fraction] = [to, from, 1 - fraction];
+  let travelled = (1 - fraction) * edgeLength(from, to);
+  let prev = from, node = to;
+  for (let hops = 0; hops < 40 && travelled < 30; hops++) {
+    const options = adj[node].filter(n => n !== prev);
+    if (options.length !== 1) break;
+    travelled += edgeLength(node, options[0]);
+    prev = node; node = options[0];
+  }
+  const options = adj[node].filter(n => n !== prev);
+  if (travelled > 30 || options.length < 2) return [];
+  const chosen = bestEdgeFrom(node, game.heading, prev).next;
+  return options.map(n => {
+    const b = bearingOf(nodes[node], nodes[n]);
+    const tip = offsetPt(nodes[node], b, 10), base = offsetPt(nodes[node], b, 2.5);
+    return { type: 'Feature', properties: { color: n === chosen ? '#ffd23f' : '#ffffff' },
+      geometry: { type: 'MultiLineString', coordinates: [[base, tip], [offsetPt(tip, b + 145, 3.5), tip, offsetPt(tip, b - 145, 3.5)]] } };
+  });
+}
+
+// ---------- server sync ----------
+async function syncPosition() {
+  if (game.phase !== 'walk' || game.sending) return;
+  const p = game.pos, key = `${p.from},${p.to},${p.fraction.toFixed(5)}`;
+  if (key === game.lastSent) return;
+  game.sending = true;
+  try {
+    const r = await api('move', { from: p.from, to: p.to, fraction: p.fraction });
+    if (r.status === 409) {
+      game.pos = r.body.position; game.autopilot = null;
+      toast('Whoa!', 'cold', 'Stay on the paths.');
+    } else if (r.status === 200) {
+      game.lastSent = key;
+      game.walked = r.body.metresWalked;
+      if (r.body.zoneReached) enterZone(r.body.zone);
+    }
+  } finally { game.sending = false; }
+}
+
+// ---------- checks ----------
+async function doCheck() {
+  if (game.phase !== 'walk') return;
+  if (game.checksLeft <= 0) { toast('No checks', 'cold', 'Keep exploring.'); return; }
+  await syncPosition();
+  const r = await api('check');
+  if (r.status !== 200) { toast('Hmm', 'cold', r.body.error || 'Could not check.'); return; }
+  const { heat, trend, point, checksRemaining } = r.body;
+  game.checksLeft = checksRemaining;
+  game.checkCount++;
+  addCheckMarker(point, heat, game.checkCount);
+  toast(heat.toUpperCase(), heat, TREND_TEXT[trend] || '');
+  flashVignette(HEAT_COLORS[heat]);
+  const li = document.createElement('li');
+  li.style.color = HEAT_COLORS[heat];
+  li.textContent = heat.toUpperCase() + (TREND_TEXT[trend] ? ' ' + TREND_TEXT[trend] : '');
+  $('checks').append(li); $('nochecks').classList.add('hidden');
+  renderHud();
+}
+
+const markerFeatures = [], ringFeatures = [];
+function addCheckMarker(point, heat, n) {
+  const color = HEAT_COLORS[heat];
+  // A thin flagpole with a heat-coloured flag, so it never hides the avatar standing at the spot.
+  markerFeatures.push(box(point, 0, -0.3, 0.3, -0.3, 0.3, 0, 8, '#fff8e7'), box(point, 0, 0.3, 3.2, -0.25, 0.25, 5.6, 7.8, color));
+  ringFeatures.push({ type: 'Feature', properties: { color }, geometry: { type: 'LineString', coordinates: circle(point, 9, 24) } });
+  map.getSource('markers').setData(fc(markerFeatures));
+  map.getSource('check-rings').setData(fc(ringFeatures));
+}
+
+// ---------- stage two ----------
+function enterZone(zone) {
+  if (game.phase !== 'walk') return;
+  game.phase = 'zone'; game.zone = zone; game.zoneAt = performance.now(); game.keys = {}; game.autopilot = null;
+  hide('help');
+  map.getSource('branches').setData(fc([]));
+  map.getSource('zone').setData(fc([{ type: 'Feature', properties: { kind: 'floor' },
+    geometry: { type: 'Polygon', coordinates: [circle(zone.centre, zone.radius, 64)] } }]));
+  for (const b of pack.buildings) {
+    if (distOf(b.center || [b.lon, b.lat], zone.centre) <= zone.radius) {
+      game.zoneBuildings.add(b.id);
+      map.setFeatureState({ source: 'buildings', id: b.id }, { candidate: true });
+    }
+  }
+  toast('ZONE FOUND', 'warm', 'Choose a hint card.');
+  flyTo({ center: zone.centre, zoom: 17.5, pitch: 55, bearing: game.camBearing, duration: 2600 }).then(() => {
+    show('hintScreen');
+    setInteractive(true);
+  });
+}
+
+async function chooseHint(level, card) {
+  if (game.phase !== 'zone') return;
+  const r = await api('hint', { level });
+  if (r.status !== 200) { toast('Hmm', 'cold', r.body.error); return; }
+  game.phase = 'hint';
+  game.hint = r.body;
+  game.zoneBuildings = new Set(r.body.zoneBuildings);
+  for (const c of document.querySelectorAll('.hintcard')) {
+    c.classList.add(c === card ? 'flipped' : 'faded');
+  }
+  card.innerHTML = `<div><div class="lvl">${level.toUpperCase()} ×${r.body.multiplier}</div><p class="text"></p></div>`;
+  card.querySelector('.text').textContent = r.body.hint;
+  $('toGuess').classList.remove('hidden');
+  $('toGuess').focus();
+}
+
+function startGuessing() {
+  game.phase = 'guess';
+  hide('hintScreen');
+  $('bannerText').textContent = `Click the building. ${pack.guessLimit || 3} guesses.`;
+  $('bannerHint').textContent = game.hint.hint;
+  show('banner');
+}
+
+function setHover(id) {
+  if (game.hover != null) map.setFeatureState({ source: 'buildings', id: game.hover }, { hover: false });
+  game.hover = id;
+  if (id != null) map.setFeatureState({ source: 'buildings', id }, { hover: true });
+}
+
+function onHover(e) {
+  if (game.phase !== 'guess') return;
+  const f = e.features[0];
+  if (!f || !game.zoneBuildings.has(f.id) || game.guessed.has(f.id)) { setHover(null); $('tip').classList.add('hidden'); map.getCanvas().style.cursor = ''; return; }
+  setHover(f.id);
+  map.getCanvas().style.cursor = 'pointer';
+  const tip = $('tip');
+  tip.textContent = buildings.get(f.id)?.name || 'Unnamed building';
+  tip.style.left = e.point.x + 'px'; tip.style.top = e.point.y + 'px';
+  tip.classList.remove('hidden');
+}
+
+async function onBuildingClick(e) {
+  if (game.phase !== 'guess' || game.busy) return;
+  const f = e.features[0];
+  if (!f || !game.zoneBuildings.has(f.id) || game.guessed.has(f.id)) return;
+  game.busy = true;
+  try {
+    const r = await api('guess', { buildingId: f.id });
+    if (r.status !== 200) { toast('Hmm', 'cold', r.body.error); return; }
+    game.guessed.add(f.id);
+    setHover(null); $('tip').classList.add('hidden');
+    if (!r.body.correct) {
+      map.setFeatureState({ source: 'buildings', id: f.id }, { wrong: true, candidate: false });
+      toast('NOPE', 'cold', r.body.message);
+    }
+    if (r.body.result) finish(r.body.result, r.body.saveError);
+    else $('bannerText').textContent = `Not that one. ${r.body.guessesRemaining} guesses left.`;
+  } finally { game.busy = false; }
+}
+
+// ---------- reveal, results, replay ----------
+async function finish(result, saveError) {
+  game.phase = 'done'; game.result = result;
+  hide('banner');
+  const t = result.target;
+  for (const id of game.zoneBuildings) map.setFeatureState({ source: 'buildings', id }, { candidate: false });
+  map.setFeatureState({ source: 'buildings', id: t.buildingId }, { target: true, wrong: false });
+  const roof = buildings.get(t.buildingId)?.height || 10;
+  map.getSource('beacon').setData(fc([box(t.centre, 0, -3, 3, -3, 3, roof + 1, roof + 120, '#ffd23f')]));
+  toast(result.won ? 'FOUND IT!' : 'IT WAS…', result.won ? 'hot' : 'cool', t.name);
+  hide('log'); hide('help');
+  // Look down steeply so the gold roof shows even when taller neighbours stand in front.
+  await flyTo({ center: t.centre, zoom: 18.2, pitch: 48, bearing: (game.camBearing + 40) % 360, duration: 3200 });
+  orbit(t.centre);
+  fillResults(result, saveError);
+  show('results');
+}
+
+function orbit(centre) {
+  const start = performance.now(), bearing0 = map.getBearing();
+  game.orbiting = true;
+  const spin = now => {
+    if (!game.orbiting) return;
+    map.jumpTo({ center: centre, bearing: bearing0 + (now - start) / 1000 * 8 });
+    requestAnimationFrame(spin);
+  };
+  requestAnimationFrame(spin);
+}
+
+function fillResults(r, saveError) {
+  const fmt = m => m >= 1000 ? (m / 1000).toFixed(2) + ' km' : m + ' m';
+  $('outcome').textContent = r.won ? `Identified in ${r.guessesUsed} ${r.guessesUsed === 1 ? 'guess' : 'guesses'}` : 'Out of guesses';
+  $('targetName').textContent = r.target.name;
+  $('targetCat').textContent = r.target.category;
+  $('eff').textContent = `(${r.score.efficiency}%)`;
+  $('routePts').textContent = r.score.route;
+  $('mult').textContent = `(${r.hintLevel} ×${r.score.multiplier})`;
+  $('idPts').textContent = r.score.identify;
+  $('total').textContent = r.score.total;
+  $('walked').textContent = fmt(r.metresWalked);
+  $('shortest').textContent = fmt(r.shortestMetres);
+  $('zoneTime').textContent = clock(r.secondsToZone);
+  $('checksUsed').textContent = r.checksUsed;
+  $('guessesUsed').textContent = r.guessesUsed;
+  $('saveError').textContent = saveError || '';
+  $('saveError').classList.toggle('hidden', !saveError);
+  const w = r.summary;
+  $('wiki').classList.toggle('hidden', !w);
+  if (w) {
+    $('wikiTitle').textContent = w.title;
+    $('wikiText').textContent = w.extract.length > 320 ? w.extract.slice(0, 317) + '…' : w.extract;
+    $('wikiImg').classList.toggle('hidden', !w.image);
+    if (w.image) $('wikiImg').src = w.image;
+    $('wikiLink').classList.toggle('hidden', !w.url);
+    if (w.url) $('wikiLink').href = w.url;
+  }
+}
+
+async function replay() {
+  const r = game.result;
+  if (!r) return;
+  game.orbiting = false;
+  const z = game.zone;
+  const all = [...r.route, ...r.shortestRoute, ...(z ? [offsetPt(z.centre, 0, z.radius), offsetPt(z.centre, 180, z.radius),
+    offsetPt(z.centre, 90, z.radius), offsetPt(z.centre, 270, z.radius)] : [])];
+  const lons = all.map(p => p[0]), lats = all.map(p => p[1]);
+  map.fitBounds([[Math.min(...lons), Math.min(...lats)], [Math.max(...lons), Math.max(...lats)]],
+    { padding: { top: 60, bottom: 90, left: 60, right: Math.min(420, innerWidth / 2) }, pitch: 35, bearing: 0, duration: 1800 });
+  await new Promise(res => map.once('moveend', res));
+  show('legend');
+  // Drawn wider underneath, so it shows as an outline where your route matches it.
+  const shortest = { type: 'Feature', properties: { color: '#4cf0d4', scale: 2.2 }, geometry: { type: 'LineString', coordinates: r.shortestRoute } };
+  const t0 = performance.now(), duration = 4500;
+  const draw = now => {
+    const k = Math.min(1, (now - t0) / duration);
+    const n = Math.max(2, Math.ceil(r.route.length * k));
+    map.getSource('routes').setData(fc([shortest, { type: 'Feature', properties: { color: '#ff5fa2' },
+      geometry: { type: 'LineString', coordinates: r.route.slice(0, n) } }]));
+    if (k < 1) requestAnimationFrame(draw);
+  };
+  requestAnimationFrame(draw);
+}
+
+// ---------- start ----------
+async function startRound() {
+  if (game.phase !== 'title') return;
+  game.phase = 'starting';
+  const r = await api('start', { difficulty: $('difficulty').dataset.value || 'normal' });
+  if (r.status !== 200) { game.phase = 'title'; $('loading').textContent = r.body.error || 'Could not start. Retry.'; return; }
+  hide('title');
+  game.orbiting = false;
+  game.pos = r.body.position;
+  game.checksLeft = r.body.checksRemaining;
+  pack.guessLimit = r.body.guessLimit;
+  game.heading = bearingOf(nodes[game.pos.from], nodes[game.pos.to]);
+  game.camBearing = game.heading;
+  game.startedAt = performance.now();
+  renderHud();
+  for (const id of ['hud', 'log', 'compass', 'help']) show(id);
+  await flyTo({ center: posPoint(game.pos), zoom: FOLLOW.zoom, pitch: FOLLOW.pitch, bearing: game.heading, duration: 3200 });
+  game.phase = 'walk';
+  toast('FIND THE ZONE', 'warm', r.body.message);
+}
+
+function resetRound() { location.reload(); }
+
+// ---------- loop ----------
+let last = performance.now();
+function frame(now) {
+  const dt = Math.min(0.1, (now - last) / 1000);
+  last = now;
+  if (game.phase === 'walk') {
+    step(dt);
+    game.camBearing = approach(game.camBearing, game.heading, Math.max(30, angDiff(game.camBearing, game.heading) * 3.2) * dt);
+    const here = posPoint(game.pos);
+    map.jumpTo({ center: offsetPt(here, game.camBearing, 6), bearing: game.camBearing, pitch: FOLLOW.pitch, zoom: FOLLOW.zoom });
+    map.getSource('avatar').setData(fc(avatarFeatures(here, game.heading)));
+    map.getSource('branches').setData(fc(branchFeatures()));
+    renderHud();
+  } else if (game.phase === 'title' && game.orbiting) {
+    map.jumpTo({ bearing: map.getBearing() + dt * 4 });
+  }
+  if (map) $('needle').style.transform = `rotate(${-map.getBearing()}deg)`;
+  requestAnimationFrame(frame);
+}
+
+function renderHud() {
+  const seconds = game.phase === 'walk' ? (performance.now() - game.startedAt) / 1000 : (game.zoneAt - game.startedAt) / 1000;
+  $('dist').textContent = Math.round(game.walked) + ' m';
+  $('time').textContent = clock(Math.max(0, seconds));
+  const pips = $('pips');
+  const total = game.checksLeft + game.checkCount;
+  if (pips.childElementCount !== total) pips.innerHTML = '<i></i>'.repeat(total);
+  [...pips.children].forEach((pip, i) => pip.classList.toggle('used', i < game.checkCount));
+}
+const clock = s => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+
+// ---------- UI helpers ----------
+let toastTimer;
+function toast(title, heat, detail = '') {
+  const t = $('toast');
+  t.style.color = HEAT_COLORS[heat] || '#fff8e7';
+  t.textContent = title;
+  const small = document.createElement('small');
+  small.style.color = '#fff8e7';
+  small.textContent = detail;
+  t.append(small);
+  t.style.opacity = 1;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => (t.style.opacity = 0), 2200);
+}
+function flashVignette(color) {
+  const v = $('vignette');
+  v.style.background = `radial-gradient(ellipse at center, transparent 45%, ${color}aa 100%)`;
+  v.style.opacity = 1;
+  setTimeout(() => (v.style.opacity = 0), 900);
+}
+const show = id => $(id).classList.remove('hidden');
+const hide = id => $(id).classList.add('hidden');
+function setInteractive(on) {
+  for (const h of ['dragPan', 'dragRotate', 'scrollZoom', 'touchZoomRotate', 'doubleClickZoom', 'keyboard']) on ? map[h].enable() : map[h].disable();
+}
+function flyTo(options) {
+  return new Promise(resolve => { map.once('moveend', resolve); map.flyTo({ ...options, essential: true }); });
+}
+
+const KEYMAP = { KeyW: 'fwd', ArrowUp: 'fwd', KeyA: 'left', ArrowLeft: 'left', KeyD: 'right', ArrowRight: 'right',
+  ShiftLeft: 'run', ShiftRight: 'run' };
+addEventListener('keydown', e => {
+  if (e.code === 'Enter' && game.phase === 'title') { startRound(); return; }
+  if (game.phase !== 'walk') return;
+  if (KEYMAP[e.code]) { game.keys[KEYMAP[e.code]] = true; e.preventDefault(); }
+  if ((e.code === 'KeyS' || e.code === 'ArrowDown') && !e.repeat) {
+    game.heading = (game.heading + 180) % 360;
+    const p = game.pos;
+    if (atNode(p) < 0) game.pos = { from: p.to, to: p.from, fraction: 1 - p.fraction };
+    e.preventDefault();
+  }
+  if (e.code === 'Space' && !e.repeat) { doCheck(); e.preventDefault(); }
+});
+addEventListener('keyup', e => { if (KEYMAP[e.code]) game.keys[KEYMAP[e.code]] = false; });
+addEventListener('blur', () => (game.keys = {}));
+$('startBtn').addEventListener('click', startRound);
+$('toGuess').addEventListener('click', startGuessing);
+$('replayBtn').addEventListener('click', replay);
+$('againBtn').addEventListener('click', resetRound);
+for (const card of document.querySelectorAll('.hintcard')) {
+  const pick = () => chooseHint(card.dataset.level, card);
+  card.addEventListener('click', pick);
+  card.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } });
+}
+
+// ---------- boot ----------
+(async () => {
+  const [packResponse] = await Promise.all([fetch('/pack.json'), initMap()]);
+  pack = await packResponse.json();
+  nodes = pack.walkways.nodes;
+  adj = nodes.map(() => []);
+  for (const [a, b] of pack.walkways.edges) { adj[a].push(b); adj[b].push(a); }
+  for (const b of pack.buildings) { b.center = [b.lon, b.lat]; buildings.set(b.id, b); }
+  M_LON = 111320 * Math.cos((pack.bounds.north + pack.bounds.south) / 2 * Math.PI / 180);
+  addGameLayers();
+  setInteractive(false);
+  game.phase = 'title';
+  game.orbiting = true;
+  $('loading').textContent = '';
+  setInterval(syncPosition, 250);
+  requestAnimationFrame(frame);
+
+  if (DEBUG) {
+    // Automated visual tests: walk to the zone with the server's debug info. Never enabled in normal play.
+    game.debugWalkToZone = async () => {
+      const zone = (await (await fetch('/api/debug')).json()).zone;
+      const startNode = atNode(game.pos) >= 0 ? atNode(game.pos) : game.pos.from;
+      const route = shortestNodes(startNode, n => distOf(nodes[n], zone.centre) <= zone.radius - 5);
+      game.autopilot = { route, i: 0, f: 0 };
+      return route.length;
+    };
+    game.shortestNodes = shortestNodes;
+  }
+})();
+
+function shortestNodes(source, goal) {
+  const dist = new Float64Array(nodes.length).fill(Infinity), prev = new Int32Array(nodes.length).fill(-1);
+  dist[source] = 0;
+  const queue = [[0, source]];
+  while (queue.length) {
+    queue.sort((a, b) => b[0] - a[0]);
+    const [d, n] = queue.pop();
+    if (d > dist[n]) continue;
+    if (goal(n)) { const out = []; for (let at = n; at !== -1; at = prev[at]) out.unshift(at); return out; }
+    for (const m of adj[n]) {
+      const nd = d + edgeLength(n, m);
+      if (nd < dist[m]) { dist[m] = nd; prev[m] = n; queue.push([nd, m]); }
+    }
+  }
+  return [source];
+}
+</script>
+</body>
+</html>
