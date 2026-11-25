@@ -299,4 +299,10 @@ public final class Expedition {
     }
 
     public double shortestToZone() { return shortestToZone; }
+
+    /**
+     * The hidden zone, for automated visual tests and diagnostics only. Player-facing code must use
+     * {@link #revealedZone()}; the explore server exposes this only when started in debug mode.
+     */
+    public Zone zoneForDiagnostics() { return zone; }
 }
