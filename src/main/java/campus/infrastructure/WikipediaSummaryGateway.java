@@ -44,24 +44,29 @@ public final class WikipediaSummaryGateway implements LandmarkInfoGateway {
             if (response.statusCode() != 200) {
                 return Optional.empty();
             }
-            Map<String, Object> page = Json.object(Json.parse(response.body()));
-            if (!(page.get("extract") instanceof String extract) || extract.isBlank()) {
-                return Optional.empty();
-            }
-            String image = page.get("thumbnail") instanceof Map<?, ?> thumbnail
-                    && thumbnail.get("source") instanceof String source && source.startsWith("https://")
-                    ? source : null;
-            String url = page.get("content_urls") instanceof Map<?, ?> urls
-                    && urls.get("desktop") instanceof Map<?, ?> desktop
-                    && desktop.get("page") instanceof String link && link.startsWith("https://")
-                    ? link : null;
-            String name = page.get("title") instanceof String text ? text : title;
-            return Optional.of(new LandmarkSummary(name, extract, image, url));
+            return parse(response.body(), title);
         } catch (IOException | IllegalArgumentException exception) {
             return Optional.empty();
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
             return Optional.empty();
         }
+    }
+
+    private static Optional<LandmarkSummary> parse(String body, String title) {
+        Map<String, Object> page = Json.object(Json.parse(body));
+        if (!(page.get("extract") instanceof String extract) || extract.isBlank()) {
+            return Optional.empty();
+        }
+        String image = page.get("thumbnail") instanceof Map<?, ?> thumbnail ? https(thumbnail.get("source")) : null;
+        String url = page.get("content_urls") instanceof Map<?, ?> urls
+                && urls.get("desktop") instanceof Map<?, ?> desktop ? https(desktop.get("page")) : null;
+        String name = page.get("title") instanceof String text ? text : title;
+        return Optional.of(new LandmarkSummary(name, extract, image, url));
+    }
+
+    /** Only https links are passed to the page, so a bad response can't inject other URL schemes. */
+    private static String https(Object value) {
+        return value instanceof String link && link.startsWith("https://") ? link : null;
     }
 }

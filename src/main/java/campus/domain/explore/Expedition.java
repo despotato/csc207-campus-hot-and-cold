@@ -8,10 +8,12 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.random.RandomGenerator;
 import java.util.stream.IntStream;
 
@@ -188,15 +190,16 @@ public final class Expedition {
      * As {@link #chooseHint(HintLevel)}, but a hard hint may use an outside clue about the target
      * (for example a redacted encyclopedia sentence) instead of its direction within the zone.
      */
-    public String chooseHint(HintLevel level, java.util.function.Function<CampusLandmark, Optional<String>> outsideClue) {
+    public String chooseHint(HintLevel level, Function<CampusLandmark, Optional<String>> outsideClue) {
         requireStage(Stage.IDENTIFY, "Reach the zone before choosing a hint.");
         if (hintLevel != null) {
             throw new IllegalStateException("You already chose a hint.");
         }
         Objects.requireNonNull(level);
         if (level == HintLevel.HARD) {
-            outsideClue.apply(target).filter(clue -> !clue.isBlank()
-                    && !clue.toLowerCase(java.util.Locale.ROOT).contains(target.name().toLowerCase(java.util.Locale.ROOT)))
+            String name = target.name().toLowerCase(Locale.ROOT);
+            outsideClue.apply(target)
+                    .filter(clue -> !clue.isBlank() && !clue.toLowerCase(Locale.ROOT).contains(name))
                     .ifPresent(clue -> this.outsideClue = clue);
         }
         hintLevel = level;
@@ -207,7 +210,7 @@ public final class Expedition {
         if (hintLevel == null) {
             return Optional.empty();
         }
-        String category = target.category().toLowerCase(java.util.Locale.ROOT);
+        String category = target.category().toLowerCase(Locale.ROOT);
         String article = category.matches("^[aeiou].*") ? "an " : "a ";
         return Optional.of(switch (hintLevel) {
             case EASY -> "It's " + article + category + " building, and its name starts with \""
