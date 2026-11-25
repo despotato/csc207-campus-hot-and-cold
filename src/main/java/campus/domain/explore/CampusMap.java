@@ -14,12 +14,22 @@ public final class CampusMap {
     private final List<CampusLandmark> landmarks;
     private final OpenSpace openSpace;
 
-    public record Building(int id, String name, GeoPoint centre) {
+    /**
+     * A building as players see it. {@code material} is its facade (brick, stone, glass or concrete); the
+     * history fields come from OpenStreetMap and may be null.
+     */
+    public record Building(int id, String name, GeoPoint centre, double height, String material, boolean courtyard,
+                           Integer built, String architect, String formerName) {
         public Building {
             Objects.requireNonNull(centre);
             if (id <= 0) {
                 throw new IllegalArgumentException("Building IDs must be positive.");
             }
+            material = material == null ? "brick" : material;
+        }
+
+        public Building(int id, String name, GeoPoint centre, double height) {
+            this(id, name, centre, height, "brick", false, null, null, null);
         }
     }
 

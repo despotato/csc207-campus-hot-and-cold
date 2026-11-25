@@ -208,6 +208,41 @@ def r6(ring):
     return [[round(x, 6), round(y, 6)] for x, y in ring]
 
 
+MATERIALS = {"brick": "brick", "stone": "stone", "sandstone": "stone", "limestone": "stone", "granite": "stone",
+             "glass": "glass", "metal": "glass", "steel": "glass", "concrete": "concrete", "plaster": "concrete",
+             "cement_block": "concrete", "wood": "brick", "timber_framing": "brick"}
+
+
+def material(tags, building_id, height, category):
+    """Facade material: OpenStreetMap's building:material when known, otherwise a plausible guess."""
+    real = MATERIALS.get(str(tags.get("building:material", "")).lower())
+    if real:
+        return real
+    h = (building_id * 2654435761) % 2 ** 32
+    if height >= 40 or (category == "Teaching" and height >= 25):
+        return "glass"
+    if category in ("College", "Library", "Campus life"):
+        return "stone" if h % 3 == 0 else "brick"
+    if category == "Residence":
+        return "brick"
+    if height >= 18:
+        return "concrete" if h % 2 else "brick"
+    return ["brick", "stone", "brick", "concrete"][h % 4]
+
+
+def history(tags):
+    """Construction year, architect and former name from OpenStreetMap, where recorded."""
+    result = {}
+    year = str(tags.get("start_date", ""))[:4]
+    if year.isdigit():
+        result["built"] = int(year)
+    if tags.get("architect"):
+        result["architect"] = tags["architect"]
+    if tags.get("old_name"):
+        result["formerName"] = tags["old_name"]
+    return result
+
+
 def footprint(e, flat):
     shapes = polygons(e)
     return {
@@ -246,7 +281,8 @@ def main(src, dst):
         lat, lon = centre(shape["outline"])
         building_ids[k] = len(buildings) + 1
         buildings.append({"id": len(buildings) + 1, "name": tags.get("name"), "lat": lat, "lon": lon,
-                          "flat": k in FLAT, **shape})
+                          "flat": k in FLAT, "courtyard": any(len(p) > 1 for p in shape["outline"]),
+                          "osmTags": tags, **shape})
 
     landmarks = []
     for next_id, (k, name, category, wiki) in enumerate(LANDMARKS, start=1):
@@ -254,8 +290,14 @@ def main(src, dst):
             sys.exit(f"missing outline for {k} {name}")
         building = buildings[building_ids[k] - 1]
         building["name"] = name
+        building["category"] = category
         landmarks.append({"id": next_id, "building": building["id"], "osm": k, "name": name,
                           "category": category, "wikipedia": wiki})
+
+    for building in buildings:
+        tags = building.pop("osmTags")
+        building["material"] = material(tags, building["id"], building["height"], building.pop("category", None))
+        building.update(history(tags))
 
     nodes = {}
     coords = []

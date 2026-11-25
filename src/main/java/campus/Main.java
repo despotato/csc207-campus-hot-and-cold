@@ -17,7 +17,6 @@ import campus.application.explore.ChooseHintInteractor;
 import campus.application.explore.ExpeditionResultRepository;
 import campus.application.explore.ExpeditionSession;
 import campus.application.explore.GuessBuildingInteractor;
-import campus.application.explore.LandmarkClueGateway;
 import campus.application.explore.MoveInteractor;
 import campus.application.explore.RoundFinisher;
 import campus.application.explore.StartExpeditionInteractor;
@@ -29,6 +28,7 @@ import campus.infrastructure.CampusPackLoader;
 import campus.infrastructure.ExploreWebServer;
 import campus.infrastructure.FileRoundRepository;
 import campus.infrastructure.WikipediaLandmarkGateway;
+import campus.infrastructure.WikipediaFactsGateway;
 import campus.infrastructure.WikipediaSummaryGateway;
 import campus.ui.CampusGame;
 import campus.ui.Launcher;
@@ -90,8 +90,7 @@ public final class Main {
                 new MoveInteractor(clock, session, presenter),
                 new TravelInteractor(clock, session, presenter),
                 new CheckTemperatureInteractor(clock, session, finisher, presenter),
-                // Team task: replace NONE with a Wikipedia clue gateway.
-                new ChooseHintInteractor(session, LandmarkClueGateway.NONE, presenter),
+                new ChooseHintInteractor(session, new WikipediaFactsGateway(client), presenter),
                 new GuessBuildingInteractor(session, finisher, presenter),
                 presenter);
         int port = Integer.getInteger("campus.explore.port", 0);

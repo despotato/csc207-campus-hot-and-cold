@@ -51,7 +51,11 @@ public final class CampusPackLoader {
         for (Object item : Json.array(pack.get("buildings"))) {
             Map<String, Object> building = Json.object(item);
             buildings.add(new Building((int) Json.number(building.get("id")), (String) building.get("name"),
-                    new GeoPoint(Json.number(building.get("lat")), Json.number(building.get("lon")))));
+                    new GeoPoint(Json.number(building.get("lat")), Json.number(building.get("lon"))),
+                    Json.number(building.get("height")), (String) building.get("material"),
+                    Boolean.TRUE.equals(building.get("courtyard")),
+                    building.get("built") instanceof Number year ? year.intValue() : null,
+                    (String) building.get("architect"), (String) building.get("formerName")));
             if (!Boolean.TRUE.equals(building.get("flat"))) {
                 for (Object polygon : Json.array(building.get("outline"))) {
                     solid.add(Json.array(polygon).stream().map(CampusPackLoader::ring).toList());

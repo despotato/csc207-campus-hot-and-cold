@@ -267,26 +267,35 @@ public final class Expedition {
         zoneReachedAt = now;
     }
 
-    /** Commits to a hint difficulty before seeing it, then reveals the hint. */
+    /** Commits to a hint difficulty before seeing it, then reveals the hint (no outside facts). */
     public String chooseHint(HintLevel level) {
-        return chooseHint(level, landmark -> Optional.empty());
+        return chooseHint(level, landmark -> List.of());
     }
 
     /**
-     * As {@link #chooseHint(HintLevel)}, but a hard hint may use an outside clue about the target
-     * (for example a redacted encyclopedia sentence) instead of its direction within the zone.
+     * Commits to a hint difficulty before seeing it, then reveals the hint. The levels suit different players:
+     * <ul>
+     *   <li>easy, anyone: what you can see in the zone (height rank, storeys, facade, courtyard);</li>
+     *   <li>normal, students: what the building is and what it's known for;</li>
+     *   <li>hard, campus historians: an obscure piece of its history.</li>
+     * </ul>
+     * {@code facts} supplies facts about the target, best known first, then historical (e.g. from an
+     * encyclopedia). Any fact that names the target is ignored.
      */
-    public String chooseHint(HintLevel level, Function<CampusLandmark, Optional<String>> outsideClue) {
+    public String chooseHint(HintLevel level, Function<CampusLandmark, List<String>> facts) {
         requireIdentifying();
         if (hintLevel != null) {
             throw new IllegalStateException("You already chose a hint.");
         }
         Objects.requireNonNull(level);
-        if (level == HintLevel.HARD) {
-            String name = target.name().toLowerCase(Locale.ROOT);
-            outsideClue.apply(target)
-                    .filter(clue -> !clue.isBlank() && !clue.toLowerCase(Locale.ROOT).contains(name))
-                    .ifPresent(clue -> this.outsideClue = clue);
+        if (level != HintLevel.EASY) {
+            // Normal uses the best-known fact; hard the first historical one after it.
+            List<String> safe = facts.apply(target).stream()
+                    .filter(fact -> fact != null && !fact.isBlank() && !LandmarkNames.givesAway(fact, target.name()))
+                    .toList();
+            if (!safe.isEmpty()) {
+                outsideClue = level == HintLevel.NORMAL || safe.size() == 1 ? safe.getFirst() : safe.get(1);
+            }
         }
         hintLevel = level;
         return hint().orElseThrow();
@@ -299,10 +308,10 @@ public final class Expedition {
         String category = target.category().toLowerCase(Locale.ROOT);
         String article = category.matches("^[aeiou].*") ? "an " : "a ";
         return Optional.of(switch (hintLevel) {
-            case EASY -> "It's " + article + category + " building, and its name starts with \""
-                    + Character.toUpperCase(target.name().charAt(0)) + "\".";
-            case NORMAL -> "It's " + article + category + " building.";
-            case HARD -> outsideClue != null ? outsideClue : directionInZone();
+            case EASY -> appearance();
+            case NORMAL -> "It's " + article + category + " building. " + (outsideClue != null ? outsideClue
+                    : "Its name starts with \"" + Character.toUpperCase(target.name().charAt(0)) + "\".");
+            case HARD -> outsideClue != null ? outsideClue : recordedHistory();
         });
     }
 
@@ -342,14 +351,34 @@ public final class Expedition {
                 routePoints + guessPoints + hintBonus + checkBonus);
     }
 
-    private String directionInZone() {
-        GeoPoint centre = zone.centre();
-        GeoPoint building = map.buildingOf(target).centre();
-        if (centre.distanceTo(building) < 20) {
-            return "It's near the middle of the zone.";
+    /** Easy: only what anyone standing in the zone can see. */
+    private String appearance() {
+        Building building = map.buildingOf(target);
+        List<Building> zoneBuildings = map.buildingsIn(zone);
+        long taller = zoneBuildings.stream().filter(other -> other.height() > building.height() + 0.5).count();
+        long shorter = zoneBuildings.stream().filter(other -> other.height() < building.height() - 0.5).count();
+        String rank = taller == 0 ? "the tallest" : shorter == 0 ? "the shortest"
+                : taller == 1 ? "the second-tallest" : taller == 2 ? "the third-tallest" : "a mid-height one";
+        long floors = Math.max(1, Math.round(building.height() / 3.66));
+        String look = floors + "-storey " + building.material() + " building" + (building.courtyard()
+                ? " with a courtyard" : "");
+        return "It's " + rank + " of the " + zoneBuildings.size() + " buildings in the zone: a " + look + ".";
+    }
+
+    /** Hard fallback when no encyclopedia facts are available: what OpenStreetMap records, else its height. */
+    private String recordedHistory() {
+        Building building = map.buildingOf(target);
+        if (building.formerName() != null && !LandmarkNames.givesAway(building.formerName(), target.name())) {
+            return "It used to be known as the " + building.formerName() + ".";
         }
-        String[] names = {"north", "north-east", "east", "south-east", "south", "south-west", "west", "north-west"};
-        return "It's in the " + names[(int) Math.round(centre.bearingTo(building) / 45) % 8] + " part of the zone.";
+        if (building.built() != null) {
+            return "It was built in " + building.built() + ".";
+        }
+        if (building.architect() != null) {
+            return "It was designed by " + building.architect() + ".";
+        }
+        long floors = Math.max(1, Math.round(building.height() / 3.66));
+        return "It stands about " + floors + " storeys tall.";
     }
 
     private void requireIdentifying() {

@@ -39,9 +39,9 @@ class ExpeditionTest {
         solid.add(List.of(List.of(at(498, -20), at(502, -20), at(502, 120), at(498, 120), at(498, -20))));
         OpenSpace ground = new OpenSpace(at(-20, -20), at(1300, 200), 1.5, solid);
         List<Building> buildings = List.of(
-                new Building(1, "Target Hall", at(1000, 75)), new Building(2, "North Hall", at(1010, 130)),
-                new Building(3, "East Hall", at(1060, 75)), new Building(4, "West Hall", at(950, 75)),
-                new Building(5, "Far Hall", at(100, 140)), new Building(6, null, at(1000, 20)));
+                new Building(1, "Target Hall", at(1000, 75), 22), new Building(2, "North Hall", at(1010, 130), 11),
+                new Building(3, "East Hall", at(1060, 75), 11), new Building(4, "West Hall", at(950, 75), 11),
+                new Building(5, "Far Hall", at(100, 140), 11), new Building(6, null, at(1000, 20), 5));
         List<CampusLandmark> landmarks = List.of(
                 new CampusLandmark(1, 1, "Target Hall", "Library", "Target Hall"),
                 new CampusLandmark(2, 5, "Far Hall", "Residence", null));
@@ -206,30 +206,58 @@ class ExpeditionTest {
         Expedition round = round();
         reachZone(round);
         assertThrows(IllegalStateException.class, () -> round.guess(1));
-        assertEquals("It's a library building, and its name starts with \"T\".", round.chooseHint(HintLevel.EASY));
+        assertEquals("It's the tallest of the 5 buildings in the zone: a 6-storey brick building.",
+                round.chooseHint(HintLevel.EASY), "easy: what anyone can see");
         assertThrows(IllegalStateException.class, () -> round.chooseHint(HintLevel.HARD));
     }
 
-    @Test void hardHintGivesDirectionWithinZone() {
-        CampusMap map = campus();
-        Expedition round = new Expedition(map, map.landmarks().getFirst(), new Zone(at(960, 75), 90), START, T0);
-        Instant time = walk(round, List.of(at(490, 126), at(510, 126), at(872, 78)), T0);
-        assertTrue(round.check(time).inZone());
-        assertEquals("It's in the east part of the zone.", round.chooseHint(HintLevel.HARD));
+    @Test void normalAndHardHintsUseFactsAndFallBackToHeight() {
+        List<String> facts = List.of("It opened in 1931 as a library.", "A film crew used its roof in 2009.");
+        Expedition normal = round();
+        reachZone(normal);
+        assertEquals("It's a library building. It opened in 1931 as a library.",
+                normal.chooseHint(HintLevel.NORMAL, target -> facts), "normal: category plus best-known fact");
+        Expedition hard = round();
+        reachZone(hard);
+        assertEquals("A film crew used its roof in 2009.", hard.chooseHint(HintLevel.HARD, target -> facts),
+                "hard: an obscure fact only");
+        Expedition none = round();
+        reachZone(none);
+        assertEquals("It stands about 6 storeys tall.", none.chooseHint(HintLevel.HARD, target -> List.of()));
+        Expedition student = round();
+        reachZone(student);
+        assertEquals("It's a library building. Its name starts with \"T\".",
+                student.chooseHint(HintLevel.NORMAL, target -> List.of()), "normal fallback: what students know");
     }
 
-    @Test void hardHintCanUseAnOutsideClueButNeverOneNamingTheTarget() {
-        Expedition round = round();
+    @Test void hardHintFallsBackToRecordedHistory() {
+        CampusMap base = campus();
+        List<CampusMap.Building> buildings = new java.util.ArrayList<>();
+        for (int id = 1; id <= 6; id++) {
+            CampusMap.Building b = base.building(id).orElseThrow();
+            buildings.add(id == 1 ? new CampusMap.Building(1, b.name(), b.centre(), 22, "stone", true, 1931,
+                    "Sproatt and Rolph", "Old Library") : b);
+        }
+        CampusMap map = new CampusMap("Test campus", buildings, base.landmarks(), base.openSpace());
+        Expedition round = new Expedition(map, map.landmarks().getFirst(), new Zone(at(1000, 75), 90), START, T0);
         reachZone(round);
-        assertEquals("Built in ____ as a library.", round.chooseHint(HintLevel.HARD,
-                target -> Optional.of("Built in ____ as a library.")));
+        assertEquals("It used to be known as the Old Library.", round.chooseHint(HintLevel.HARD, target -> List.of()));
+        Expedition easy = new Expedition(map, map.landmarks().getFirst(), new Zone(at(1000, 75), 90), START, T0);
+        reachZone(easy);
+        assertEquals("It's the tallest of the 5 buildings in the zone: a 6-storey stone building with a courtyard.",
+                easy.chooseHint(HintLevel.EASY));
+    }
+
+    @Test void factsThatGiveAwayTheNameAreIgnored() {
         Expedition leaky = round();
         reachZone(leaky);
-        assertEquals("It's near the middle of the zone.", leaky.chooseHint(HintLevel.HARD,
-                target -> Optional.of("Target Hall opened in 1900.")), "falls back when the clue names it");
+        assertEquals("It stands about 6 storeys tall.", leaky.chooseHint(HintLevel.HARD,
+                target -> List.of("Target Hall opened in 1900.", "The target building of 1900.")),
+                "the full name, or its distinctive word 'target', gives it away");
         Expedition easy = round();
         reachZone(easy);
-        assertTrue(easy.chooseHint(HintLevel.EASY, target -> Optional.of("ignored")).startsWith("It's a library"));
+        assertTrue(easy.chooseHint(HintLevel.EASY, target -> List.of("ignored")).startsWith("It's the tallest"),
+                "easy never uses outside facts");
     }
 
     @Test void guessesMustBeInsideTheZoneAndDistinct() {

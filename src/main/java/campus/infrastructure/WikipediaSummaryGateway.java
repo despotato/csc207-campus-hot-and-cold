@@ -36,7 +36,7 @@ public final class WikipediaSummaryGateway implements LandmarkInfoGateway {
         String path = URLEncoder.encode(title.replace(' ', '_'), StandardCharsets.UTF_8).replace("+", "%20");
         HttpRequest request = HttpRequest.newBuilder(base.resolve(path))
                 .timeout(Duration.ofSeconds(5))
-                .header("User-Agent", "CampusHotAndCold/0.2 (CSC207 classroom project)")
+                .header("User-Agent", WikipediaFactsGateway.USER_AGENT)
                 .header("Accept", "application/json")
                 .GET().build();
         try {
