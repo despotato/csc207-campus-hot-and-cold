@@ -51,7 +51,8 @@ public sealed interface ExploreResponse {
 
     /** {@code hintLevel} and {@code secondsToZone} are null when the zone was never found. */
     record Result(boolean won, String targetName, String category, int targetBuildingId, GeoPoint targetCentre,
-                  int routePoints, double efficiency, int identifyPoints, double multiplier, int score,
+                  int routePoints, double efficiency, int guessPoints, int hintBonus, int checkBonus,
+                  double multiplier, int score,
                   double metresWalked, double shortestMetres, Long secondsToZone, int checksUsed,
                   int guessesUsed, Expedition.HintLevel hintLevel, ZoneView zone, List<GeoPoint> route,
                   List<GeoPoint> shortestRoute, List<Expedition.Check> checks, LandmarkSummary summary) { }

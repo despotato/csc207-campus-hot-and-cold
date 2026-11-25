@@ -52,7 +52,21 @@ public final class Expedition {
     /** {@code inZone} is true for the check that found the zone. */
     public record Check(GeoPoint point, Heat heat, Trend trend, double metresToZone, boolean inZone) { }
 
-    public record Score(int routePoints, double efficiency, int identifyPoints, double multiplier, int total) { }
+    /**
+     * Out of {@link #MAX_SCORE}: route efficiency (up to 400) + identification (250/150/75 for guess 1/2/3)
+     * + hint bonus (+0%, +50% or +100% of identification) + checks saved (up to 100).
+     */
+    public record Score(int routePoints, double efficiency, int guessPoints, int hintBonus, int checkBonus,
+                        double multiplier, int total) {
+        public int identifyPoints() {
+            return guessPoints + hintBonus;
+        }
+    }
+
+    public static final int MAX_SCORE = 1000;
+    static final int ROUTE_POINTS = 400;
+    static final int[] GUESS_POINTS = {250, 150, 75};
+    static final int CHECK_POINTS = 100;
 
     private final UUID id = UUID.randomUUID();
     private final Difficulty difficulty;
@@ -315,12 +329,17 @@ public final class Expedition {
     }
 
     public Score score() {
+        boolean found = zoneReachedAt != null;
         double efficiency = metresWalked <= 0 ? 0 : Math.min(1, shortestToZone / metresWalked);
-        int routePoints = zoneReachedAt == null ? 0 : (int) Math.round(500 * efficiency);
-        int base = won ? new int[]{300, 200, 100}[guesses.size() - 1] : 0;
+        int routePoints = found ? (int) Math.round(ROUTE_POINTS * efficiency) : 0;
+        int guessPoints = won ? GUESS_POINTS[guesses.size() - 1] : 0;
         double multiplier = hintLevel == null ? 1 : hintLevel.multiplier();
-        int identifyPoints = (int) Math.round(base * multiplier);
-        return new Score(routePoints, efficiency, identifyPoints, multiplier, routePoints + identifyPoints);
+        int hintBonus = (int) Math.round(guessPoints * (multiplier - 1));
+        // Checks still unused when the zone was found (the check that found it counts as used).
+        int checkBonus = found && difficulty.checks() > 0
+                ? (int) Math.round(CHECK_POINTS * (double) checksRemaining() / difficulty.checks()) : 0;
+        return new Score(routePoints, efficiency, guessPoints, hintBonus, checkBonus, multiplier,
+                routePoints + guessPoints + hintBonus + checkBonus);
     }
 
     private String directionInZone() {

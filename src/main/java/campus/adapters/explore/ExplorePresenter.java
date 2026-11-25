@@ -117,9 +117,12 @@ public final class ExplorePresenter implements ExploreOutputBoundary {
         Map<String, Object> score = new LinkedHashMap<>();
         score.put("route", result.routePoints());
         score.put("efficiency", Math.round(result.efficiency() * 100));
-        score.put("identify", result.identifyPoints());
+        score.put("guess", result.guessPoints());
+        score.put("hintBonus", result.hintBonus());
+        score.put("checkBonus", result.checkBonus());
         score.put("multiplier", result.multiplier());
         score.put("total", result.score());
+        score.put("max", Expedition.MAX_SCORE);
         body.put("score", score);
         body.put("metresWalked", round(result.metresWalked()));
         body.put("shortestMetres", round(result.shortestMetres()));

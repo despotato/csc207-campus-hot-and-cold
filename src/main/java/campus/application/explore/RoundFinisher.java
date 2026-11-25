@@ -49,7 +49,8 @@ public final class RoundFinisher {
         var zone = expedition.revealedZone().orElseThrow();
         return new ExploreResponse.Result(expedition.isWon(), target.name(), target.category(),
                 target.buildingId(), expedition.map().buildingOf(target).centre(), score.routePoints(),
-                score.efficiency(), score.identifyPoints(), score.multiplier(), score.total(),
+                score.efficiency(), score.guessPoints(), score.hintBonus(), score.checkBonus(),
+                score.multiplier(), score.total(),
                 expedition.metresWalked(), expedition.shortestToZone(), secondsToZone, expedition.checksUsed(),
                 expedition.guesses().size(), expedition.hintLevel().orElse(null),
                 new ExploreResponse.ZoneView(zone.centre(), zone.radiusMetres()), expedition.track(),

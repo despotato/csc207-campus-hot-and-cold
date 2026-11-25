@@ -246,25 +246,43 @@ class ExpeditionTest {
         assertTrue(round.revealedShortestRoute().orElseThrow().size() >= 2);
     }
 
-    @Test void scoreRewardsEfficiencyHarderHintsAndFewerGuesses() {
+    @Test void scoreIsOutOfOneThousandAndTalliesEachPart() {
         Expedition direct = round();
-        reachZone(direct);
+        reachZone(direct); // one check used, the one that found the zone
         direct.chooseHint(HintLevel.HARD);
         direct.guess(1);
         Expedition.Score best = direct.score();
-        assertTrue(best.routePoints() >= 490, () -> "nearly the shortest route: " + best.routePoints());
-        assertEquals(600, best.identifyPoints());
+        assertTrue(best.routePoints() >= 390, () -> "nearly the shortest route: " + best.routePoints());
+        assertEquals(250, best.guessPoints(), "first guess");
+        assertEquals(250, best.hintBonus(), "hard doubles it");
+        assertEquals(83, best.checkBonus(), "5 of 6 checks saved");
+        assertEquals(best.routePoints() + 250 + 250 + 83, best.total());
+        assertTrue(best.total() <= Expedition.MAX_SCORE);
 
         Expedition detour = round();
         Instant time = walk(detour, List.of(at(200, 75), at(0, 75)), T0); // 400 m wasted
+        detour.check(time);
+        detour.check(time);
         reachZone(detour, time);
-        detour.chooseHint(HintLevel.EASY);
+        detour.chooseHint(HintLevel.NORMAL);
         detour.guess(4);
         detour.guess(1);
         Expedition.Score worse = detour.score();
-        assertEquals(Math.round(500 * detour.shortestToZone() / detour.metresWalked()), worse.routePoints());
-        assertTrue(worse.routePoints() < 360);
-        assertEquals(200, worse.identifyPoints());
+        assertEquals(Math.round(400 * detour.shortestToZone() / detour.metresWalked()), worse.routePoints());
+        assertEquals(150, worse.guessPoints(), "second guess");
+        assertEquals(75, worse.hintBonus(), "normal adds half");
+        assertEquals(50, worse.checkBonus(), "3 of 6 checks saved");
+    }
+
+    @Test void spendingTheOnlyCheckToFindTheZoneEarnsNoCheckBonus() {
+        CampusMap map = campus();
+        Expedition round = new Expedition(new Difficulty("perfect", 1, 90, 450, 900), map,
+                map.landmarks().getFirst(), new Zone(at(1000, 75), 90), START, T0);
+        reachZone(round);
+        round.chooseHint(HintLevel.HARD);
+        round.guess(1);
+        // The only check was spent finding the zone, so no check bonus: route + 250 + 250.
+        assertEquals(round.score().routePoints() + 500, round.score().total());
     }
 
     @Test void threeWrongGuessesEndTheRoundWithNoIdentifyPoints() {
@@ -277,6 +295,7 @@ class ExpeditionTest {
         assertEquals(Expedition.Stage.FINISHED, round.stage());
         assertFalse(round.isWon());
         assertEquals(0, round.score().identifyPoints());
+        assertTrue(round.score().routePoints() > 0, "found the zone, so the route still scores");
     }
 
     @Test void randomRoundsStartOnOpenGroundOutsideTheZone() {
