@@ -26,7 +26,7 @@ class SubmitGuessInteractorTest {
         assertTrue(model.guessAccepted());
         assertFalse(model.completed());
         assertEquals(5, model.guessesRemaining());
-        assertEquals("1. Landmark 1 �� Cold", model.feedbackLines().getFirst());
+        assertEquals("1. Landmark 1 - Cold", model.feedbackLines().getFirst());
         assertEquals(7, model.candidates().size());
         assertNull(model.revealedAnswer());
         var response = harness.capture.response;
@@ -193,4 +193,3 @@ class SubmitGuessInteractorTest {
     private record Harness(Round round, SubmitGuessController controller, SubmitGuessPresenter presenter,
                            Capture capture) { }
 }
-

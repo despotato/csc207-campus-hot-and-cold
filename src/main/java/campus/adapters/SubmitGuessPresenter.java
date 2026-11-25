@@ -18,9 +18,9 @@ public final class SubmitGuessPresenter implements SubmitGuessOutputBoundary {
         List<String> lines = IntStream.range(0, response.feedback().size()).mapToObj(index -> {
             var feedback = response.feedback().get(index);
             String trend = feedback.trend() == Guess.Trend.FIRST
-                    ? "" : " �� " + title(feedback.trend().name());
+                    ? "" : " - " + title(feedback.trend().name());
             return (index + 1) + ". " + feedback.landmarkName()
-                    + " �� " + title(feedback.heat().name()) + trend;
+                    + " - " + title(feedback.heat().name()) + trend;
         }).toList();
         viewModel = new SubmitGuessViewModel(response.guessAccepted(), response.completed(), response.won(),
                 response.guessesRemaining(), response.score(), response.status(), response.candidates(), lines,
@@ -42,4 +42,3 @@ public final class SubmitGuessPresenter implements SubmitGuessOutputBoundary {
         return Character.toUpperCase(lower.charAt(0)) + lower.substring(1);
     }
 }
-

@@ -12,4 +12,8 @@ jobs:
           distribution: temurin
           java-version: '21'
           cache: maven
-      - run: mvn --batch-mode verify
+      - run: xvfb-run -a mvn --batch-mode verify
+      - uses: actions/upload-artifact@v4
+        with:
+          name: campus-hot-and-cold-java21
+          path: target/campus-hot-and-cold-*.jar
