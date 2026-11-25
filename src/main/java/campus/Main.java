@@ -4,9 +4,12 @@ import campus.adapters.SavedResultsController;
 import campus.adapters.SavedResultsPresenter;
 import campus.adapters.StartRoundController;
 import campus.adapters.StartRoundPresenter;
+import campus.adapters.SubmitGuessController;
+import campus.adapters.SubmitGuessPresenter;
 import campus.application.GameSession;
 import campus.application.SavedResultsInteractor;
 import campus.application.StartRoundInteractor;
+import campus.application.SubmitGuessInteractor;
 import campus.domain.Campus;
 import campus.infrastructure.BrowserLandmarkMapGateway;
 import campus.infrastructure.FileRoundRepository;
@@ -48,11 +51,16 @@ public final class Main {
         var presenter = new StartRoundPresenter();
         var interactor = new StartRoundInteractor(gateway, RandomGenerator.getDefault(), session, presenter);
         var controller = new StartRoundController(interactor);
+        var guessPresenter = new SubmitGuessPresenter();
+        var guessController = new SubmitGuessController(new SubmitGuessInteractor(session, guessPresenter));
         var resultsPresenter = new SavedResultsPresenter();
         var resultsDirectory = Path.of(System.getProperty("user.home"), ".campus-hot-and-cold", "rounds");
         var results = new SavedResultsController(new SavedResultsInteractor(session,
                 new FileRoundRepository(resultsDirectory), new BrowserLandmarkMapGateway(), resultsPresenter));
         SwingUtilities.invokeLater(() ->
-                new CampusGame(controller, presenter, session, results, resultsPresenter).show());
+                new CampusGame(controller, presenter, guessController, guessPresenter,
+                        results, resultsPresenter).show());
     }
 }
+
+
