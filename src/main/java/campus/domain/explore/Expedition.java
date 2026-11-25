@@ -23,12 +23,12 @@ public final class Expedition {
     /** The target sits at most this far from the zone centre, so the centre never gives it away exactly. */
     static final double MAX_ZONE_OFFSET = 50;
     /** A fast sprint with slack for network jitter; anything quicker is treated as teleporting. */
-    static final double MAX_SPEED = 40;
+    static final double MAX_SPEED = 60;
     static final double SPEED_SLACK_SECONDS = 0.75;
-    static final double MAX_STEP = 120;
+    static final double MAX_STEP = 150;
     static final int MAX_POINTS_PER_MOVE = 64;
     /** Fast travel costs the time walking the route would take at the page's walking speed. */
-    static final double TRAVEL_SPEED = 28;
+    static final double TRAVEL_SPEED = 47;
     /** Every zone offers a real choice: enough proper buildings, several of them named. */
     static final int MIN_ZONE_BUILDINGS = 5;
     static final int MIN_NAMED_ZONE_BUILDINGS = 3;

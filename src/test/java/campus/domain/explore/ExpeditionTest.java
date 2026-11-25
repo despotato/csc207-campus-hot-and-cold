@@ -112,6 +112,8 @@ class ExpeditionTest {
         Expedition round = round();
         assertThrows(IllegalArgumentException.class,
                 () -> round.moveAlong(List.of(at(300, 75)), T0.plusSeconds(1)), "300 m in a second");
+        assertThrows(IllegalArgumentException.class,
+                () -> round.moveAlong(List.of(at(110, 75)), T0.plusSeconds(1)), "faster than the 47 m/s walk allows");
         Instant time = walk(round, List.of(at(490, 75)), T0);
         assertThrows(IllegalArgumentException.class,
                 () -> round.moveAlong(List.of(at(506, 75)), time.plusSeconds(1)), "through the wall");
@@ -135,7 +137,7 @@ class ExpeditionTest {
         assertEquals(Expedition.Stage.FIND_ZONE, round.stage());
         assertThrows(IllegalArgumentException.class, () -> round.travelTo(at(1000, 20), T0.plusSeconds(2)),
                 "can't travel into a building");
-        assertEquals(1 + Math.round(round.metresWalked() / 28), round.secondsElapsed(T0.plusSeconds(1)),
+        assertEquals(1 + Math.round(round.metresWalked() / 47), round.secondsElapsed(T0.plusSeconds(1)),
                 "the trip costs the time walking it would take");
     }
 
