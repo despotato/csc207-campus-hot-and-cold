@@ -1,0 +1,11 @@
+{
+  "campuses": [
+    {
+      "id": "st-george",
+      "name": "University of Toronto — St. George",
+      "short": "U of T St. George",
+      "file": "st-george.json",
+      "timezone": "America/Toronto"
+    }
+  ]
+}

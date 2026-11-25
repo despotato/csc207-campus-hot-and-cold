@@ -26,7 +26,10 @@ public final class ExplorePresenter implements ExploreOutputBoundary {
             case ExploreResponse.Started started -> {
                 body.put("type", "started");
                 body.put("roundId", started.roundId().toString());
+                body.put("campusId", started.campusId());
                 body.put("campus", started.campus());
+                body.put("mode", started.mode());
+                body.put("date", started.date());
                 body.put("point", point(started.start()));
                 body.put("checksRemaining", started.checksRemaining());
                 body.put("guessLimit", started.guessLimit());

@@ -24,6 +24,7 @@ import java.util.function.Supplier;
 public final class ExploreWebServer implements AutoCloseable {
     static final String PAGE = "/campus/explore/index.html";
     private static final int MAX_BODY = 16 * 1024;
+    private static final String JSON_TYPE = "application/json; charset=utf-8";
 
     private final HttpServer server;
     private final ExecutorService executor = Executors.newFixedThreadPool(4, runnable -> {
@@ -32,16 +33,16 @@ public final class ExploreWebServer implements AutoCloseable {
         return thread;
     });
     private final ExploreController controller;
-    private final byte[] pack;
+    private final PackCatalog packs;
     private final Supplier<Map<String, Object>> debug;
 
     /**
      * @param debug optional supplier of round internals for automated visual tests; pass null in play.
      */
-    public ExploreWebServer(ExploreController controller, String packJson, int port,
+    public ExploreWebServer(ExploreController controller, PackCatalog packs, int port,
                             Supplier<Map<String, Object>> debug) throws IOException {
         this.controller = Objects.requireNonNull(controller);
-        this.pack = packJson.getBytes(StandardCharsets.UTF_8);
+        this.packs = Objects.requireNonNull(packs);
         this.debug = debug;
         server = HttpServer.create(new InetSocketAddress(InetAddress.getLoopbackAddress(), port), 0);
         server.setExecutor(executor);
@@ -66,8 +67,15 @@ public final class ExploreWebServer implements AutoCloseable {
             String method = exchange.getRequestMethod();
             if ("GET".equals(method) && ("/".equals(path) || "/index.html".equals(path))) {
                 send(exchange, 200, "text/html; charset=utf-8", page());
-            } else if ("GET".equals(method) && "/pack.json".equals(path)) {
-                send(exchange, 200, "application/json; charset=utf-8", pack);
+            } else if ("GET".equals(method) && "/packs/index.json".equals(path)) {
+                send(exchange, 200, JSON_TYPE, packs.rawIndex().getBytes(StandardCharsets.UTF_8));
+            } else if ("GET".equals(method) && path.startsWith("/packs/")) {
+                var pack = packs.rawPack(path.substring("/packs/".length()));
+                if (pack.isPresent()) {
+                    send(exchange, 200, JSON_TYPE, pack.get().getBytes(StandardCharsets.UTF_8));
+                } else {
+                    send(exchange, 404, "text/plain", "Not found".getBytes(StandardCharsets.UTF_8));
+                }
             } else if ("GET".equals(method) && "/api/debug".equals(path) && debug != null) {
                 json(exchange, 200, debug.get());
             } else if (path.startsWith("/api/")) {

@@ -5,6 +5,7 @@ import campus.application.explore.ChooseHintInputBoundary;
 import campus.application.explore.GuessBuildingInputBoundary;
 import campus.application.explore.MoveInputBoundary;
 import campus.application.explore.StartExpeditionInputBoundary;
+import campus.application.explore.StartRequest;
 import campus.application.explore.TravelInputBoundary;
 import campus.domain.explore.Difficulty;
 import campus.domain.explore.GeoPoint;
@@ -47,8 +48,7 @@ public final class ExploreController {
     public synchronized ExploreViewModel handle(String action, Map<String, Object> fields) {
         try {
             switch (action) {
-                case "start" -> start.execute(Difficulty.named(
-                        fields.get("difficulty") instanceof String name ? name : Difficulty.NORMAL.name()));
+                case "start" -> start.execute(startRequest(fields));
                 case "move" -> move.execute(round(fields), path(fields.get("path")));
                 case "travel" -> travel.execute(round(fields), path(List.of(fields.get("to"))).getFirst());
                 case "check" -> check.execute(round(fields));
@@ -62,6 +62,18 @@ public final class ExploreController {
             return new ExploreViewModel(400, Map.of("type", "error", "error", exception.getMessage()));
         }
         return presenter.viewModel();
+    }
+
+    private static StartRequest startRequest(Map<String, Object> fields) {
+        String mode = fields.get("mode") instanceof String text ? text.toUpperCase(Locale.ROOT) : "UNLIMITED";
+        StartRequest.Mode chosen;
+        try {
+            chosen = StartRequest.Mode.valueOf(mode);
+        } catch (IllegalArgumentException exception) {
+            throw new IllegalArgumentException("Choose daily or unlimited.");
+        }
+        return new StartRequest(fields.get("campus") instanceof String campus ? campus : null, chosen,
+                Difficulty.named(fields.get("difficulty") instanceof String name ? name : Difficulty.NORMAL.name()));
     }
 
     /** A path is a list of [longitude, latitude] pairs, as GeoJSON writes them. */

@@ -4,8 +4,11 @@ Usage: python3 -I build_pack.py area.json out.json [greenery.json]
 greenery.json (optional): trees (natural=tree nodes) and lawns/gardens/parks/pitches as an Overpass export.
 Landmarks are hand-picked below by OSM element; everything else is generated.
 """
+import datetime
+import hashlib
 import json
 import math
+import random
 import sys
 
 # (osm element, display name, category, wikipedia title or None)
@@ -98,6 +101,13 @@ LANDMARKS = [
 # Keep it an original pixel design in the school's colours rather than copying official mascot artwork.
 MASCOT = {"name": "True Blue", "species": "beaver", "school": "University of Toronto",
           "colors": {"fur": "#7a4a2a", "belly": "#b98a5e", "dark": "#3e2a1c", "primary": "#1e3765", "secondary": "#ffffff"}}
+
+CAMPUS_ID = "st-george"
+TIMEZONE = "America/Toronto"
+# Daily puzzles: the same target, zone and start for every player on a given date (one per day for a year).
+DAILY_FROM = datetime.date(2026, 11, 1)
+DAILY_DAYS = 400
+ZONE_RADIUS, MIN_START, MAX_START = 90, 450, 900
 
 # Open-air landmarks highlighted at ground level instead of as a raised block.
 FLAT = {"w6147259"}
@@ -282,6 +292,68 @@ def greenery(src):
     return trees, greens
 
 
+def metres(a, b, lat0):
+    """Planar distance in metres between [lon, lat] points (fine at campus scale)."""
+    m_lat = math.pi * 6371000 / 180
+    return math.hypot((a[0] - b[0]) * m_lat * math.cos(math.radians(lat0)), (a[1] - b[1]) * m_lat)
+
+
+def offset(p, bearing, dist, lat0):
+    m_lat = math.pi * 6371000 / 180
+    r = math.radians(bearing)
+    return [p[0] + math.sin(r) * dist / (m_lat * math.cos(math.radians(lat0))), p[1] + math.cos(r) * dist / m_lat]
+
+
+def daily_schedule(buildings, landmarks, coords, edges, lat0):
+    """Deterministic daily puzzles. Starts are footpath points on the main network, clear of buildings."""
+    parent = list(range(len(coords)))
+
+    def find(x):
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+    for a, b in edges:
+        parent[find(a)] = find(b)
+    sizes = {}
+    for i in range(len(coords)):
+        sizes[find(i)] = sizes.get(find(i), 0) + 1
+    main_root = max(sizes, key=sizes.get)
+    solid = [polygon for b in buildings if not b["flat"] for polygon in b["outline"]]
+
+    def clear(p):
+        for polygon in solid:
+            ring = polygon[0]
+            xs = [q[0] for q in ring]
+            ys = [q[1] for q in ring]
+            if min(xs) - 0.00005 <= p[0] <= max(xs) + 0.00005 and min(ys) - 0.00005 <= p[1] <= max(ys) + 0.00005:
+                return False   # within ~4 m of a building: keep starts comfortably outdoors
+        return True
+    network = [coords[i] for i in range(len(coords)) if find(i) == main_root]
+    by_id = {b["id"]: b for b in buildings}
+    schedule = {}
+    for day in range(DAILY_DAYS):
+        date = (DAILY_FROM + datetime.timedelta(days=day)).isoformat()
+        rng = random.Random(int(hashlib.sha256((CAMPUS_ID + date).encode()).hexdigest(), 16))
+        for _ in range(500):
+            landmark = rng.choice(landmarks)
+            centre = [by_id[landmark["building"]]["lon"], by_id[landmark["building"]]["lat"]]
+            zone = offset(centre, rng.uniform(0, 360), rng.uniform(0, 50), lat0)
+            choices = [b for b in buildings if b["height"] >= 4 and metres([b["lon"], b["lat"]], zone, lat0) <= ZONE_RADIUS]
+            if len(choices) < 5 or sum(1 for b in choices if b["name"]) < 3:
+                continue
+            if not any(metres(p, zone, lat0) <= ZONE_RADIUS - 10 for p in network):
+                continue
+            starts = [p for p in network if MIN_START <= metres(p, zone, lat0) <= MAX_START]
+            rng.shuffle(starts)
+            start = next((p for p in starts[:40] if clear(p)), None)
+            if start:
+                schedule[date] = {"landmark": landmark["id"], "zone": [round(zone[0], 7), round(zone[1], 7)],
+                                  "start": start}
+                break
+    return schedule
+
+
 def main(src, dst, green_src=None):
     elements = json.load(open(src))["elements"]
     by_key = {key(e): e for e in elements}
@@ -340,8 +412,11 @@ def main(src, dst, green_src=None):
                 edges.add((min(previous, n), max(previous, n)))
             previous = n
 
+    lat0 = (43.6565 + 43.6695) / 2
     pack = {
         "version": 2,
+        "id": CAMPUS_ID,
+        "timezone": TIMEZONE,
         "campus": "University of Toronto — St. George",
         "bounds": {"south": 43.6565, "west": -79.4040, "north": 43.6695, "east": -79.3875},
         "attribution": "Building outlines and paths © OpenStreetMap contributors (ODbL)",
@@ -352,10 +427,11 @@ def main(src, dst, green_src=None):
     }
     if green_src:
         pack["trees"], pack["greens"] = greenery(green_src)
+    pack["daily"] = daily_schedule(buildings, landmarks, coords, sorted(edges), lat0)
     with open(dst, "w") as out:
         json.dump(pack, out, separators=(",", ":"), ensure_ascii=False)
     print(f"{len(landmarks)} landmarks, {len(buildings)} buildings, "
-          f"{len(coords)} walk nodes, {len(edges)} walk edges")
+          f"{len(coords)} walk nodes, {len(edges)} walk edges, {len(pack['daily'])} daily puzzles")
 
 
 if __name__ == "__main__":

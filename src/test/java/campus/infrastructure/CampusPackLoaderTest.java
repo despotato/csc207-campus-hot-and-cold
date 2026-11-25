@@ -48,6 +48,29 @@ class CampusPackLoaderTest {
         }
     }
 
+    @Test void catalogListsCampusesAndLoadsTheirDailyPuzzles() throws Exception {
+        var catalog = new PackCatalog();
+        assertEquals(List.of("st-george"), catalog.campusIds());
+        CampusMap map = catalog.campus("st-george").orElseThrow();
+        assertEquals("America/Toronto", map.timezone().getId());
+        var date = java.time.LocalDate.of(2026, 11, 25);
+        var daily = Expedition.daily(map, date, Instant.EPOCH);
+        assertTrue(map.openSpace().isOpen(daily.start()));
+        assertTrue(daily.shortestToZone() > 300);
+        assertTrue(catalog.campus("nowhere").isEmpty());
+    }
+
+    @Test void dailyAttemptsAreRecordedOncePerCampusAndDate(@org.junit.jupiter.api.io.TempDir java.nio.file.Path dir)
+            throws Exception {
+        var attempts = new FileDailyAttempts(dir);
+        var date = java.time.LocalDate.of(2026, 11, 25);
+        assertTrue(attempts.claim("st-george", date));
+        assertFalse(attempts.claim("st-george", date), "second try the same day");
+        assertTrue(new FileDailyAttempts(dir).claim("st-george", date.plusDays(1)), "tomorrow is a new puzzle");
+        assertFalse(new FileDailyAttempts(dir).claim("st-george", date), "remembered across restarts");
+        assertThrows(java.io.IOException.class, () -> attempts.claim("../escape", date));
+    }
+
     @Test void rejectsUnsupportedPacks() {
         assertThrows(IllegalArgumentException.class, () -> CampusPackLoader.parse("{\"version\":1}"));
     }

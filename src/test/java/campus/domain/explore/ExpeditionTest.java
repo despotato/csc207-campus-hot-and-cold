@@ -337,6 +337,17 @@ class ExpeditionTest {
         assertFalse(Expedition.offersARealChoice(map, new Zone(at(1000, 75), 50)), "too few within 50 m");
     }
 
+    @Test void theDailyPuzzleIsTheSameForEveryone() {
+        CampusMap map = TestCampus.withDaily();
+        Expedition first = Expedition.daily(map, TestCampus.DAILY_DATE, T0);
+        Expedition second = Expedition.daily(map, TestCampus.DAILY_DATE, T0.plusSeconds(3600));
+        assertEquals(first.start(), second.start());
+        assertEquals(first.zoneForDiagnostics(), second.zoneForDiagnostics());
+        assertEquals(first.shortestToZone(), second.shortestToZone());
+        assertEquals(Difficulty.NORMAL, first.difficulty(), "daily is always normal");
+        assertThrows(IllegalStateException.class, () -> Expedition.daily(map, TestCampus.DAILY_DATE.plusDays(1), T0));
+    }
+
     @Test void randomRoundsStartOnOpenGroundOutsideTheZone() {
         CampusMap map = campus();
         for (int seed = 0; seed < 10; seed++) {

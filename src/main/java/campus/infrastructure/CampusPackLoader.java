@@ -9,7 +9,11 @@ import campus.domain.explore.OpenSpace;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -69,11 +73,27 @@ public final class CampusPackLoader {
                     (int) Json.number(landmark.get("building")), (String) landmark.get("name"),
                     (String) landmark.get("category"), (String) landmark.get("wikipedia")));
         }
+        Map<LocalDate, CampusMap.DailyPuzzle> daily = new HashMap<>();
+        if (pack.get("daily") instanceof Map<?, ?> schedule) {
+            for (Map.Entry<?, ?> entry : schedule.entrySet()) {
+                Map<String, Object> puzzle = Json.object(entry.getValue());
+                daily.put(LocalDate.parse((String) entry.getKey()), new CampusMap.DailyPuzzle(
+                        (int) Json.number(puzzle.get("landmark")), point(puzzle.get("zone")),
+                        point(puzzle.get("start"))));
+            }
+        }
         Map<String, Object> bounds = Json.object(pack.get("bounds"));
         OpenSpace ground = new OpenSpace(
                 new GeoPoint(Json.number(bounds.get("south")), Json.number(bounds.get("west"))),
                 new GeoPoint(Json.number(bounds.get("north")), Json.number(bounds.get("east"))), CELL_METRES, solid);
-        return new CampusMap((String) pack.get("campus"), buildings, landmarks, ground);
+        String id = pack.get("id") instanceof String text ? text : "campus";
+        ZoneId zone = pack.get("timezone") instanceof String tz ? ZoneId.of(tz) : ZoneOffset.UTC;
+        return new CampusMap(id, (String) pack.get("campus"), zone, daily, buildings, landmarks, ground);
+    }
+
+    private static GeoPoint point(Object lonLat) {
+        List<Object> pair = Json.array(lonLat);
+        return new GeoPoint(Json.number(pair.get(1)), Json.number(pair.get(0)));
     }
 
     private static List<GeoPoint> ring(Object value) {

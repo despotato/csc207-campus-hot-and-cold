@@ -9,7 +9,10 @@ import java.util.stream.Collectors;
 
 /** A playable campus: its buildings, the landmarks that can be targets, and the open ground to walk on. */
 public final class CampusMap {
+    private final String id;
     private final String name;
+    private final java.time.ZoneId timezone;
+    private final Map<java.time.LocalDate, DailyPuzzle> daily;
     private final Map<Integer, Building> buildings;
     private final List<CampusLandmark> landmarks;
     private final OpenSpace openSpace;
@@ -41,10 +44,26 @@ public final class CampusMap {
         }
     }
 
-    public CampusMap(String name, List<Building> buildings, List<CampusLandmark> landmarks, OpenSpace openSpace) {
-        if (name == null || name.isBlank() || landmarks.isEmpty()) {
-            throw new IllegalArgumentException("A campus needs a name and landmarks.");
+    /** Today's shared puzzle: everyone playing the daily on this date gets the same target, zone and start. */
+    public record DailyPuzzle(int landmarkId, GeoPoint zoneCentre, GeoPoint start) {
+        public DailyPuzzle {
+            Objects.requireNonNull(zoneCentre);
+            Objects.requireNonNull(start);
         }
+    }
+
+    public CampusMap(String name, List<Building> buildings, List<CampusLandmark> landmarks, OpenSpace openSpace) {
+        this("campus", name, java.time.ZoneOffset.UTC, Map.of(), buildings, landmarks, openSpace);
+    }
+
+    public CampusMap(String id, String name, java.time.ZoneId timezone, Map<java.time.LocalDate, DailyPuzzle> daily,
+                     List<Building> buildings, List<CampusLandmark> landmarks, OpenSpace openSpace) {
+        if (id == null || id.isBlank() || name == null || name.isBlank() || landmarks.isEmpty()) {
+            throw new IllegalArgumentException("A campus needs an ID, a name and landmarks.");
+        }
+        this.id = id;
+        this.timezone = Objects.requireNonNull(timezone);
+        this.daily = Map.copyOf(daily);
         this.name = name;
         this.buildings = buildings.stream().collect(Collectors.toUnmodifiableMap(Building::id, Function.identity()));
         this.landmarks = List.copyOf(landmarks);
@@ -56,8 +75,25 @@ public final class CampusMap {
         }
     }
 
+    public String id() {
+        return id;
+    }
+
     public String name() {
         return name;
+    }
+
+    /** The campus's local time zone, which decides when the daily puzzle changes. */
+    public java.time.ZoneId timezone() {
+        return timezone;
+    }
+
+    public Optional<DailyPuzzle> dailyPuzzle(java.time.LocalDate date) {
+        return Optional.ofNullable(daily.get(date));
+    }
+
+    public Optional<CampusLandmark> landmark(int id) {
+        return landmarks.stream().filter(landmark -> landmark.id() == id).findFirst();
     }
 
     public List<CampusLandmark> landmarks() {

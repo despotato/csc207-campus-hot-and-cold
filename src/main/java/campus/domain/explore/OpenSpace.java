@@ -74,6 +74,31 @@ public final class OpenSpace {
         return true;
     }
 
+    /** The open spot nearest to {@code point} within {@code maxMetres} (the point itself if it is open). */
+    public Optional<GeoPoint> nearestOpen(GeoPoint point, double maxMetres) {
+        if (isOpen(point)) {
+            return Optional.of(point);
+        }
+        int reach = (int) Math.ceil(maxMetres / cellMetres);
+        GeoPoint best = null;
+        double bestDistance = Double.MAX_VALUE;
+        int column = column(point);
+        int row = row(point);
+        for (int r = row - reach; r <= row + reach; r++) {
+            for (int c = column - reach; c <= column + reach; c++) {
+                if (inside(c, r) && !blocked.get(r * columns + c)) {
+                    GeoPoint candidate = centre(c, r);
+                    double distance = candidate.distanceTo(point);
+                    if (distance <= maxMetres && distance < bestDistance) {
+                        best = candidate;
+                        bestDistance = distance;
+                    }
+                }
+            }
+        }
+        return Optional.ofNullable(best);
+    }
+
     /** Open cell centres, for choosing start points. */
     public List<GeoPoint> openCells(int stride) {
         List<GeoPoint> result = new ArrayList<>();

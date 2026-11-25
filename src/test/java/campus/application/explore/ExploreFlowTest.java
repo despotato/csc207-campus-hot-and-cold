@@ -22,7 +22,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /** Drives the explore use cases through the controller exactly as the browser does. */
 class ExploreFlowTest {
-    private final CampusMap map = TestCampus.map();
+    private final CampusMap map = TestCampus.withDaily();
+    private final java.util.Set<String> dailyPlayed = new java.util.HashSet<>();
     private final MutableClock clock = new MutableClock();
     private final List<String> summaries = new java.util.ArrayList<>();
     private ExploreController controller;
@@ -30,7 +31,7 @@ class ExploreFlowTest {
     private boolean failSave;
 
     static final class MutableClock extends Clock {
-        Instant now = Instant.parse("2026-11-25T12:00:00Z");
+        Instant now = Instant.parse("2026-11-25T12:00:00Z");   // TestCampus.DAILY_DATE, in UTC
         @Override public ZoneOffset getZone() { return ZoneOffset.UTC; }
         @Override public Clock withZone(java.time.ZoneId zone) { return this; }
         @Override public Instant instant() { return now; }
@@ -46,7 +47,12 @@ class ExploreFlowTest {
             return Optional.of(new ExploreResponse.LandmarkSummary(title, "A test building.", null, null));
         };
         controller = new ExploreController(
-                new StartExpeditionInteractor(map, new Random(3), clock, session, presenter),
+                new StartExpeditionInteractor(new CampusCatalog() {
+                    @Override public List<String> campusIds() { return List.of("test"); }
+                    @Override public Optional<CampusMap> campus(String id) {
+                        return "test".equals(id) ? Optional.of(map) : Optional.empty();
+                    }
+                }, (campus, date) -> dailyPlayed.add(campus + date), new Random(3), clock, session, presenter),
                 new MoveInteractor(clock, session, presenter), new TravelInteractor(clock, session, presenter),
                 new CheckTemperatureInteractor(clock, session, finisher(info), presenter),
                 new ChooseHintInteractor(session, presenter),
@@ -188,6 +194,27 @@ class ExploreFlowTest {
         assertEquals(ExpeditionSession.STALE, stale.body().get("error"));
         assertEquals(200, call("check", Map.of()).status(), "the current round still works");
         assertEquals(400, controller.handle("check", Map.of()).status(), "a round ID is required");
+    }
+
+    @Test void theDailyIsOneTryPerDayAndUnlimitedStillWorks() {
+        ExploreViewModel daily = call("start", Map.of("mode", "daily"));
+        assertEquals(200, daily.status());
+        assertEquals("daily", daily.body().get("mode"));
+        assertEquals("2026-11-25", daily.body().get("date"));
+        assertEquals(List.of(ExpeditionTestPoints.START.longitude(), ExpeditionTestPoints.START.latitude()),
+                daily.body().get("point"), "everyone starts at the daily start");
+        ExploreViewModel again = call("start", Map.of("mode", "daily"));
+        assertEquals(400, again.status(), "one try");
+        assertTrue(((String) again.body().get("error")).contains("already played"));
+        assertEquals(200, call("start", Map.of("mode", "unlimited")).status());
+        clock.now = clock.now.plusSeconds(24 * 3600);
+        assertEquals(400, call("start", Map.of("mode", "daily")).status(), "no puzzle scheduled for the next day");
+    }
+
+    @Test void unknownCampusesAndModesAreRejected() {
+        assertEquals(400, call("start", Map.of("campus", "nowhere")).status());
+        assertEquals(400, call("start", Map.of("mode", "weekly")).status());
+        assertEquals(200, call("start", Map.of("campus", "test")).status());
     }
 
     @Test void onlyKnownDifficultiesCanStartARound() {

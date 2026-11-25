@@ -9,8 +9,9 @@ import java.util.UUID;
 
 /** Output data for the explore use cases. Nothing here leaks the target or zone before they're found. */
 public sealed interface ExploreResponse {
-    record Started(UUID roundId, String campus, GeoPoint start, int checksRemaining, int guessLimit,
-                   String difficulty) implements ExploreResponse { }
+    /** {@code date} is set for the daily puzzle. */
+    record Started(UUID roundId, String campusId, String campus, GeoPoint start, int checksRemaining, int guessLimit,
+                   String difficulty, String mode, String date) implements ExploreResponse { }
 
     record Moved(double metresWalked, long elapsedSeconds) implements ExploreResponse { }
 

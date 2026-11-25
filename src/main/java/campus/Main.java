@@ -24,7 +24,8 @@ import campus.application.explore.TravelInteractor;
 import campus.domain.Campus;
 import campus.domain.explore.GeoPoint;
 import campus.infrastructure.BrowserLandmarkMapGateway;
-import campus.infrastructure.CampusPackLoader;
+import campus.infrastructure.FileDailyAttempts;
+import campus.infrastructure.PackCatalog;
 import campus.infrastructure.ExploreWebServer;
 import campus.infrastructure.FileRoundRepository;
 import campus.infrastructure.WikipediaLandmarkGateway;
@@ -78,7 +79,7 @@ public final class Main {
 
     /** Explore mode: the 3D browser game. Set -Dcampus.explore.port to fix the port. */
     static ExploreWebServer startExplore(HttpClient client) throws IOException {
-        var map = CampusPackLoader.load(CampusPackLoader.ST_GEORGE);
+        var campuses = new PackCatalog();
         var session = new ExpeditionSession();
         var presenter = new ExplorePresenter();
         var clock = Clock.systemUTC();
@@ -86,7 +87,8 @@ public final class Main {
         var finisher = new RoundFinisher(new WikipediaSummaryGateway(client),
                 ExpeditionResultRepository.DISABLED, clock);
         var controller = new ExploreController(
-                new StartExpeditionInteractor(map, RandomGenerator.getDefault(), clock, session, presenter),
+                new StartExpeditionInteractor(campuses, new FileDailyAttempts(Path.of(System.getProperty("user.home"),
+                        ".campus-hot-and-cold", "daily")), RandomGenerator.getDefault(), clock, session, presenter),
                 new MoveInteractor(clock, session, presenter),
                 new TravelInteractor(clock, session, presenter),
                 new CheckTemperatureInteractor(clock, session, finisher, presenter),
@@ -99,10 +101,11 @@ public final class Main {
                 session.current().map(round -> Map.<String, Object>of(
                         "zone", Map.of("centre", point(round.zoneForDiagnostics().centre()),
                                 "radius", round.zoneForDiagnostics().radiusMetres()),
-                        "route", map.openSpace().shortestRoute(round.position(), round.zoneForDiagnostics()::contains)
+                        "route", round.map().openSpace().shortestRoute(round.position(),
+                                        round.zoneForDiagnostics()::contains)
                                 .map(route -> route.points().stream().map(Main::point).toList())
                                 .orElse(List.of()))).orElse(Map.of()) : null;
-        return new ExploreWebServer(controller, CampusPackLoader.raw(CampusPackLoader.ST_GEORGE), port, debug);
+        return new ExploreWebServer(controller, campuses, port, debug);
     }
 
     private static List<Double> point(GeoPoint point) {

@@ -128,6 +128,18 @@ public final class Expedition {
         track.add(start);
     }
 
+    /** The shared daily puzzle for {@code date}: the same target, zone and start for every player. */
+    public static Expedition daily(CampusMap map, java.time.LocalDate date, Instant now) {
+        CampusMap.DailyPuzzle puzzle = map.dailyPuzzle(date)
+                .orElseThrow(() -> new IllegalStateException("There is no daily puzzle for " + date + "."));
+        CampusLandmark target = map.landmark(puzzle.landmarkId())
+                .orElseThrow(() -> new IllegalStateException("The daily puzzle names an unknown landmark."));
+        GeoPoint start = map.openSpace().nearestOpen(puzzle.start(), 8)
+                .orElseThrow(() -> new IllegalStateException("The daily puzzle starts inside a building."));
+        return new Expedition(Difficulty.NORMAL, map, target, new Zone(puzzle.zoneCentre(),
+                Difficulty.NORMAL.zoneRadius()), start, now);
+    }
+
     /** Picks a random target, an offset zone around it, and a start a long walk away. */
     public static Expedition begin(CampusMap map, RandomGenerator random, Instant now) {
         return begin(Difficulty.NORMAL, map, random, now);
