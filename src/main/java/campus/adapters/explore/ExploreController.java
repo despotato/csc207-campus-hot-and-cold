@@ -5,6 +5,7 @@ import campus.application.explore.ChooseHintInputBoundary;
 import campus.application.explore.GuessBuildingInputBoundary;
 import campus.application.explore.MoveInputBoundary;
 import campus.application.explore.StartExpeditionInputBoundary;
+import campus.application.explore.TravelInputBoundary;
 import campus.domain.explore.Difficulty;
 import campus.domain.explore.GeoPoint;
 import campus.domain.explore.Expedition.HintLevel;
@@ -24,16 +25,18 @@ public final class ExploreController {
 
     private final StartExpeditionInputBoundary start;
     private final MoveInputBoundary move;
+    private final TravelInputBoundary travel;
     private final CheckTemperatureInputBoundary check;
     private final ChooseHintInputBoundary hint;
     private final GuessBuildingInputBoundary guess;
     private final ExplorePresenter presenter;
 
-    public ExploreController(StartExpeditionInputBoundary start, MoveInputBoundary move,
+    public ExploreController(StartExpeditionInputBoundary start, MoveInputBoundary move, TravelInputBoundary travel,
                              CheckTemperatureInputBoundary check, ChooseHintInputBoundary hint,
                              GuessBuildingInputBoundary guess, ExplorePresenter presenter) {
         this.start = Objects.requireNonNull(start);
         this.move = Objects.requireNonNull(move);
+        this.travel = Objects.requireNonNull(travel);
         this.check = Objects.requireNonNull(check);
         this.hint = Objects.requireNonNull(hint);
         this.guess = Objects.requireNonNull(guess);
@@ -46,6 +49,7 @@ public final class ExploreController {
                 case "start" -> start.execute(Difficulty.named(
                         fields.get("difficulty") instanceof String name ? name : Difficulty.NORMAL.name()));
                 case "move" -> move.execute(path(fields.get("path")));
+                case "travel" -> travel.execute(path(List.of(fields.get("to"))).getFirst());
                 case "check" -> check.execute();
                 case "hint" -> hint.execute(level(fields.get("level")));
                 case "guess" -> guess.execute(integer(fields, "buildingId"));

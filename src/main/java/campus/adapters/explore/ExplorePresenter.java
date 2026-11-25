@@ -36,12 +36,15 @@ public final class ExplorePresenter implements ExploreOutputBoundary {
                 body.put("type", "moved");
                 body.put("metresWalked", round(moved.metresWalked()));
                 body.put("elapsedSeconds", moved.elapsedSeconds());
-                body.put("zoneReached", moved.zoneReached());
-                if (moved.zone() != null) {
-                    body.put("zone", Map.of("centre", point(moved.zone().centre()),
-                            "radius", moved.zone().radiusMetres()));
-                    body.put("message", "You found the zone! Pick a hint to identify the building.");
-                }
+                putZone(body, moved.zoneReached(), moved.zone());
+            }
+            case ExploreResponse.Travelled travelled -> {
+                body.put("type", "travelled");
+                body.put("point", point(travelled.position()));
+                body.put("path", travelled.path().stream().map(ExplorePresenter::point).toList());
+                body.put("metresWalked", round(travelled.metresWalked()));
+                body.put("elapsedSeconds", travelled.elapsedSeconds());
+                putZone(body, travelled.zoneReached(), travelled.zone());
             }
             case ExploreResponse.Rejected rejected -> {
                 status = 409;
@@ -86,6 +89,14 @@ public final class ExplorePresenter implements ExploreOutputBoundary {
             }
         }
         viewModel = new ExploreViewModel(status, body);
+    }
+
+    private static void putZone(Map<String, Object> body, boolean reached, ExploreResponse.ZoneView zone) {
+        body.put("zoneReached", reached);
+        if (zone != null) {
+            body.put("zone", Map.of("centre", point(zone.centre()), "radius", zone.radiusMetres()));
+            body.put("message", "You found the zone! Pick a hint to identify the building.");
+        }
     }
 
     private static Map<String, Object> result(ExploreResponse.Result result) {

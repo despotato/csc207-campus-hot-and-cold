@@ -22,10 +22,10 @@ public final class Expedition {
     public static final int GUESS_LIMIT = 3;
     /** The target sits at most this far from the zone centre, so the centre never gives it away exactly. */
     static final double MAX_ZONE_OFFSET = 50;
-    /** A sprint with slack for network jitter; anything quicker is treated as teleporting. */
-    static final double MAX_SPEED = 14;
+    /** A fast sprint with slack for network jitter; anything quicker is treated as teleporting. */
+    static final double MAX_SPEED = 30;
     static final double SPEED_SLACK_SECONDS = 0.75;
-    static final double MAX_STEP = 60;
+    static final double MAX_STEP = 90;
     static final int MAX_POINTS_PER_MOVE = 64;
     static final int MIN_ZONE_BUILDINGS = 4;
 
@@ -174,6 +174,43 @@ public final class Expedition {
                 zoneReachedAt = now;
                 return;
             }
+        }
+    }
+
+    /**
+     * Fast travel from the campus map. The trip is charged as the shortest walk on open ground, so it
+     * scores exactly like walking that route; if the route crosses into the zone the trip stops there.
+     */
+    public void travelTo(GeoPoint destination, Instant now) {
+        requireStage(Stage.FIND_ZONE, "Movement ends once you reach the zone.");
+        OpenSpace ground = map.openSpace();
+        if (!ground.isOpen(destination)) {
+            throw new IllegalArgumentException("You can't travel into a building.");
+        }
+        double cell = ground.cellMetres();
+        OpenSpace.Route route = ground.shortestRoute(position, point -> point.distanceTo(destination) <= cell)
+                .orElseThrow(() -> new IllegalArgumentException("You can't get there on foot."));
+        List<GeoPoint> points = new java.util.ArrayList<>(route.points().subList(1, route.points().size()));
+        points.add(destination);
+        lastMoveAt = now;
+        GeoPoint at = position;
+        for (GeoPoint next : points) {
+            int steps = Math.max(1, (int) Math.ceil(at.distanceTo(next) / 2));
+            for (int i = 1; i <= steps; i++) {
+                GeoPoint step = at.towards(next, (double) i / steps);
+                metresWalked += position.distanceTo(step);
+                position = step;
+                if (step.distanceTo(track.getLast()) >= 3) {
+                    track.add(step);
+                }
+                if (zone.contains(step)) {
+                    track.add(step);
+                    stage = Stage.IDENTIFY;
+                    zoneReachedAt = now;
+                    return;
+                }
+            }
+            at = next;
         }
     }
 

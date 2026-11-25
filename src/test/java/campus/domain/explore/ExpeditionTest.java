@@ -115,6 +115,25 @@ class ExpeditionTest {
         assertEquals(10, round.position().distanceTo(at(0, 80)), 0.5);
     }
 
+    @Test void fastTravelIsChargedAsTheShortestWalk() {
+        Expedition round = round();
+        round.travelTo(at(700, 75), T0.plusSeconds(1));
+        // Around the wall's north end: longer than the 700 m straight line.
+        assertTrue(round.metresWalked() > 705 && round.metresWalked() < 730, () -> "" + round.metresWalked());
+        assertEquals(0, round.position().distanceTo(at(700, 75)), 0.01);
+        assertEquals(Expedition.Stage.FIND_ZONE, round.stage());
+        assertThrows(IllegalArgumentException.class, () -> round.travelTo(at(1000, 20), T0.plusSeconds(2)),
+                "can't travel into a building");
+    }
+
+    @Test void fastTravelThroughTheZoneStopsAtItsEdge() {
+        Expedition round = round();
+        round.travelTo(at(1200, 180), T0.plusSeconds(1));
+        assertEquals(Expedition.Stage.IDENTIFY, round.stage());
+        assertTrue(round.zoneForDiagnostics().contains(round.position()));
+        assertTrue(round.position().distanceTo(at(1000, 75)) > 85, "stopped at the edge, not the far side");
+    }
+
     @Test void checksGiveHeatAndTrendAndAreLimited() {
         Expedition round = round();
         Expedition.Check first = round.check();

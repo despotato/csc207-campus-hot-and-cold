@@ -47,7 +47,7 @@ class ExploreFlowTest {
         };
         controller = new ExploreController(
                 new StartExpeditionInteractor(map, new Random(3), clock, session, presenter),
-                new MoveInteractor(clock, session, presenter),
+                new MoveInteractor(clock, session, presenter), new TravelInteractor(clock, session, presenter),
                 new CheckTemperatureInteractor(session, presenter),
                 new ChooseHintInteractor(session, presenter),
                 new GuessBuildingInteractor(session, info, new ExpeditionResultRepository() {
@@ -144,6 +144,21 @@ class ExploreFlowTest {
         ExploreViewModel right = call("guess", Map.of("buildingId", 1));
         assertNotNull(right.body().get("result"));
         assertEquals("Your result could not be saved.", right.body().get("saveError"));
+    }
+
+    @Test void fastTravelMovesThePlayerAndChargesTheWalk() {
+        call("start", Map.of());
+        GeoPoint here = session.current().orElseThrow().position();
+        GeoPoint there = map.openSpace().openCells(3).stream()
+                .filter(p -> p.distanceTo(here) > 150 && p.distanceTo(here) < 250
+                        && !session.current().orElseThrow().zoneForDiagnostics().contains(p))
+                .findFirst().orElseThrow();
+        ExploreViewModel travelled = call("travel", Map.of("to", List.of(there.longitude(), there.latitude())));
+        assertEquals(200, travelled.status());
+        assertEquals("travelled", travelled.body().get("type"));
+        assertTrue(((Number) travelled.body().get("metresWalked")).doubleValue() >= 150);
+        assertFalse(((List<?>) travelled.body().get("path")).isEmpty());
+        assertEquals(400, call("travel", Map.of("to", "nowhere")).status());
     }
 
     @Test void onlyKnownDifficultiesCanStartARound() {

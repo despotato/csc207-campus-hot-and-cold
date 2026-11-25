@@ -20,6 +20,7 @@ import campus.application.explore.GuessBuildingInteractor;
 import campus.application.explore.LandmarkClueGateway;
 import campus.application.explore.MoveInteractor;
 import campus.application.explore.StartExpeditionInteractor;
+import campus.application.explore.TravelInteractor;
 import campus.domain.Campus;
 import campus.domain.explore.GeoPoint;
 import campus.infrastructure.BrowserLandmarkMapGateway;
@@ -83,6 +84,7 @@ public final class Main {
         var controller = new ExploreController(
                 new StartExpeditionInteractor(map, RandomGenerator.getDefault(), clock, session, presenter),
                 new MoveInteractor(clock, session, presenter),
+                new TravelInteractor(clock, session, presenter),
                 new CheckTemperatureInteractor(session, presenter),
                 // Team task: replace NONE with a Wikipedia clue gateway.
                 new ChooseHintInteractor(session, LandmarkClueGateway.NONE, presenter),

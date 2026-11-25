@@ -9,6 +9,7 @@ import campus.application.explore.GuessBuildingInteractor;
 import campus.application.explore.LandmarkInfoGateway;
 import campus.application.explore.MoveInteractor;
 import campus.application.explore.StartExpeditionInteractor;
+import campus.application.explore.TravelInteractor;
 import campus.domain.explore.TestCampus;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,7 +35,7 @@ class ExploreWebServerTest {
         var clock = Clock.systemUTC();
         var controller = new ExploreController(
                 new StartExpeditionInteractor(TestCampus.map(), new Random(1), clock, session, presenter),
-                new MoveInteractor(clock, session, presenter), new CheckTemperatureInteractor(session, presenter),
+                new MoveInteractor(clock, session, presenter), new TravelInteractor(clock, session, presenter), new CheckTemperatureInteractor(session, presenter),
                 new ChooseHintInteractor(session, presenter),
                 new GuessBuildingInteractor(session, LandmarkInfoGateway.NONE, presenter), presenter);
         server = new ExploreWebServer(controller, "{\"version\":2}", 0, null);

@@ -14,6 +14,14 @@ public sealed interface ExploreResponse {
     record Moved(double metresWalked, long elapsedSeconds, boolean zoneReached, ZoneView zone)
             implements ExploreResponse { }
 
+    /** Fast travel finished at {@code position}, walking {@code path} (charged as walked distance). */
+    record Travelled(GeoPoint position, List<GeoPoint> path, double metresWalked, long elapsedSeconds,
+                     boolean zoneReached, ZoneView zone) implements ExploreResponse {
+        public Travelled {
+            path = List.copyOf(path);
+        }
+    }
+
     /** A move was refused; the player stays at {@code position}. */
     record Rejected(String message, GeoPoint position, double metresWalked) implements ExploreResponse { }
 
