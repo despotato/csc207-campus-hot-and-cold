@@ -1,0 +1,485 @@
+{
+  "id": "st-george",
+  "name": "University of Toronto — St. George",
+  "timezone": "America/Toronto",
+  "bounds": {
+    "south": 43.6565,
+    "west": -79.404,
+    "north": 43.6695,
+    "east": -79.3875
+  },
+  "mascot": {
+    "name": "True Blue",
+    "species": "beaver",
+    "school": "University of Toronto",
+    "colors": {
+      "fur": "#7a4a2a",
+      "belly": "#b98a5e",
+      "dark": "#3e2a1c",
+      "primary": "#1e3765",
+      "secondary": "#ffffff"
+    }
+  },
+  "flat": [
+    "w6147259"
+  ],
+  "dailyFrom": "2026-11-01",
+  "landmarks": [
+    {
+      "osm": "w7991747",
+      "name": "Robarts Library",
+      "category": "Library",
+      "wikipedia": "Robarts Library"
+    },
+    {
+      "osm": "r14756874",
+      "name": "Gerstein Science Information Centre",
+      "category": "Library",
+      "wikipedia": "Gerstein Science Information Centre"
+    },
+    {
+      "osm": "w9916090",
+      "name": "Thomas Fisher Rare Book Library",
+      "category": "Library",
+      "wikipedia": "Thomas Fisher Rare Book Library"
+    },
+    {
+      "osm": "w8111900",
+      "name": "E. J. Pratt Library",
+      "category": "Library",
+      "wikipedia": null
+    },
+    {
+      "osm": "w8027952",
+      "name": "John M. Kelly Library",
+      "category": "Library",
+      "wikipedia": null
+    },
+    {
+      "osm": "w12000627",
+      "name": "Bora Laskin Law Library",
+      "category": "Library",
+      "wikipedia": null
+    },
+    {
+      "osm": "w7685383",
+      "name": "Wetmore Hall",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w10336058",
+      "name": "Wilson Hall",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w8068859",
+      "name": "New College Residence (45 Willcocks)",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w8027962",
+      "name": "Sir Daniel Wilson Residence",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w12873850",
+      "name": "Burwash Hall",
+      "category": "Residence",
+      "wikipedia": "Burwash Hall"
+    },
+    {
+      "osm": "w12873822",
+      "name": "Margaret Addison Hall",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w23436623",
+      "name": "Annesley Hall",
+      "category": "Residence",
+      "wikipedia": "Annesley Hall"
+    },
+    {
+      "osm": "w12874392",
+      "name": "Whitney Hall",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w12874330",
+      "name": "Morrison Hall",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "r73341",
+      "name": "Graduate House",
+      "category": "Residence",
+      "wikipedia": "Graduate House (University of Toronto)"
+    },
+    {
+      "osm": "w20898043",
+      "name": "Innis Residence",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w10336057",
+      "name": "Woodsworth College Residence",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w23435125",
+      "name": "Elmsley Hall",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w15401950",
+      "name": "Sorbara Hall",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w23433444",
+      "name": "St. Hilda's College",
+      "category": "Residence",
+      "wikipedia": "St. Hilda's College, University of Toronto"
+    },
+    {
+      "osm": "w23436644",
+      "name": "Loretto College",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w23436633",
+      "name": "Rowell Jackman Hall",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w1383202632",
+      "name": "Oak House",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w8032167",
+      "name": "University College",
+      "category": "College",
+      "wikipedia": "University College, Toronto"
+    },
+    {
+      "osm": "r2687",
+      "name": "Trinity College",
+      "category": "College",
+      "wikipedia": "Trinity College, Toronto"
+    },
+    {
+      "osm": "w204323029",
+      "name": "Victoria College",
+      "category": "College",
+      "wikipedia": "Victoria University, Toronto"
+    },
+    {
+      "osm": "w22372215",
+      "name": "Innis College",
+      "category": "College",
+      "wikipedia": "Innis College, Toronto"
+    },
+    {
+      "osm": "r2032",
+      "name": "Knox College",
+      "category": "College",
+      "wikipedia": "Knox College, Toronto"
+    },
+    {
+      "osm": "r4323",
+      "name": "Massey College",
+      "category": "College",
+      "wikipedia": "Massey College, Toronto"
+    },
+    {
+      "osm": "r47346",
+      "name": "Wycliffe College",
+      "category": "College",
+      "wikipedia": "Wycliffe College, Toronto"
+    },
+    {
+      "osm": "w204323317",
+      "name": "Emmanuel College",
+      "category": "College",
+      "wikipedia": "Emmanuel College, Toronto"
+    },
+    {
+      "osm": "w60303738",
+      "name": "Regis College",
+      "category": "College",
+      "wikipedia": "Regis College (Toronto)"
+    },
+    {
+      "osm": "w27750952",
+      "name": "Woodsworth College (Kruger Hall)",
+      "category": "College",
+      "wikipedia": null
+    },
+    {
+      "osm": "w141691917",
+      "name": "Bahen Centre for Information Technology",
+      "category": "Teaching",
+      "wikipedia": "Bahen Centre for Information Technology"
+    },
+    {
+      "osm": "w7948423",
+      "name": "Sidney Smith Hall",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w403302492",
+      "name": "Myhal Centre",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w988615299",
+      "name": "Medical Sciences Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w1466900017",
+      "name": "Lash Miller Chemical Laboratories",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w1428103037",
+      "name": "McLennan Physical Laboratories",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w13403180",
+      "name": "Sandford Fleming Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "r76177",
+      "name": "Galbraith Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w1464898602",
+      "name": "Wallberg Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w354180331",
+      "name": "Mechanical Engineering Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w12873543",
+      "name": "Lassonde Mining Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "r2152",
+      "name": "Earth Sciences Centre",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w9303310",
+      "name": "Ramsay Wright Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w12873582",
+      "name": "Leslie Dan Pharmacy Building",
+      "category": "Teaching",
+      "wikipedia": "Leslie Dan Faculty of Pharmacy"
+    },
+    {
+      "osm": "w12000960",
+      "name": "Rotman School of Management",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w676618964",
+      "name": "Jackman Law Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w8101762",
+      "name": "Daniels Building (One Spadina)",
+      "category": "Teaching",
+      "wikipedia": "1 Spadina Crescent"
+    },
+    {
+      "osm": "w12000624",
+      "name": "Edward Johnson Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w10725629",
+      "name": "OISE",
+      "category": "Teaching",
+      "wikipedia": "Ontario Institute for Studies in Education"
+    },
+    {
+      "osm": "w23436801",
+      "name": "Health Sciences Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w12873396",
+      "name": "Donnelly Centre",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w23433584",
+      "name": "C. David Naylor Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w23201562",
+      "name": "Jackman Humanities Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w8117208",
+      "name": "Northrop Frye Hall",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w8810864",
+      "name": "Carr Hall",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w10334995",
+      "name": "Claude T. Bissell Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w22372209",
+      "name": "Max Gluskin House",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w1461363247",
+      "name": "Schwartz Reisman Innovation Campus",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w9916087",
+      "name": "Clara Benson Building",
+      "category": "Athletics",
+      "wikipedia": null
+    },
+    {
+      "osm": "w23113405",
+      "name": "Gerald Larkin Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "r1989",
+      "name": "Hart House",
+      "category": "Campus life",
+      "wikipedia": "Hart House (University of Toronto)"
+    },
+    {
+      "osm": "w330718925",
+      "name": "Convocation Hall",
+      "category": "Campus life",
+      "wikipedia": "Convocation Hall (University of Toronto)"
+    },
+    {
+      "osm": "w10336055",
+      "name": "Simcoe Hall",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w28822997",
+      "name": "Soldiers' Tower",
+      "category": "Campus life",
+      "wikipedia": "Soldiers' Tower"
+    },
+    {
+      "osm": "w8099717",
+      "name": "Koffler Student Services Centre",
+      "category": "Campus life",
+      "wikipedia": "Koffler Student Centre"
+    },
+    {
+      "osm": "w12872719",
+      "name": "Student Commons",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w12873892",
+      "name": "Isabel Bader Theatre",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w27291427",
+      "name": "George Ignatieff Theatre",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w23436928",
+      "name": "Central Exams Facility",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w6147259",
+      "name": "Varsity Stadium",
+      "category": "Athletics",
+      "wikipedia": "Varsity Stadium"
+    },
+    {
+      "osm": "w8095834",
+      "name": "Varsity Arena",
+      "category": "Athletics",
+      "wikipedia": "Varsity Arena"
+    },
+    {
+      "osm": "w258167657",
+      "name": "Goldring Centre",
+      "category": "Athletics",
+      "wikipedia": "Goldring Centre for High Performance Sport"
+    }
+  ]
+}

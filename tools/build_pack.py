@@ -1,8 +1,8 @@
-"""Builds the St. George campus pack from an Overpass dump.
+"""Builds a campus pack from an Overpass dump and campus configuration.
 
-Usage: python3 -I build_pack.py area.json out.json [greenery.json]
+Usage: python3 -I build_pack.py campus.json area.json out.json [greenery.json]
 greenery.json (optional): trees (natural=tree nodes) and lawns/gardens/parks/pitches as an Overpass export.
-Landmarks are hand-picked below by OSM element; everything else is generated.
+Landmarks are hand-picked in the campus config; everything else is generated.
 """
 import datetime
 import hashlib
@@ -11,106 +11,9 @@ import math
 import random
 import sys
 
-# (osm element, display name, category, wikipedia title or None)
-LANDMARKS = [
-    # Libraries
-    ("w7991747", "Robarts Library", "Library", "Robarts Library"),
-    ("r14756874", "Gerstein Science Information Centre", "Library", "Gerstein Science Information Centre"),
-    ("w9916090", "Thomas Fisher Rare Book Library", "Library", "Thomas Fisher Rare Book Library"),
-    ("w8111900", "E. J. Pratt Library", "Library", None),
-    ("w8027952", "John M. Kelly Library", "Library", None),
-    ("w12000627", "Bora Laskin Law Library", "Library", None),
-    # Residences
-    ("w7685383", "Wetmore Hall", "Residence", None),
-    ("w10336058", "Wilson Hall", "Residence", None),
-    ("w8068859", "New College Residence (45 Willcocks)", "Residence", None),
-    ("w8027962", "Sir Daniel Wilson Residence", "Residence", None),
-    ("w12873850", "Burwash Hall", "Residence", "Burwash Hall"),
-    ("w12873822", "Margaret Addison Hall", "Residence", None),
-    ("w23436623", "Annesley Hall", "Residence", "Annesley Hall"),
-    ("w12874392", "Whitney Hall", "Residence", None),
-    ("w12874330", "Morrison Hall", "Residence", None),
-    ("r73341", "Graduate House", "Residence", "Graduate House (University of Toronto)"),
-    ("w20898043", "Innis Residence", "Residence", None),
-    ("w10336057", "Woodsworth College Residence", "Residence", None),
-    ("w23435125", "Elmsley Hall", "Residence", None),
-    ("w15401950", "Sorbara Hall", "Residence", None),
-    ("w23433444", "St. Hilda's College", "Residence", "St. Hilda's College, University of Toronto"),
-    ("w23436644", "Loretto College", "Residence", None),
-    ("w23436633", "Rowell Jackman Hall", "Residence", None),
-    ("w1383202632", "Oak House", "Residence", None),
-    # Colleges
-    ("w8032167", "University College", "College", "University College, Toronto"),
-    ("r2687", "Trinity College", "College", "Trinity College, Toronto"),
-    ("w204323029", "Victoria College", "College", "Victoria University, Toronto"),
-    ("w22372215", "Innis College", "College", "Innis College, Toronto"),
-    ("r2032", "Knox College", "College", "Knox College, Toronto"),
-    ("r4323", "Massey College", "College", "Massey College, Toronto"),
-    ("r47346", "Wycliffe College", "College", "Wycliffe College, Toronto"),
-    ("w204323317", "Emmanuel College", "College", "Emmanuel College, Toronto"),
-    ("w60303738", "Regis College", "College", "Regis College (Toronto)"),
-    ("w27750952", "Woodsworth College (Kruger Hall)", "College", None),
-    # Teaching and research
-    ("w141691917", "Bahen Centre for Information Technology", "Teaching", "Bahen Centre for Information Technology"),
-    ("w7948423", "Sidney Smith Hall", "Teaching", None),
-    ("w403302492", "Myhal Centre", "Teaching", None),
-    ("w988615299", "Medical Sciences Building", "Teaching", None),
-    ("w1466900017", "Lash Miller Chemical Laboratories", "Teaching", None),
-    ("w1428103037", "McLennan Physical Laboratories", "Teaching", None),
-    ("w13403180", "Sandford Fleming Building", "Teaching", None),
-    ("r76177", "Galbraith Building", "Teaching", None),
-    ("w1464898602", "Wallberg Building", "Teaching", None),
-    ("w354180331", "Mechanical Engineering Building", "Teaching", None),
-    ("w12873543", "Lassonde Mining Building", "Teaching", None),
-    ("r2152", "Earth Sciences Centre", "Teaching", None),
-    ("w9303310", "Ramsay Wright Building", "Teaching", None),
-    ("w12873582", "Leslie Dan Pharmacy Building", "Teaching", "Leslie Dan Faculty of Pharmacy"),
-    ("w12000960", "Rotman School of Management", "Teaching", None),
-    ("w676618964", "Jackman Law Building", "Teaching", None),
-    ("w8101762", "Daniels Building (One Spadina)", "Teaching", "1 Spadina Crescent"),
-    ("w12000624", "Edward Johnson Building", "Teaching", None),
-    ("w10725629", "OISE", "Teaching", "Ontario Institute for Studies in Education"),
-    ("w23436801", "Health Sciences Building", "Teaching", None),
-    ("w12873396", "Donnelly Centre", "Teaching", None),
-    ("w23433584", "C. David Naylor Building", "Teaching", None),
-    ("w23201562", "Jackman Humanities Building", "Teaching", None),
-    ("w8117208", "Northrop Frye Hall", "Teaching", None),
-    ("w8810864", "Carr Hall", "Teaching", None),
-    ("w10334995", "Claude T. Bissell Building", "Teaching", None),
-    ("w22372209", "Max Gluskin House", "Teaching", None),
-    ("w1461363247", "Schwartz Reisman Innovation Campus", "Teaching", None),
-    ("w9916087", "Clara Benson Building", "Athletics", None),
-    ("w23113405", "Gerald Larkin Building", "Teaching", None),
-    # Campus life and landmarks
-    ("r1989", "Hart House", "Campus life", "Hart House (University of Toronto)"),
-    ("w330718925", "Convocation Hall", "Campus life", "Convocation Hall (University of Toronto)"),
-    ("w10336055", "Simcoe Hall", "Campus life", None),
-    ("w28822997", "Soldiers' Tower", "Campus life", "Soldiers' Tower"),
-    ("w8099717", "Koffler Student Services Centre", "Campus life", "Koffler Student Centre"),
-    ("w12872719", "Student Commons", "Campus life", None),
-    ("w12873892", "Isabel Bader Theatre", "Campus life", None),
-    ("w27291427", "George Ignatieff Theatre", "Campus life", None),
-    ("w23436928", "Central Exams Facility", "Campus life", None),
-    ("w6147259", "Varsity Stadium", "Athletics", "Varsity Stadium"),
-    ("w8095834", "Varsity Arena", "Athletics", "Varsity Arena"),
-    ("w258167657", "Goldring Centre", "Athletics", "Goldring Centre for High Performance Sport"),
-]
-
-# The player's avatar for this campus. CHANGE THIS FOR EVERY UNIVERSITY: each campus pack names its own mascot,
-# picks a body the explore page can draw ("beaver"; anything else falls back to a student), and its school colours.
-# Keep it an original pixel design in the school's colours rather than copying official mascot artwork.
-MASCOT = {"name": "True Blue", "species": "beaver", "school": "University of Toronto",
-          "colors": {"fur": "#7a4a2a", "belly": "#b98a5e", "dark": "#3e2a1c", "primary": "#1e3765", "secondary": "#ffffff"}}
-
-CAMPUS_ID = "st-george"
-TIMEZONE = "America/Toronto"
-# Daily puzzles: the same target, zone and start for every player on a given date (one per day for a year).
-DAILY_FROM = datetime.date(2026, 11, 1)
+# Daily puzzles: the same target, zone and start for every player on a given date.
 DAILY_DAYS = 400
 ZONE_RADIUS, MIN_START, MAX_START = 90, 450, 900
-
-# Open-air landmarks highlighted at ground level instead of as a raised block.
-FLAT = {"w6147259"}
 
 HIGHWAYS = {"footway", "path", "pedestrian", "steps", "living_street", "residential", "service",
             "tertiary", "secondary", "primary", "unclassified", "cycleway", "corridor"}
@@ -304,7 +207,7 @@ def offset(p, bearing, dist, lat0):
     return [p[0] + math.sin(r) * dist / (m_lat * math.cos(math.radians(lat0))), p[1] + math.cos(r) * dist / m_lat]
 
 
-def daily_schedule(buildings, landmarks, coords, edges, lat0):
+def daily_schedule(buildings, landmarks, coords, edges, lat0, campus_id, daily_from):
     """Deterministic daily puzzles. Starts are footpath points on the main network, clear of buildings."""
     parent = list(range(len(coords)))
 
@@ -333,8 +236,8 @@ def daily_schedule(buildings, landmarks, coords, edges, lat0):
     by_id = {b["id"]: b for b in buildings}
     schedule = {}
     for day in range(DAILY_DAYS):
-        date = (DAILY_FROM + datetime.timedelta(days=day)).isoformat()
-        rng = random.Random(int(hashlib.sha256((CAMPUS_ID + date).encode()).hexdigest(), 16))
+        date = (daily_from + datetime.timedelta(days=day)).isoformat()
+        rng = random.Random(int(hashlib.sha256((campus_id + date).encode()).hexdigest(), 16))
         for _ in range(500):
             landmark = rng.choice(landmarks)
             centre = [by_id[landmark["building"]]["lon"], by_id[landmark["building"]]["lat"]]
@@ -354,10 +257,14 @@ def daily_schedule(buildings, landmarks, coords, edges, lat0):
     return schedule
 
 
-def main(src, dst, green_src=None):
+def main(config_src, src, dst, green_src=None):
+    config = json.load(open(config_src))
+    bounds = config["bounds"]
+    landmarks_config = config["landmarks"]
+    flat = set(config["flat"])
     elements = json.load(open(src))["elements"]
     by_key = {key(e): e for e in elements}
-    landmark_keys = {k for k, *_ in LANDMARKS}
+    landmark_keys = {item["osm"] for item in landmarks_config}
 
     buildings = []
     building_ids = {}
@@ -369,17 +276,18 @@ def main(src, dst, green_src=None):
                 continue
             if tags.get("layer", "0").startswith("-") or tags.get("location") == "underground":
                 continue
-        shape = footprint(e, k in FLAT)
+        shape = footprint(e, k in flat)
         if shape is None:
             continue
         lat, lon = centre(shape["outline"])
         building_ids[k] = len(buildings) + 1
         buildings.append({"id": len(buildings) + 1, "name": tags.get("name"), "lat": lat, "lon": lon,
-                          "flat": k in FLAT, "courtyard": any(len(p) > 1 for p in shape["outline"]),
+                          "flat": k in flat, "courtyard": any(len(p) > 1 for p in shape["outline"]),
                           "osmTags": tags, **shape})
 
     landmarks = []
-    for next_id, (k, name, category, wiki) in enumerate(LANDMARKS, start=1):
+    for next_id, item in enumerate(landmarks_config, start=1):
+        k, name, category, wiki = (item["osm"], item["name"], item["category"], item["wikipedia"])
         if k not in building_ids:
             sys.exit(f"missing outline for {k} {name}")
         building = buildings[building_ids[k] - 1]
@@ -412,22 +320,23 @@ def main(src, dst, green_src=None):
                 edges.add((min(previous, n), max(previous, n)))
             previous = n
 
-    lat0 = (43.6565 + 43.6695) / 2
+    lat0 = (bounds["south"] + bounds["north"]) / 2
     pack = {
         "version": 2,
-        "id": CAMPUS_ID,
-        "timezone": TIMEZONE,
-        "campus": "University of Toronto — St. George",
-        "bounds": {"south": 43.6565, "west": -79.4040, "north": 43.6695, "east": -79.3875},
+        "id": config["id"],
+        "timezone": config["timezone"],
+        "campus": config["name"],
+        "bounds": bounds,
         "attribution": "Building outlines and paths © OpenStreetMap contributors (ODbL)",
-        "mascot": MASCOT,
+        "mascot": config["mascot"],
         "landmarks": landmarks,
         "buildings": buildings,
         "walkways": {"nodes": coords, "edges": sorted(edges)},
     }
     if green_src:
         pack["trees"], pack["greens"] = greenery(green_src)
-    pack["daily"] = daily_schedule(buildings, landmarks, coords, sorted(edges), lat0)
+    pack["daily"] = daily_schedule(buildings, landmarks, coords, sorted(edges), lat0, config["id"],
+                                    datetime.date.fromisoformat(config["dailyFrom"]))
     with open(dst, "w") as out:
         json.dump(pack, out, separators=(",", ":"), ensure_ascii=False)
     print(f"{len(landmarks)} landmarks, {len(buildings)} buildings, "
@@ -435,4 +344,4 @@ def main(src, dst, green_src=None):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1], sys.argv[2], sys.argv[3] if len(sys.argv) > 3 else None)
+    main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4] if len(sys.argv) > 4 else None)
