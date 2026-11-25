@@ -9,7 +9,7 @@ import java.util.Optional;
 /** Output data for the explore use cases. Nothing here leaks the target before the round ends. */
 public sealed interface ExploreResponse {
     record Started(String campus, GeoPoint start, int from, int to, double fraction,
-                   int checksRemaining, int guessLimit) implements ExploreResponse { }
+                   int checksRemaining, int guessLimit, String difficulty) implements ExploreResponse { }
 
     record Moved(double metresWalked, long elapsedSeconds, boolean zoneReached, ZoneView zone)
             implements ExploreResponse { }
@@ -23,7 +23,9 @@ public sealed interface ExploreResponse {
     record HintChosen(Expedition.HintLevel level, double multiplier, String hint, List<Integer> zoneBuildings)
             implements ExploreResponse { }
 
-    record Guessed(int buildingId, boolean correct, int guessesRemaining, Result result) implements ExploreResponse {
+    /** {@code saveError} is set only when saving a finished round failed. */
+    record Guessed(int buildingId, boolean correct, int guessesRemaining, Result result, String saveError)
+            implements ExploreResponse {
         public Optional<Result> finished() {
             return Optional.ofNullable(result);
         }

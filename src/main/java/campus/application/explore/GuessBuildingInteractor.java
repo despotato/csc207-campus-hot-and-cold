@@ -3,18 +3,29 @@ package campus.application.explore;
 import campus.domain.explore.CampusMap.CampusLandmark;
 import campus.domain.explore.Expedition;
 
+import java.io.IOException;
+import java.time.Clock;
 import java.time.Duration;
 import java.util.Objects;
 
 public final class GuessBuildingInteractor implements GuessBuildingInputBoundary {
     private final ExpeditionSession session;
     private final LandmarkInfoGateway info;
+    private final ExpeditionResultRepository results;
+    private final Clock clock;
     private final ExploreOutputBoundary output;
 
     public GuessBuildingInteractor(ExpeditionSession session, LandmarkInfoGateway info,
                                    ExploreOutputBoundary output) {
+        this(session, info, ExpeditionResultRepository.DISABLED, Clock.systemUTC(), output);
+    }
+
+    public GuessBuildingInteractor(ExpeditionSession session, LandmarkInfoGateway info,
+                                   ExpeditionResultRepository results, Clock clock, ExploreOutputBoundary output) {
         this.session = Objects.requireNonNull(session);
         this.info = Objects.requireNonNull(info);
+        this.results = Objects.requireNonNull(results);
+        this.clock = Objects.requireNonNull(clock);
         this.output = Objects.requireNonNull(output);
     }
 
@@ -35,7 +46,16 @@ public final class GuessBuildingInteractor implements GuessBuildingInputBoundary
         int remaining = Expedition.GUESS_LIMIT - expedition.guesses().size();
         ExploreResponse.Result result = expedition.revealedTarget()
                 .map(target -> result(expedition, target)).orElse(null);
-        output.present(new ExploreResponse.Guessed(buildingId, correct, remaining, result));
+        String saveError = null;
+        if (result != null && results.enabled()) {
+            try {
+                results.save(expedition.id(), expedition.map().name(), clock.instant(),
+                        expedition.difficulty().name(), result);
+            } catch (IOException exception) {
+                saveError = "Your result could not be saved.";
+            }
+        }
+        output.present(new ExploreResponse.Guessed(buildingId, correct, remaining, result, saveError));
     }
 
     private ExploreResponse.Result result(Expedition expedition, CampusLandmark target) {
@@ -47,7 +67,7 @@ public final class GuessBuildingInteractor implements GuessBuildingInputBoundary
                 score.efficiency(), score.identifyPoints(), score.multiplier(), score.total(),
                 expedition.metresWalked(), expedition.shortestToZone(),
                 Duration.between(expedition.startedAt(), expedition.zoneReachedAt().orElseThrow()).toSeconds(),
-                Expedition.CHECK_LIMIT - expedition.checksRemaining(), expedition.guesses().size(),
+                expedition.checksUsed(), expedition.guesses().size(),
                 expedition.hintLevel().orElseThrow(), expedition.track(),
                 expedition.revealedShortestRoute().orElseThrow(), expedition.checks(), summary);
     }

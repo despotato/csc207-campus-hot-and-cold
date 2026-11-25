@@ -30,6 +30,7 @@ public final class ExplorePresenter implements ExploreOutputBoundary {
                 body.put("point", point(started.start()));
                 body.put("checksRemaining", started.checksRemaining());
                 body.put("guessLimit", started.guessLimit());
+                body.put("difficulty", started.difficulty());
                 body.put("message", "Find the zone. You have " + started.checksRemaining() + " checks.");
             }
             case ExploreResponse.Moved moved -> {
@@ -75,6 +76,9 @@ public final class ExplorePresenter implements ExploreOutputBoundary {
                         : guessed.finished().isPresent() ? "Out of guesses."
                         : "Not this one. " + guessed.guessesRemaining() + " guesses left.");
                 guessed.finished().ifPresent(result -> body.put("result", result(result)));
+                if (guessed.saveError() != null) {
+                    body.put("saveError", guessed.saveError());
+                }
             }
             case ExploreResponse.Failed failed -> {
                 status = 400;

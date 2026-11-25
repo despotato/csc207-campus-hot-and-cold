@@ -20,13 +20,9 @@ import java.util.stream.IntStream;
  * the zone. Stage two: choose a hint difficulty blind, then identify the building inside the zone.
  */
 public final class Expedition {
-    public static final int CHECK_LIMIT = 6;
     public static final int GUESS_LIMIT = 3;
-    public static final double ZONE_RADIUS = 90;
     /** The target sits at most this far from the zone centre, so the centre never gives it away exactly. */
     static final double MAX_ZONE_OFFSET = 50;
-    static final double MIN_START_DISTANCE = 450;
-    static final double MAX_START_DISTANCE = 900;
     /** Fast jog with slack for network jitter; anything quicker is treated as teleporting. */
     static final double MAX_SPEED = 9;
     static final double MAX_STEP = 60;
@@ -57,6 +53,7 @@ public final class Expedition {
     public record Score(int routePoints, double efficiency, int identifyPoints, double multiplier, int total) { }
 
     private final UUID id = UUID.randomUUID();
+    private final Difficulty difficulty;
     private final CampusMap map;
     private final CampusLandmark target;
     private final Zone zone;
@@ -74,9 +71,15 @@ public final class Expedition {
     private Stage stage = Stage.FIND_ZONE;
     private Instant zoneReachedAt;
     private HintLevel hintLevel;
+    private String outsideClue;
     private boolean won;
 
     Expedition(CampusMap map, CampusLandmark target, Zone zone, int startNode, Instant now) {
+        this(Difficulty.NORMAL, map, target, zone, startNode, now);
+    }
+
+    Expedition(Difficulty difficulty, CampusMap map, CampusLandmark target, Zone zone, int startNode, Instant now) {
+        this.difficulty = Objects.requireNonNull(difficulty);
         this.map = Objects.requireNonNull(map);
         this.target = Objects.requireNonNull(target);
         this.zone = Objects.requireNonNull(zone);
@@ -103,25 +106,30 @@ public final class Expedition {
 
     /** Picks a random target, an offset zone around it, and a start a long walk away. */
     public static Expedition begin(CampusMap map, RandomGenerator random, Instant now) {
+        return begin(Difficulty.NORMAL, map, random, now);
+    }
+
+    public static Expedition begin(Difficulty difficulty, CampusMap map, RandomGenerator random, Instant now) {
         WalkGraph walkways = map.walkways();
         int[] network = IntStream.range(0, walkways.size()).filter(walkways::isMainNetwork).toArray();
         for (int attempt = 0; attempt < 200; attempt++) {
             CampusLandmark target = map.landmarks().get(random.nextInt(map.landmarks().size()));
             GeoPoint targetCentre = map.buildingOf(target).centre();
             Zone zone = new Zone(targetCentre.offset(random.nextDouble(360),
-                    random.nextDouble(MAX_ZONE_OFFSET)), ZONE_RADIUS);
+                    random.nextDouble(Math.min(MAX_ZONE_OFFSET, difficulty.zoneRadius() * 0.6))),
+                    difficulty.zoneRadius());
             if (map.buildingsIn(zone).size() < MIN_ZONE_BUILDINGS) {
                 continue;
             }
             int[] starts = IntStream.of(network).filter(node -> {
                 double distance = walkways.node(node).distanceTo(zone.centre());
-                return distance >= MIN_START_DISTANCE && distance <= MAX_START_DISTANCE;
+                return distance >= difficulty.minStartDistance() && distance <= difficulty.maxStartDistance();
             }).toArray();
             if (starts.length == 0) {
                 continue;
             }
             try {
-                return new Expedition(map, target, zone, starts[random.nextInt(starts.length)], now);
+                return new Expedition(difficulty, map, target, zone, starts[random.nextInt(starts.length)], now);
             } catch (IllegalArgumentException unreachable) {
                 // Try another target.
             }
@@ -173,11 +181,25 @@ public final class Expedition {
 
     /** Commits to a hint difficulty before seeing it, then reveals the hint. */
     public String chooseHint(HintLevel level) {
+        return chooseHint(level, landmark -> Optional.empty());
+    }
+
+    /**
+     * As {@link #chooseHint(HintLevel)}, but a hard hint may use an outside clue about the target
+     * (for example a redacted encyclopedia sentence) instead of its direction within the zone.
+     */
+    public String chooseHint(HintLevel level, java.util.function.Function<CampusLandmark, Optional<String>> outsideClue) {
         requireStage(Stage.IDENTIFY, "Reach the zone before choosing a hint.");
         if (hintLevel != null) {
             throw new IllegalStateException("You already chose a hint.");
         }
-        hintLevel = Objects.requireNonNull(level);
+        Objects.requireNonNull(level);
+        if (level == HintLevel.HARD) {
+            outsideClue.apply(target).filter(clue -> !clue.isBlank()
+                    && !clue.toLowerCase(java.util.Locale.ROOT).contains(target.name().toLowerCase(java.util.Locale.ROOT)))
+                    .ifPresent(clue -> this.outsideClue = clue);
+        }
+        hintLevel = level;
         return hint().orElseThrow();
     }
 
@@ -191,7 +213,7 @@ public final class Expedition {
             case EASY -> "It's " + article + category + " building, and its name starts with \""
                     + Character.toUpperCase(target.name().charAt(0)) + "\".";
             case NORMAL -> "It's " + article + category + " building.";
-            case HARD -> directionInZone();
+            case HARD -> outsideClue != null ? outsideClue : directionInZone();
         });
     }
 
@@ -248,7 +270,9 @@ public final class Expedition {
     public Position position() { return position; }
     public Position start() { return start; }
     public double metresWalked() { return metresWalked; }
-    public int checksRemaining() { return CHECK_LIMIT - checks.size(); }
+    public int checksRemaining() { return difficulty.checks() - checks.size(); }
+    public int checksUsed() { return checks.size(); }
+    public Difficulty difficulty() { return difficulty; }
     public List<Check> checks() { return List.copyOf(checks); }
     public List<GeoPoint> track() { return List.copyOf(track); }
     public List<Integer> guesses() { return List.copyOf(guesses); }

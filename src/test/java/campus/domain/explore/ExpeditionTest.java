@@ -142,6 +142,20 @@ class ExpeditionTest {
         assertEquals("It's in the east part of the zone.", round.chooseHint(HintLevel.HARD));
     }
 
+    @Test void hardHintCanUseAnOutsideClueButNeverOneNamingTheTarget() {
+        Expedition round = round();
+        walkEast(round, 0, 19, T0);
+        assertEquals("Built in ____ as a library.", round.chooseHint(HintLevel.HARD,
+                target -> java.util.Optional.of("Built in ____ as a library.")));
+        Expedition leaky = round();
+        walkEast(leaky, 0, 19, T0);
+        assertEquals("It's near the middle of the zone.", leaky.chooseHint(HintLevel.HARD,
+                target -> java.util.Optional.of("Target Hall opened in 1900.")), "falls back when the clue names it");
+        Expedition easy = round();
+        walkEast(easy, 0, 19, T0);
+        assertTrue(easy.chooseHint(HintLevel.EASY, target -> java.util.Optional.of("ignored")).startsWith("It's a library"));
+    }
+
     @Test void guessesMustBeInsideTheZoneAndDistinct() {
         Expedition round = round();
         walkEast(round, 0, 19, T0);

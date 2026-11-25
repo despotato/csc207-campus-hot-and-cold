@@ -27,6 +27,8 @@ class ExploreFlowTest {
     private final MutableClock clock = new MutableClock();
     private final List<String> summaries = new java.util.ArrayList<>();
     private ExploreController controller;
+    private final List<String> saved = new java.util.ArrayList<>();
+    private boolean failSave;
 
     static final class MutableClock extends Clock {
         Instant now = Instant.parse("2026-11-25T12:00:00Z");
@@ -47,7 +49,14 @@ class ExploreFlowTest {
                 new MoveInteractor(clock, session, presenter),
                 new CheckTemperatureInteractor(session, presenter),
                 new ChooseHintInteractor(session, presenter),
-                new GuessBuildingInteractor(session, info, presenter), presenter);
+                new GuessBuildingInteractor(session, info, new ExpeditionResultRepository() {
+                    @Override
+                    public void save(java.util.UUID id, String campus, Instant at, String difficulty,
+                                     ExploreResponse.Result result) throws java.io.IOException {
+                        if (failSave) throw new java.io.IOException("disk full");
+                        saved.add(campus + "|" + difficulty + "|" + result.targetName() + "|" + result.score());
+                    }
+                }, clock, presenter), presenter);
     }
 
     private ExploreViewModel call(String action, Map<String, Object> fields) {
@@ -116,7 +125,24 @@ class ExploreFlowTest {
         assertEquals(500, score.get("route"), "walked the shortest route");
         assertFalse(((List<?>) result.get("shortestRoute")).isEmpty());
         assertEquals(List.of("Target Hall"), summaries, "Wikipedia looked up once, at the end");
+        assertEquals(List.of("Test campus|normal|Target Hall|900"), saved, "saved exactly once when finished");
+        assertNull(right.body().get("saveError"));
         assertEquals("A test building.", map(result.get("summary")).get("extract"));
+    }
+
+    @Test void failedSaveIsReportedWithoutLosingTheResult() {
+        failSave = true;
+        ExploreViewModel started = call("start", Map.of("difficulty", "normal"));
+        walkToZone(((Number) map(started.body().get("position")).get("from")).intValue());
+        call("hint", Map.of("level", "easy"));
+        ExploreViewModel right = call("guess", Map.of("buildingId", 1));
+        assertNotNull(right.body().get("result"));
+        assertEquals("Your result could not be saved.", right.body().get("saveError"));
+    }
+
+    @Test void onlyKnownDifficultiesCanStartARound() {
+        assertEquals(400, call("start", Map.of("difficulty", "nightmare")).status());
+        assertEquals(200, call("start", Map.of("difficulty", "NORMAL")).status());
     }
 
     @Test void badInputIsRejectedWithoutChangingTheRound() {

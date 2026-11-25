@@ -1,6 +1,7 @@
 package campus.application.explore;
 
 import campus.domain.explore.CampusMap;
+import campus.domain.explore.Difficulty;
 import campus.domain.explore.Expedition;
 import campus.domain.explore.WalkGraph.Position;
 
@@ -25,10 +26,14 @@ public final class StartExpeditionInteractor implements StartExpeditionInputBoun
     }
 
     @Override
-    public void execute() {
+    public void execute(Difficulty difficulty) {
+        if (difficulty == null) {
+            output.present(new ExploreResponse.Failed("Choose a difficulty."));
+            return;
+        }
         Expedition expedition;
         try {
-            expedition = Expedition.begin(map, random, clock.instant());
+            expedition = Expedition.begin(difficulty, map, random, clock.instant());
         } catch (IllegalStateException exception) {
             output.present(new ExploreResponse.Failed("Could not set up a round. Please retry."));
             return;
@@ -36,6 +41,6 @@ public final class StartExpeditionInteractor implements StartExpeditionInputBoun
         session.start(expedition);
         Position start = expedition.start();
         output.present(new ExploreResponse.Started(map.name(), map.walkways().pointAt(start), start.from(),
-                start.to(), start.fraction(), expedition.checksRemaining(), Expedition.GUESS_LIMIT));
+                start.to(), start.fraction(), expedition.checksRemaining(), Expedition.GUESS_LIMIT, difficulty.name()));
     }
 }

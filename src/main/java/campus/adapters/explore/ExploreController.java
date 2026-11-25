@@ -5,6 +5,7 @@ import campus.application.explore.ChooseHintInputBoundary;
 import campus.application.explore.GuessBuildingInputBoundary;
 import campus.application.explore.MoveInputBoundary;
 import campus.application.explore.StartExpeditionInputBoundary;
+import campus.domain.explore.Difficulty;
 import campus.domain.explore.Expedition.HintLevel;
 
 import java.util.Locale;
@@ -37,7 +38,8 @@ public final class ExploreController {
     public synchronized ExploreViewModel handle(String action, Map<String, Object> fields) {
         try {
             switch (action) {
-                case "start" -> start.execute();
+                case "start" -> start.execute(Difficulty.named(
+                        fields.get("difficulty") instanceof String name ? name : Difficulty.NORMAL.name()));
                 case "move" -> move.execute(integer(fields, "from"), integer(fields, "to"), number(fields, "fraction"));
                 case "check" -> check.execute();
                 case "hint" -> hint.execute(level(fields.get("level")));
