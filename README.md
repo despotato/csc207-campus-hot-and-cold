@@ -126,6 +126,12 @@ Use feature branches and pull requests. GitHub Actions runs `mvn verify` under a
 
 Explore is the two-stage version of the game, played in a pixel-art 3D model of the real St. George campus. Run the app and click **Play Explore (3D)** in the launcher. It opens in your browser. **Classic mode** is the original six-guess game.
 
+### Campuses and modes
+
+- **University:** the start screen lists the campuses in `src/main/resources/campus/packs/index.json` (U of T St. George for now). Each campus is a data pack, so adding one needs no code changes; see *Development* below.
+- **Daily:** everyone gets the same puzzle each day (same target, zone and start, in the Java app and on the website), always on normal difficulty, with **one try**. The day changes at midnight campus time. The puzzles are generated ahead in the campus pack. The one-try rule is per player device: the Java app keeps a marker in `~/.campus-hot-and-cold/daily/`, the website uses browser storage. After a round, **Share** copies a spoiler-free result (score, check colours, guesses).
+- **Unlimited:** a fresh random round every time.
+
 ### What the player sees and does
 
 **Stage 1: find the zone**

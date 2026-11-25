@@ -76,6 +76,12 @@
   .lead { margin: 0 0 14px; }
   .rules { display: grid; gap: 6px; margin: 0 0 14px; padding-left: 20px; }
   .controls { display: flex; flex-wrap: wrap; gap: 10px 18px; margin: 0 0 16px; font-size: 12px; }
+  .choice { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 10px; }
+  .choice button { padding: 6px 10px; font-size: 12px; }
+  .choice button[aria-checked="true"] { background: var(--gold); }
+  .choice small { font-size: 10px; opacity: .75; }
+  .note { font-size: 11px; margin: 0 0 12px; opacity: .85; }
+  #modeLabel { font-size: 11px; color: var(--mint); margin-bottom: 4px; }
   #cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 12px 0; }
   .hintcard { aspect-ratio: 3 / 4; display: grid; place-items: center; text-align: center; padding: 10px; background: var(--paper);
     color: var(--ink); border: 3px solid var(--ink); box-shadow: 0 6px 0 var(--ink); cursor: pointer; transition: transform 180ms; }
@@ -140,7 +146,13 @@
 <section id="title" class="screen">
   <div class="card panel">
     <h1>Campus<br>Hot <span class="amp">&amp;</span> Cold</h1>
-    <p class="lead">U of T St. George · Explore<span id="mascotLine"></span></p>
+    <p class="lead"><span id="campusName">Campus</span> · Explore<span id="mascotLine"></span></p>
+    <div class="choice" id="campusChoice" role="radiogroup" aria-label="University"></div>
+    <div class="choice" id="modeChoice" role="radiogroup" aria-label="Mode">
+      <button class="secondary" data-mode="daily" role="radio">Daily <small id="dailyDate"></small></button>
+      <button class="secondary" data-mode="unlimited" role="radio">Unlimited</button>
+    </div>
+    <p id="modeNote" class="note"></p>
     <ol class="rules">
       <li>Walk around campus to find the hidden <b>zone</b>. You get a few hot/cold checks; a check made inside the zone finds it.</li>
       <li>Inside the zone, pick a hint <b>blind</b>: easy, normal or hard. Harder hints score more.</li>
@@ -181,6 +193,7 @@
 </section>
 
 <aside id="results" class="panel hidden">
+  <div id="modeLabel"></div>
   <div id="outcome" class="title-sm"></div>
   <div class="big" id="targetName"></div>
   <div id="targetCat"></div>
@@ -195,7 +208,7 @@
   </table>
   <p id="saveError" class="hidden"></p>
   <div id="wiki" class="hidden"><img id="wikiImg" alt=""><div><b id="wikiTitle"></b><p id="wikiText"></p><a id="wikiLink" target="_blank" rel="noopener noreferrer">Read on Wikipedia ↗</a></div></div>
-  <div class="buttons"><button id="replayBtn" class="secondary">Replay route</button><button id="againBtn">Play again</button></div>
+  <div class="buttons"><button id="replayBtn" class="secondary">Replay route</button><button id="shareBtn" class="secondary">Share</button><button id="againBtn">Play again</button></div>
 </aside>
 
 <script>
@@ -1059,6 +1072,8 @@ function orbit(centre) {
 }
 
 function fillResults(r, saveError) {
+  $('modeLabel').textContent = game.mode === 'daily' ? `Daily · ${game.date} · ${$('campusName').textContent}` : 'Unlimited';
+  if (game.mode === 'daily') store.set(dailyKey(), String(r.score.total));
   const fmt = m => m >= 1000 ? (m / 1000).toFixed(2) + ' km' : m + ' m';
   $('outcome').textContent = r.won ? `Identified in ${r.guessesUsed} ${r.guessesUsed === 1 ? 'guess' : 'guesses'}`
     : r.secondsToZone == null ? 'Zone not found' : 'Out of guesses';
@@ -1235,7 +1250,42 @@ const LocalRules = (() => {
     return { points: smooth, metres };
   }
 
-  function start() {
+  function nearestOpen(p, maxMetres) {
+    if (isOpen(p)) return p;
+    let best = null, bestD = Infinity;
+    const reach = Math.ceil(maxMetres / CELL), c0 = colOf(p[0]), r0 = rowOf(p[1]);
+    for (let r = r0 - reach; r <= r0 + reach; r++) for (let c = c0 - reach; c <= c0 + reach; c++) {
+      if (c < 0 || r < 0 || c >= grid.cols || r >= grid.rows || grid.blocked[r * grid.cols + c]) continue;
+      const q = [grid.west + (c + 0.5) * CELL / M_LON, grid.south + (r + 0.5) * CELL / M_LAT], d = distOf(p, q);
+      if (d <= maxMetres && d < bestD) { best = q; bestD = d; }
+    }
+    return best;
+  }
+
+  /** Today's shared puzzle from the campus pack: same target, zone and start as the Java app. */
+  function startDaily() {
+    const date = campusDate(), puzzle = pack.daily?.[date];
+    if (!puzzle) return fail("There's no daily puzzle today. Try unlimited mode.");
+    if (store.get('claimed:' + dailyKey())) return fail("You've already played today's daily. Come back tomorrow, or play unlimited.");
+    const target = pack.landmarks.find(l => l.id === puzzle.landmark), building = buildings.get(target.building);
+    const zone = { centre: puzzle.zone, radius: RADIUS }, startPoint = nearestOpen(puzzle.start, 8);
+    const route = startPoint && shortestRoute(startPoint, p => inZone(zone, p), p => Math.max(0, distOf(p, zone.centre) - zone.radius), 600000);
+    if (!route) return fail('Could not set up the daily puzzle.');
+    store.set('claimed:' + dailyKey(), '1');
+    return begin(target, building, zone, startPoint, route, 'daily', date);
+  }
+
+  function begin(target, building, zone, startPoint, route, mode, date) {
+    round = { id: String(Date.now()) + Math.random().toString(16).slice(2), target, building, zone, pos: startPoint,
+      start: startPoint, walked: 0, track: [startPoint], checks: [], guesses: [], stage: 'find', hint: null,
+      startedAt: Date.now(), zoneAt: null, shortest: route, won: false, fact: null };
+    return ok({ type: 'started', roundId: round.id, campusId: pack.id, campus: pack.campus, point: startPoint,
+      checksRemaining: CHECKS, guessLimit: GUESSES, difficulty: 'normal', mode, date,
+      message: `Find the zone. Check inside it to know you're there. ${CHECKS} checks.` });
+  }
+
+  function start(body = {}) {
+    if (body.mode === 'daily') return startDaily();
     const open = cells();
     for (let attempt = 0; attempt < 200; attempt++) {
       const target = pack.landmarks[Math.floor(Math.random() * pack.landmarks.length)];
@@ -1249,11 +1299,7 @@ const LocalRules = (() => {
       const route = shortestRoute(startPoint, p => inZone(zone, p),
         p => Math.max(0, distOf(p, zone.centre) - zone.radius), 300000);
       if (!route) continue;
-      round = { id: String(Date.now()) + Math.random().toString(16).slice(2), target, building, zone, pos: startPoint,
-        start: startPoint, walked: 0, track: [startPoint], checks: [], guesses: [], stage: 'find', hint: null,
-        startedAt: Date.now(), zoneAt: null, shortest: route, won: false, fact: null };
-      return ok({ type: 'started', roundId: round.id, campus: pack.campus, point: startPoint, checksRemaining: CHECKS,
-        guessLimit: GUESSES, difficulty: 'normal', message: `Find the zone. Check inside it to know you're there. ${CHECKS} checks.` });
+      return begin(target, building, zone, startPoint, route, 'unlimited', null);
     }
     return fail('Could not set up a round. Please retry.');
   }
@@ -1438,10 +1484,12 @@ const LocalRules = (() => {
 
   return {
     /** Debug only: the shortest route from where you stand into the zone. */
+    /** Debug only: the hidden zone and target, to verify the daily matches the Java app. */
+    debugInfo: () => DEBUG && round ? { zone: round.zone, target: round.target.name } : null,
     debugRoute: () => DEBUG && round ? shortestRoute(round.pos, p => inZone(round.zone, p),
       p => Math.max(0, distOf(p, round.zone.centre) - round.zone.radius))?.points || [] : [],
     async handle(action, body) {
-      if (action === 'start') return start();
+      if (action === 'start') return start(body);
       if (!round || body.round !== round.id) return fail('This round has ended or was replaced. Start a new round.');
       switch (action) {
         case 'move': return move(body);
@@ -1455,15 +1503,65 @@ const LocalRules = (() => {
   };
 })();
 
+// ---------- campus & mode selection ----------
+const store = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) { /* private mode: fine */ } } };
+let campusIndex = [], chosenMode = store.get('mode') || 'daily';
+/** Today's date on the campus clock (the daily changes at local midnight). */
+const campusDate = () => new Intl.DateTimeFormat('en-CA', { timeZone: pack.timezone || 'UTC' }).format(new Date());
+const dailyKey = () => `daily:${pack.id}:${campusDate()}`;
+
+function renderChoices() {
+  const box = $('campusChoice');
+  box.innerHTML = '';
+  for (const c of campusIndex) {
+    const b = document.createElement('button');
+    b.className = 'secondary'; b.textContent = c.short || c.name; b.setAttribute('role', 'radio');
+    b.setAttribute('aria-checked', String(c.id === pack.id));
+    b.addEventListener('click', () => {
+      if (c.id === pack.id) return;
+      store.set('campus', c.id);
+      const url = new URL(location.href); url.searchParams.set('campus', c.id); location.href = url.toString();
+    });
+    box.append(b);
+  }
+  if (campusIndex.length < 2) {
+    const soon = document.createElement('span');
+    soon.className = 'note'; soon.textContent = 'More campuses coming';
+    box.append(soon);
+  }
+  for (const b of document.querySelectorAll('#modeChoice button')) b.setAttribute('aria-checked', String(b.dataset.mode === chosenMode));
+  $('dailyDate').textContent = pack.daily ? campusDate() : '';
+  const played = store.get(dailyKey());
+  $('modeNote').textContent = chosenMode === 'daily'
+    ? (played === 'unfinished' ? "You started today's daily without finishing it. Come back tomorrow, or play unlimited."
+      : played ? `You've played today's daily: ${played} / 1000. Come back tomorrow, or play unlimited.`
+      : 'One try. Everyone gets the same puzzle today, on normal difficulty.')
+    : 'Fresh random rounds, as many as you like.';
+}
+for (const b of document.querySelectorAll('#modeChoice button')) {
+  b.addEventListener('click', () => { chosenMode = b.dataset.mode; store.set('mode', chosenMode); renderChoices(); });
+}
+
+async function loadCampusPack() {
+  const index = await (await fetch('packs/index.json')).json();
+  campusIndex = index.campuses;
+  const wanted = params.get('campus') || store.get('campus');
+  const campus = campusIndex.find(c => c.id === wanted) || campusIndex[0];
+  return (await fetch('packs/' + campus.file)).json();
+}
+
 // ---------- start ----------
 async function startRound() {
   if (game.phase !== 'title') return;
   game.phase = 'starting';
-  const r = await api('start', { difficulty: $('difficulty').dataset.value || 'normal' });
+  const r = await api('start', { campus: pack.id, mode: chosenMode, difficulty: $('difficulty').dataset.value || 'normal' });
   if (r.status !== 200) { game.phase = 'title'; $('loading').textContent = r.body.error || 'Could not start. Retry.'; return; }
   hide('title');
   game.orbiting = false;
   game.roundId = r.body.roundId;
+  game.mode = r.body.mode; game.date = r.body.date;
+  if (game.mode === 'daily') store.set(dailyKey(), 'unfinished');
   game.pos = r.body.point;
   game.lastPushed = game.pos;
   game.trail = [game.pos];
@@ -1621,6 +1719,18 @@ $('startBtn').addEventListener('click', startRound);
 $('toGuess').addEventListener('click', startGuessing);
 $('replayBtn').addEventListener('click', replay);
 $('againBtn').addEventListener('click', resetRound);
+// A spoiler-free summary to compare with friends (no building name, no route).
+$('shareBtn').addEventListener('click', async () => {
+  const r = game.result;
+  if (!r) return;
+  const heat = { hot: '🟥', warm: '🟧', cool: '🟦', cold: '⬜', zone: '🟨' };
+  const checks = r.checks.map(c => heat[c.heat] || '⬜').join('');
+  const guesses = '❌'.repeat(Math.max(0, r.guessesUsed - (r.won ? 1 : 0))) + (r.won ? '✅' : '');
+  const title = game.mode === 'daily' ? `Campus Hot & Cold · ${$('campusName').textContent} daily ${game.date}` : 'Campus Hot & Cold';
+  const text = `${title}\n${r.score.total}/1000 · ${r.hintLevel || 'no'} hint\nChecks ${checks}\nGuesses ${guesses}\n${location.origin + location.pathname}`;
+  try { await navigator.clipboard.writeText(text); toast('COPIED', 'warm', 'Paste it to your friends.'); }
+  catch (e) { prompt('Copy your result:', text); }
+});
 for (const card of document.querySelectorAll('.hintcard')) {
   const pick = () => chooseHint(card.dataset.level, card);
   card.addEventListener('click', pick);
@@ -1629,8 +1739,10 @@ for (const card of document.querySelectorAll('.hintcard')) {
 
 // ---------- boot ----------
 (async () => {
-  const [packResponse] = await Promise.all([fetch('pack.json'), initMap()]);
-  pack = await packResponse.json();
+  const [loaded] = await Promise.all([loadCampusPack(), initMap()]);
+  pack = loaded;
+  $('campusName').textContent = (campusIndex.find(c => c.id === pack.id) || {}).short || pack.campus;
+  renderChoices();
   M_LON = M_LAT * Math.cos((pack.bounds.north + pack.bounds.south) / 2 * Math.PI / 180);
   const categories = new Map(pack.landmarks.map(l => [l.building, l.category]));
   for (const b of pack.buildings) {
