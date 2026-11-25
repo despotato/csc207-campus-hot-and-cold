@@ -3,7 +3,6 @@ package campus.application.explore;
 import campus.domain.explore.CampusMap;
 import campus.domain.explore.Difficulty;
 import campus.domain.explore.Expedition;
-import campus.domain.explore.WalkGraph.Position;
 
 import java.time.Clock;
 import java.util.Objects;
@@ -39,8 +38,7 @@ public final class StartExpeditionInteractor implements StartExpeditionInputBoun
             return;
         }
         session.start(expedition);
-        Position start = expedition.start();
-        output.present(new ExploreResponse.Started(map.name(), map.walkways().pointAt(start), start.from(),
-                start.to(), start.fraction(), expedition.checksRemaining(), Expedition.GUESS_LIMIT, difficulty.name()));
+        output.present(new ExploreResponse.Started(map.name(), expedition.start(), expedition.checksRemaining(),
+                Expedition.GUESS_LIMIT, difficulty.name()));
     }
 }

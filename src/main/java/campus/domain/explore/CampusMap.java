@@ -7,12 +7,12 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-/** A playable campus: its buildings, the landmarks that can be targets, and the walkways. */
+/** A playable campus: its buildings, the landmarks that can be targets, and the open ground to walk on. */
 public final class CampusMap {
     private final String name;
     private final Map<Integer, Building> buildings;
     private final List<CampusLandmark> landmarks;
-    private final WalkGraph walkways;
+    private final OpenSpace openSpace;
 
     public record Building(int id, String name, GeoPoint centre) {
         public Building {
@@ -31,14 +31,14 @@ public final class CampusMap {
         }
     }
 
-    public CampusMap(String name, List<Building> buildings, List<CampusLandmark> landmarks, WalkGraph walkways) {
+    public CampusMap(String name, List<Building> buildings, List<CampusLandmark> landmarks, OpenSpace openSpace) {
         if (name == null || name.isBlank() || landmarks.isEmpty()) {
             throw new IllegalArgumentException("A campus needs a name and landmarks.");
         }
         this.name = name;
         this.buildings = buildings.stream().collect(Collectors.toUnmodifiableMap(Building::id, Function.identity()));
         this.landmarks = List.copyOf(landmarks);
-        this.walkways = Objects.requireNonNull(walkways);
+        this.openSpace = Objects.requireNonNull(openSpace);
         for (CampusLandmark landmark : landmarks) {
             if (!this.buildings.containsKey(landmark.buildingId())) {
                 throw new IllegalArgumentException("Landmark " + landmark.name() + " has no building.");
@@ -54,8 +54,9 @@ public final class CampusMap {
         return landmarks;
     }
 
-    public WalkGraph walkways() {
-        return walkways;
+    /** Where players can walk: everywhere on campus outside buildings. */
+    public OpenSpace openSpace() {
+        return openSpace;
     }
 
     public Optional<Building> building(int id) {

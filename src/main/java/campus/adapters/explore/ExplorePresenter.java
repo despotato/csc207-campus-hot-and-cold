@@ -26,7 +26,6 @@ public final class ExplorePresenter implements ExploreOutputBoundary {
             case ExploreResponse.Started started -> {
                 body.put("type", "started");
                 body.put("campus", started.campus());
-                body.put("position", position(started.from(), started.to(), started.fraction()));
                 body.put("point", point(started.start()));
                 body.put("checksRemaining", started.checksRemaining());
                 body.put("guessLimit", started.guessLimit());
@@ -48,7 +47,7 @@ public final class ExplorePresenter implements ExploreOutputBoundary {
                 status = 409;
                 body.put("type", "rejected");
                 body.put("error", rejected.message());
-                body.put("position", position(rejected.from(), rejected.to(), rejected.fraction()));
+                body.put("point", point(rejected.position()));
                 body.put("metresWalked", round(rejected.metresWalked()));
             }
             case ExploreResponse.Checked checked -> {
@@ -121,10 +120,6 @@ public final class ExplorePresenter implements ExploreOutputBoundary {
             body.put("summary", summary);
         }
         return body;
-    }
-
-    private static Map<String, Object> position(int from, int to, double fraction) {
-        return Map.of("from", from, "to", to, "fraction", fraction);
     }
 
     /** GeoJSON order: [longitude, latitude]. */

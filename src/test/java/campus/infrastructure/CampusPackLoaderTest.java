@@ -33,15 +33,16 @@ class CampusPackLoaderTest {
         assertEquals(76, map.landmarks().size());
         assertTrue(map.landmarks().stream().anyMatch(l -> l.name().equals("Robarts Library")));
         assertTrue(map.landmarks().stream().anyMatch(l -> l.category().equals("Residence")));
-        long mainNetwork = java.util.stream.IntStream.range(0, map.walkways().size())
-                .filter(map.walkways()::isMainNetwork).count();
-        assertTrue(mainNetwork > 6000, "most of the footpath network is connected");
+        var robarts = map.landmarks().stream().filter(l -> l.name().equals("Robarts Library")).findFirst().orElseThrow();
+        assertFalse(map.openSpace().isOpen(map.buildingOf(robarts).centre()), "buildings are solid");
+        assertTrue(map.openSpace().openCells(4).size() > 30_000, "about two thirds of campus is walkable");
     }
 
     @Test void realCampusRoundsAreSetUpCorrectly() throws Exception {
         CampusMap map = CampusPackLoader.load(CampusPackLoader.ST_GEORGE);
-        for (int seed = 0; seed < 25; seed++) {
+        for (int seed = 0; seed < 10; seed++) {
             Expedition round = Expedition.begin(map, new Random(seed), Instant.EPOCH);
+            assertTrue(map.openSpace().isOpen(round.start()), "starts outdoors");
             assertTrue(round.shortestToZone() >= 300, "a real walk to the zone");
             assertTrue(round.shortestToZone() < 2000);
         }

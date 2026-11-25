@@ -8,14 +8,14 @@ import java.util.Optional;
 
 /** Output data for the explore use cases. Nothing here leaks the target before the round ends. */
 public sealed interface ExploreResponse {
-    record Started(String campus, GeoPoint start, int from, int to, double fraction,
-                   int checksRemaining, int guessLimit, String difficulty) implements ExploreResponse { }
+    record Started(String campus, GeoPoint start, int checksRemaining, int guessLimit, String difficulty)
+            implements ExploreResponse { }
 
     record Moved(double metresWalked, long elapsedSeconds, boolean zoneReached, ZoneView zone)
             implements ExploreResponse { }
 
-    record Rejected(String message, int from, int to, double fraction, double metresWalked)
-            implements ExploreResponse { }
+    /** A move was refused; the player stays at {@code position}. */
+    record Rejected(String message, GeoPoint position, double metresWalked) implements ExploreResponse { }
 
     record Checked(GeoPoint point, Expedition.Heat heat, Expedition.Trend trend, int checksRemaining)
             implements ExploreResponse { }

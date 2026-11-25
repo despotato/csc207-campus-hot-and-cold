@@ -6,7 +6,6 @@ import campus.adapters.explore.ExploreViewModel;
 import campus.domain.explore.CampusMap;
 import campus.domain.explore.GeoPoint;
 import campus.domain.explore.TestCampus;
-import campus.domain.explore.WalkGraph;
 import campus.infrastructure.Json;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -37,8 +36,10 @@ class ExploreFlowTest {
         @Override public Instant instant() { return now; }
     }
 
+    private ExpeditionSession session;
+
     @BeforeEach void wire() {
-        var session = new ExpeditionSession();
+        session = new ExpeditionSession();
         var presenter = new ExplorePresenter();
         LandmarkInfoGateway info = title -> {
             summaries.add(title);
@@ -68,20 +69,25 @@ class ExploreFlowTest {
         return (Map<String, Object>) value;
     }
 
-    /** Walks node to node along the shortest route to the target area, 7 s per 50 m edge. */
-    private ExploreViewModel walkToZone(int startNode) {
-        WalkGraph walkways = map.walkways();
-        GeoPoint target = map.building(1).orElseThrow().centre();
-        var route = walkways.shortestRoute(startNode, node -> walkways.node(node).distanceTo(target) < 30)
-                .orElseThrow().nodes();
+    /** Walks the shortest route into the zone in one-second chunks of up to 10 m, as the browser would. */
+    private ExploreViewModel walkToZone() {
+        var round = session.current().orElseThrow();
+        var zone = round.zoneForDiagnostics();
+        List<GeoPoint> route = map.openSpace().shortestRoute(round.position(), zone::contains).orElseThrow().points();
         ExploreViewModel last = null;
-        for (int i = 1; i < route.size(); i++) {
-            clock.now = clock.now.plusSeconds(7);
-            last = call("move", Map.of("from", route.get(i), "to", route.get(i - 1), "fraction", 0));
-            assertEquals(200, last.status(), () -> "move rejected");
-            if (Boolean.TRUE.equals(last.body().get("zoneReached"))) {
-                return last;
+        GeoPoint here = route.getFirst();
+        for (GeoPoint target : route.subList(1, route.size())) {
+            int steps = (int) Math.ceil(here.distanceTo(target) / 10);
+            for (int i = 1; i <= steps; i++) {
+                GeoPoint next = here.towards(target, (double) i / steps);
+                clock.now = clock.now.plusSeconds(1);
+                last = call("move", Map.of("path", List.of(List.of(next.longitude(), next.latitude()))));
+                assertEquals(200, last.status(), () -> "move rejected");
+                if (Boolean.TRUE.equals(last.body().get("zoneReached"))) {
+                    return last;
+                }
             }
+            here = target;
         }
         return last;
     }
@@ -92,7 +98,6 @@ class ExploreFlowTest {
         String startJson = Json.write(started.body());
         assertFalse(startJson.contains("Target Hall"), "target hidden at start");
         assertFalse(startJson.contains("zone\""), "zone hidden at start");
-        int startNode = ((Number) map(started.body().get("position")).get("from")).intValue();
 
         ExploreViewModel checked = call("check", Map.of());
         assertEquals("checked", checked.body().get("type"));
@@ -101,7 +106,7 @@ class ExploreFlowTest {
 
         assertEquals(400, call("guess", Map.of("buildingId", 1)).status(), "can't guess before the zone");
 
-        ExploreViewModel reached = walkToZone(startNode);
+        ExploreViewModel reached = walkToZone();
         assertEquals(true, reached.body().get("zoneReached"));
         assertNotNull(reached.body().get("zone"));
         assertFalse(Json.write(reached.body()).contains("Target Hall"));
@@ -122,18 +127,19 @@ class ExploreFlowTest {
         assertEquals("Target Hall", map(result.get("target")).get("name"));
         Map<String, Object> score = map(result.get("score"));
         assertEquals(400, score.get("identify"), "second guess (200) x hard (2)");
-        assertEquals(500, score.get("route"), "walked the shortest route");
+        assertTrue(((Number) score.get("route")).intValue() >= 490, "walked the shortest route");
         assertFalse(((List<?>) result.get("shortestRoute")).isEmpty());
         assertEquals(List.of("Target Hall"), summaries, "Wikipedia looked up once, at the end");
-        assertEquals(List.of("Test campus|normal|Target Hall|900"), saved, "saved exactly once when finished");
+        assertEquals(1, saved.size(), "saved exactly once when finished");
+        assertTrue(saved.getFirst().startsWith("Test campus|normal|Target Hall|"));
         assertNull(right.body().get("saveError"));
         assertEquals("A test building.", map(result.get("summary")).get("extract"));
     }
 
     @Test void failedSaveIsReportedWithoutLosingTheResult() {
         failSave = true;
-        ExploreViewModel started = call("start", Map.of("difficulty", "normal"));
-        walkToZone(((Number) map(started.body().get("position")).get("from")).intValue());
+        call("start", Map.of("difficulty", "normal"));
+        walkToZone();
         call("hint", Map.of("level", "easy"));
         ExploreViewModel right = call("guess", Map.of("buildingId", 1));
         assertNotNull(right.body().get("result"));
@@ -148,11 +154,14 @@ class ExploreFlowTest {
     @Test void badInputIsRejectedWithoutChangingTheRound() {
         assertEquals(400, call("check", Map.of()).status(), "no round yet");
         call("start", Map.of());
-        ExploreViewModel teleport = call("move", Map.of("from", 0, "to", 1, "fraction", 0.5));
+        GeoPoint far = session.current().orElseThrow().position().offset(90, 400);
+        ExploreViewModel teleport = call("move", Map.of("path", List.of(List.of(far.longitude(), far.latitude()))));
         assertEquals(409, teleport.status());
         assertEquals(0L, teleport.body().get("metresWalked"));
-        assertEquals(400, call("move", Map.of("from", "x")).status());
-        assertEquals(400, call("move", Map.of("from", 1.5, "to", 2, "fraction", 0)).status());
+        assertNotNull(teleport.body().get("point"), "the page is told where the player really is");
+        assertEquals(400, call("move", Map.of("path", "x")).status());
+        assertEquals(400, call("move", Map.of("path", List.of(List.of(1)))).status());
+        assertEquals(400, call("move", Map.of("path", List.of())).status());
         assertEquals(400, call("hint", Map.of("level", "impossible")).status());
         assertEquals(404, call("cheat", Map.of()).status());
     }

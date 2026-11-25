@@ -1,10 +1,11 @@
 package campus.application.explore;
 
 import campus.domain.explore.Expedition;
-import campus.domain.explore.WalkGraph.Position;
+import campus.domain.explore.GeoPoint;
 
 import java.time.Clock;
 import java.time.Duration;
+import java.util.List;
 import java.util.Objects;
 
 public final class MoveInteractor implements MoveInputBoundary {
@@ -19,18 +20,17 @@ public final class MoveInteractor implements MoveInputBoundary {
     }
 
     @Override
-    public void execute(int from, int to, double fraction) {
+    public void execute(List<GeoPoint> path) {
         Expedition expedition = session.current().orElse(null);
         if (expedition == null) {
             output.present(new ExploreResponse.Failed("Start a round first."));
             return;
         }
         try {
-            expedition.moveTo(new Position(from, to, fraction), clock.instant());
+            expedition.moveAlong(path, clock.instant());
         } catch (IllegalArgumentException | IllegalStateException exception) {
-            Position at = expedition.position();
-            output.present(new ExploreResponse.Rejected(exception.getMessage(), at.from(), at.to(),
-                    at.fraction(), expedition.metresWalked()));
+            output.present(new ExploreResponse.Rejected(exception.getMessage(), expedition.position(),
+                    expedition.metresWalked()));
             return;
         }
         boolean reached = expedition.stage() != Expedition.Stage.FIND_ZONE;

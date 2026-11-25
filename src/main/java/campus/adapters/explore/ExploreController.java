@@ -6,8 +6,11 @@ import campus.application.explore.GuessBuildingInputBoundary;
 import campus.application.explore.MoveInputBoundary;
 import campus.application.explore.StartExpeditionInputBoundary;
 import campus.domain.explore.Difficulty;
+import campus.domain.explore.GeoPoint;
 import campus.domain.explore.Expedition.HintLevel;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
@@ -17,6 +20,8 @@ import java.util.Objects;
  * resulting view model. Calls are synchronized because the game state is shared.
  */
 public final class ExploreController {
+    private static final int MAX_PATH_POINTS = 64;
+
     private final StartExpeditionInputBoundary start;
     private final MoveInputBoundary move;
     private final CheckTemperatureInputBoundary check;
@@ -40,7 +45,7 @@ public final class ExploreController {
             switch (action) {
                 case "start" -> start.execute(Difficulty.named(
                         fields.get("difficulty") instanceof String name ? name : Difficulty.NORMAL.name()));
-                case "move" -> move.execute(integer(fields, "from"), integer(fields, "to"), number(fields, "fraction"));
+                case "move" -> move.execute(path(fields.get("path")));
                 case "check" -> check.execute();
                 case "hint" -> hint.execute(level(fields.get("level")));
                 case "guess" -> guess.execute(integer(fields, "buildingId"));
@@ -52,6 +57,22 @@ public final class ExploreController {
             return new ExploreViewModel(400, Map.of("type", "error", "error", exception.getMessage()));
         }
         return presenter.viewModel();
+    }
+
+    /** A path is a list of [longitude, latitude] pairs, as GeoJSON writes them. */
+    private static List<GeoPoint> path(Object value) {
+        if (!(value instanceof List<?> items) || items.isEmpty() || items.size() > MAX_PATH_POINTS) {
+            throw new IllegalArgumentException("Missing or invalid path.");
+        }
+        List<GeoPoint> points = new ArrayList<>();
+        for (Object item : items) {
+            if (!(item instanceof List<?> pair) || pair.size() != 2
+                    || !(pair.get(0) instanceof Number lon) || !(pair.get(1) instanceof Number lat)) {
+                throw new IllegalArgumentException("Path points must be [longitude, latitude].");
+            }
+            points.add(new GeoPoint(lat.doubleValue(), lon.doubleValue()));
+        }
+        return points;
     }
 
     private static HintLevel level(Object value) {

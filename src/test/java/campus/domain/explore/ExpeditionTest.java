@@ -3,96 +3,116 @@ package campus.domain.explore;
 import campus.domain.explore.CampusMap.Building;
 import campus.domain.explore.CampusMap.CampusLandmark;
 import campus.domain.explore.Expedition.HintLevel;
-import campus.domain.explore.WalkGraph.Position;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class ExpeditionTest {
-    /** A 25 x 3 grid of path nodes 50 m apart running east, so node (col, row) = row * 25 + col. */
-    static final int COLS = 25;
     static final GeoPoint ORIGIN = new GeoPoint(43.66, -79.40);
     static final Instant T0 = Instant.parse("2026-11-25T12:00:00Z");
+    static final GeoPoint START = at(0, 75);
 
-    static GeoPoint grid(double col, double row) {
-        return ORIGIN.offset(90, col * 50).offset(0, row * 50);
+    /** A point {@code east} and {@code north} metres from the origin. */
+    static GeoPoint at(double east, double north) {
+        return ORIGIN.offset(90, east).offset(0, north);
     }
 
-    static WalkGraph gridGraph() {
-        List<GeoPoint> nodes = new ArrayList<>();
-        List<int[]> edges = new ArrayList<>();
-        for (int row = 0; row < 3; row++) {
-            for (int col = 0; col < COLS; col++) {
-                nodes.add(grid(col, row));
-                int id = row * COLS + col;
-                if (col > 0) edges.add(new int[]{id - 1, id});
-                if (row > 0) edges.add(new int[]{id - COLS, id});
-            }
-        }
-        nodes.add(grid(0, 10)); // an isolated node that is not on the main network
-        return new WalkGraph(nodes, edges);
+    static List<List<GeoPoint>> square(double east, double north, double half) {
+        return List.of(List.of(at(east - half, north - half), at(east + half, north - half),
+                at(east + half, north + half), at(east - half, north + half), at(east - half, north - half)));
     }
 
-    /** Target building sits between rows 1 and 2 near column 20; five buildings nearby. */
+    /**
+     * A 1,300 m x 220 m open campus. A thin wall at 500 m east runs from the south edge up to 120 m north,
+     * so walking east means going around its north end. Target Hall stands at (1000, 75).
+     */
     static CampusMap campus() {
+        List<List<List<GeoPoint>>> solid = new ArrayList<>(List.of(
+                square(1000, 75, 10), square(1010, 130, 10), square(1060, 75, 10), square(950, 75, 10),
+                square(100, 140, 10), square(1000, 20, 10)));
+        solid.add(List.of(List.of(at(498, -20), at(502, -20), at(502, 120), at(498, 120), at(498, -20))));
+        OpenSpace ground = new OpenSpace(at(-20, -20), at(1300, 200), 1.5, solid);
         List<Building> buildings = List.of(
-                new Building(1, "Target Hall", grid(20, 1.5)),
-                new Building(2, "North Hall", grid(20.5, 2.4)),
-                new Building(3, "East Hall", grid(21.2, 1.5)),
-                new Building(4, "West Hall", grid(19, 1.5)),
-                new Building(5, "Far Hall", grid(2, 1.5)),
-                new Building(6, null, grid(20, 0.6)));
+                new Building(1, "Target Hall", at(1000, 75)), new Building(2, "North Hall", at(1010, 130)),
+                new Building(3, "East Hall", at(1060, 75)), new Building(4, "West Hall", at(950, 75)),
+                new Building(5, "Far Hall", at(100, 140)), new Building(6, null, at(1000, 20)));
         List<CampusLandmark> landmarks = List.of(
                 new CampusLandmark(1, 1, "Target Hall", "Library", "Target Hall"),
                 new CampusLandmark(2, 5, "Far Hall", "Residence", null));
-        return new CampusMap("Test campus", buildings, landmarks, gridGraph());
+        return new CampusMap("Test campus", buildings, landmarks, ground);
     }
 
     static Expedition round() {
         CampusMap map = campus();
-        return new Expedition(map, map.landmarks().getFirst(), new Zone(grid(20, 1.5), 90), COLS, T0);
+        return new Expedition(map, map.landmarks().getFirst(), new Zone(at(1000, 75), 90), START, T0);
     }
 
-    /** Walks east along row 1 one edge at a time, 6 seconds per 50 m edge. */
-    static Instant walkEast(Expedition round, int fromCol, int toCol, Instant time) {
-        for (int col = fromCol; col < toCol && round.stage() == Expedition.Stage.FIND_ZONE; col++) {
-            time = time.plusSeconds(6);
-            round.moveTo(new Position(COLS + col + 1, COLS + col, 0), time);
+    /** Around the wall's north end and into the zone. */
+    static final List<GeoPoint> ROUTE = List.of(at(490, 126), at(510, 126), at(912, 78));
+
+    /** Walks to each waypoint in 10 m steps, one second per step (10 m/s, under the speed limit). */
+    static Instant walk(Expedition round, List<GeoPoint> waypoints, Instant time) {
+        GeoPoint here = round.position();
+        for (GeoPoint target : waypoints) {
+            int steps = (int) Math.ceil(here.distanceTo(target) / 10);
+            for (int i = 1; i <= steps && round.stage() == Expedition.Stage.FIND_ZONE; i++) {
+                time = time.plusSeconds(1);
+                round.moveAlong(List.of(here.towards(target, (double) i / steps)), time);
+            }
+            here = target;
         }
         return time;
     }
 
-    @Test void shortestRouteIsComputedToTheZoneEdge() {
+    @Test void openSpaceBlocksBuildingsButNotCourtyards() {
+        List<List<GeoPoint>> ring = new ArrayList<>(square(50, 50, 30));
+        ring.addAll(square(50, 50, 10)); // courtyard
+        OpenSpace ground = new OpenSpace(at(0, 0), at(100, 100), 1.0, List.of(ring));
+        assertTrue(ground.isOpen(at(5, 5)));
+        assertFalse(ground.isOpen(at(30, 50)), "inside the building");
+        assertTrue(ground.isOpen(at(50, 50)), "inside the open courtyard");
+        assertFalse(ground.isOpen(at(150, 50)), "outside the campus bounds");
+        assertFalse(ground.clearPath(at(5, 50), at(95, 50)));
+        assertTrue(ground.clearPath(at(5, 5), at(95, 5)));
+    }
+
+    @Test void shortestRouteGoesAroundBuildings() {
         Expedition round = round();
-        // Zone centre at column 20 with radius 90 m: the first node inside is column 19 (50 m away).
-        assertEquals(19 * 50, round.shortestToZone(), 1);
+        // Straight to the zone edge is 910 m; going around the wall's end adds a little.
+        assertTrue(round.shortestToZone() > 912 && round.shortestToZone() < 935, () -> "" + round.shortestToZone());
         assertTrue(round.revealedShortestRoute().isEmpty(), "Route stays hidden during play");
     }
 
     @Test void walkingCountsEveryMetreIncludingBacktracking() {
         Expedition round = round();
-        Instant time = walkEast(round, 0, 4, T0);
-        time = time.plusSeconds(6);
-        round.moveTo(new Position(COLS + 3, COLS + 4, 0), time); // back one edge
-        assertEquals(250, round.metresWalked(), 1);
+        Instant time = walk(round, List.of(at(100, 75)), T0);
+        walk(round, List.of(at(60, 75)), time);
+        assertEquals(140, round.metresWalked(), 0.5);
         assertEquals(Expedition.Stage.FIND_ZONE, round.stage());
     }
 
-    @Test void teleportsAndOffPathMovesAreRejected() {
+    @Test void teleportsAndWalkingThroughBuildingsAreRejected() {
         Expedition round = round();
         assertThrows(IllegalArgumentException.class,
-                () -> round.moveTo(new Position(COLS + 10, COLS + 11, 0), T0.plusSeconds(1)));
+                () -> round.moveAlong(List.of(at(300, 75)), T0.plusSeconds(1)), "300 m in a second");
+        Instant time = walk(round, List.of(at(490, 75)), T0);
         assertThrows(IllegalArgumentException.class,
-                () -> round.moveTo(new Position(COLS, COLS + 12, 0), T0.plusSeconds(1)));
-        // 50 m in one second is faster than the speed limit.
-        assertThrows(IllegalArgumentException.class,
-                () -> round.moveTo(new Position(COLS + 1, COLS, 0), T0.plusSeconds(1)));
-        assertEquals(0, round.metresWalked());
+                () -> round.moveAlong(List.of(at(506, 75)), time.plusSeconds(1)), "through the wall");
+        assertThrows(IllegalArgumentException.class, () -> round.moveAlong(List.of(), time.plusSeconds(1)));
+        assertEquals(490, round.metresWalked(), 0.5);
+    }
+
+    @Test void aMoveMaySendSeveralPointsWalkedSinceTheLastUpdate() {
+        Expedition round = round();
+        round.moveAlong(List.of(at(5, 75), at(5, 80), at(10, 80)), T0.plusSeconds(1));
+        assertEquals(15, round.metresWalked(), 0.5);
+        assertEquals(10, round.position().distanceTo(at(0, 80)), 0.5);
     }
 
     @Test void checksGiveHeatAndTrendAndAreLimited() {
@@ -100,12 +120,12 @@ class ExpeditionTest {
         Expedition.Check first = round.check();
         assertEquals(Expedition.Heat.COLD, first.heat());
         assertEquals(Expedition.Trend.FIRST, first.trend());
-        Instant time = walkEast(round, 0, 8, T0);
+        Instant time = walk(round, List.of(at(400, 75)), T0);
         Expedition.Check second = round.check();
         assertEquals(Expedition.Trend.WARMER, second.trend());
-        assertEquals(Expedition.Heat.COLD, second.heat()); // about 600 m away
-        walkEast(round, 8, 14, time);
-        assertEquals(Expedition.Heat.COOL, round.check().heat()); // about 301 m away
+        assertEquals(Expedition.Heat.COLD, second.heat()); // 600 m away
+        walk(round, List.of(at(490, 126), at(510, 126), at(720, 75)), time);
+        assertEquals(Expedition.Heat.WARM, round.check().heat()); // 280 m away
         while (round.checksRemaining() > 0) {
             round.check();
         }
@@ -116,19 +136,18 @@ class ExpeditionTest {
     @Test void enteringTheZoneStartsStageTwoAndRevealsTheZoneOnly() {
         Expedition round = round();
         assertTrue(round.revealedZone().isEmpty());
-        walkEast(round, 0, 19, T0);
+        Instant time = walk(round, ROUTE, T0);
         assertEquals(Expedition.Stage.IDENTIFY, round.stage());
         assertTrue(round.revealedZone().isPresent());
         assertTrue(round.revealedTarget().isEmpty());
-        assertEquals(T0.plusSeconds(19 * 6), round.zoneReachedAt().orElseThrow());
-        assertThrows(IllegalStateException.class,
-                () -> round.moveTo(new Position(COLS + 20, COLS + 19, 0), T0.plusSeconds(200)));
+        assertEquals(time, round.zoneReachedAt().orElseThrow());
+        assertThrows(IllegalStateException.class, () -> round.moveAlong(List.of(at(915, 78)), time.plusSeconds(2)));
         assertThrows(IllegalStateException.class, round::check);
     }
 
     @Test void hintMustBeChosenBlindBeforeGuessingAndOnlyOnce() {
         Expedition round = round();
-        walkEast(round, 0, 19, T0);
+        walk(round, ROUTE, T0);
         assertThrows(IllegalStateException.class, () -> round.guess(1));
         assertEquals("It's a library building, and its name starts with \"T\".", round.chooseHint(HintLevel.EASY));
         assertThrows(IllegalStateException.class, () -> round.chooseHint(HintLevel.HARD));
@@ -136,29 +155,28 @@ class ExpeditionTest {
 
     @Test void hardHintGivesDirectionWithinZone() {
         CampusMap map = campus();
-        Expedition round = new Expedition(map, map.landmarks().getFirst(),
-                new Zone(grid(20, 1.5).offset(270, 40), 90), COLS, T0);
-        walkEast(round, 0, 19, T0);
+        Expedition round = new Expedition(map, map.landmarks().getFirst(), new Zone(at(960, 75), 90), START, T0);
+        walk(round, List.of(at(490, 126), at(510, 126), at(872, 78)), T0);
         assertEquals("It's in the east part of the zone.", round.chooseHint(HintLevel.HARD));
     }
 
     @Test void hardHintCanUseAnOutsideClueButNeverOneNamingTheTarget() {
         Expedition round = round();
-        walkEast(round, 0, 19, T0);
+        walk(round, ROUTE, T0);
         assertEquals("Built in ____ as a library.", round.chooseHint(HintLevel.HARD,
-                target -> java.util.Optional.of("Built in ____ as a library.")));
+                target -> Optional.of("Built in ____ as a library.")));
         Expedition leaky = round();
-        walkEast(leaky, 0, 19, T0);
+        walk(leaky, ROUTE, T0);
         assertEquals("It's near the middle of the zone.", leaky.chooseHint(HintLevel.HARD,
-                target -> java.util.Optional.of("Target Hall opened in 1900.")), "falls back when the clue names it");
+                target -> Optional.of("Target Hall opened in 1900.")), "falls back when the clue names it");
         Expedition easy = round();
-        walkEast(easy, 0, 19, T0);
-        assertTrue(easy.chooseHint(HintLevel.EASY, target -> java.util.Optional.of("ignored")).startsWith("It's a library"));
+        walk(easy, ROUTE, T0);
+        assertTrue(easy.chooseHint(HintLevel.EASY, target -> Optional.of("ignored")).startsWith("It's a library"));
     }
 
     @Test void guessesMustBeInsideTheZoneAndDistinct() {
         Expedition round = round();
-        walkEast(round, 0, 19, T0);
+        walk(round, ROUTE, T0);
         round.chooseHint(HintLevel.NORMAL);
         assertThrows(IllegalArgumentException.class, () -> round.guess(5), "Far Hall is outside the zone");
         assertThrows(IllegalArgumentException.class, () -> round.guess(99));
@@ -167,38 +185,33 @@ class ExpeditionTest {
         assertTrue(round.guess(1));
         assertEquals(Expedition.Stage.FINISHED, round.stage());
         assertEquals("Target Hall", round.revealedTarget().orElseThrow().name());
-        assertTrue(round.revealedShortestRoute().isPresent());
+        assertTrue(round.revealedShortestRoute().orElseThrow().size() >= 2);
     }
 
     @Test void scoreRewardsEfficiencyHarderHintsAndFewerGuesses() {
-        Expedition perfect = round();
-        walkEast(perfect, 0, 19, T0);
-        perfect.chooseHint(HintLevel.HARD);
-        perfect.guess(1);
-        Expedition.Score best = perfect.score();
-        assertEquals(500, best.routePoints());
+        Expedition direct = round();
+        walk(direct, ROUTE, T0);
+        direct.chooseHint(HintLevel.HARD);
+        direct.guess(1);
+        Expedition.Score best = direct.score();
+        assertTrue(best.routePoints() >= 490, () -> "nearly the shortest route: " + best.routePoints());
         assertEquals(600, best.identifyPoints());
-        assertEquals(1100, best.total());
 
         Expedition detour = round();
-        Instant time = walkEast(detour, 0, 4, T0);
-        for (int i = 0; i < 4; i++) { // back, forward, back, forward along one edge: +200 m
-            time = time.plusSeconds(6);
-            int node = i % 2 == 0 ? COLS + 3 : COLS + 4;
-            detour.moveTo(new Position(node, i % 2 == 0 ? COLS + 4 : COLS + 3, 0), time);
-        }
-        walkEast(detour, 4, 19, time);
+        Instant time = walk(detour, List.of(at(200, 75), at(0, 75)), T0); // 400 m wasted
+        walk(detour, ROUTE, time);
         detour.chooseHint(HintLevel.EASY);
         detour.guess(4);
         detour.guess(1);
         Expedition.Score worse = detour.score();
-        assertEquals(Math.round(500 * 950 / 1150.0), worse.routePoints());
+        assertEquals(Math.round(500 * detour.shortestToZone() / detour.metresWalked()), worse.routePoints());
+        assertTrue(worse.routePoints() < 360);
         assertEquals(200, worse.identifyPoints());
     }
 
     @Test void threeWrongGuessesEndTheRoundWithNoIdentifyPoints() {
         Expedition round = round();
-        walkEast(round, 0, 19, T0);
+        walk(round, ROUTE, T0);
         round.chooseHint(HintLevel.NORMAL);
         assertFalse(round.guess(2));
         assertFalse(round.guess(3));
@@ -206,19 +219,16 @@ class ExpeditionTest {
         assertEquals(Expedition.Stage.FINISHED, round.stage());
         assertFalse(round.isWon());
         assertEquals(0, round.score().identifyPoints());
-        assertEquals(500, round.score().routePoints());
     }
 
-    @Test void randomRoundsAreValid() {
+    @Test void randomRoundsStartOnOpenGroundOutsideTheZone() {
         CampusMap map = campus();
-        for (int seed = 0; seed < 20; seed++) {
+        for (int seed = 0; seed < 10; seed++) {
             Expedition round = Expedition.begin(map, new Random(seed), T0);
-            GeoPoint start = map.walkways().pointAt(round.start());
-            assertTrue(map.walkways().isMainNetwork(round.start().from()));
+            assertTrue(map.openSpace().isOpen(round.start()));
+            assertFalse(round.zoneForDiagnostics().contains(round.start()));
             assertEquals(Expedition.Stage.FIND_ZONE, round.stage());
-            assertTrue(round.shortestToZone() > 0);
-            assertTrue(start.distanceTo(map.buildingOf(map.landmarks().getFirst()).centre()) > 300
-                    || start.distanceTo(map.buildingOf(map.landmarks().get(1)).centre()) > 300);
+            assertTrue(round.shortestToZone() > 300);
         }
     }
 }

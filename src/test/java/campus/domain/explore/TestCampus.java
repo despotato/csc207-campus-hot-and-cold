@@ -7,6 +7,4 @@ public final class TestCampus {
     public static CampusMap map() {
         return ExpeditionTest.campus();
     }
-
-    public static final int COLS = ExpeditionTest.COLS;
 }

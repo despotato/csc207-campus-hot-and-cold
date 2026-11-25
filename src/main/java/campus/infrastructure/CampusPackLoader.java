@@ -4,7 +4,7 @@ import campus.domain.explore.CampusMap;
 import campus.domain.explore.CampusMap.Building;
 import campus.domain.explore.CampusMap.CampusLandmark;
 import campus.domain.explore.GeoPoint;
-import campus.domain.explore.WalkGraph;
+import campus.domain.explore.OpenSpace;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -19,6 +19,8 @@ import java.util.Map;
  */
 public final class CampusPackLoader {
     public static final String ST_GEORGE = "/campus/packs/st-george.json";
+    /** Walkability grid resolution; the browser uses the same value (see the explore page). */
+    public static final double CELL_METRES = 1.5;
 
     private CampusPackLoader() { }
 
@@ -45,10 +47,16 @@ public final class CampusPackLoader {
             throw new IllegalArgumentException("Unsupported campus pack version.");
         }
         List<Building> buildings = new ArrayList<>();
+        List<List<List<GeoPoint>>> solid = new ArrayList<>();
         for (Object item : Json.array(pack.get("buildings"))) {
             Map<String, Object> building = Json.object(item);
             buildings.add(new Building((int) Json.number(building.get("id")), (String) building.get("name"),
                     new GeoPoint(Json.number(building.get("lat")), Json.number(building.get("lon")))));
+            if (!Boolean.TRUE.equals(building.get("flat"))) {
+                for (Object polygon : Json.array(building.get("outline"))) {
+                    solid.add(Json.array(polygon).stream().map(CampusPackLoader::ring).toList());
+                }
+            }
         }
         List<CampusLandmark> landmarks = new ArrayList<>();
         for (Object item : Json.array(pack.get("landmarks"))) {
@@ -57,17 +65,17 @@ public final class CampusPackLoader {
                     (int) Json.number(landmark.get("building")), (String) landmark.get("name"),
                     (String) landmark.get("category"), (String) landmark.get("wikipedia")));
         }
-        Map<String, Object> walkways = Json.object(pack.get("walkways"));
-        List<GeoPoint> nodes = new ArrayList<>();
-        for (Object item : Json.array(walkways.get("nodes"))) {
+        Map<String, Object> bounds = Json.object(pack.get("bounds"));
+        OpenSpace ground = new OpenSpace(
+                new GeoPoint(Json.number(bounds.get("south")), Json.number(bounds.get("west"))),
+                new GeoPoint(Json.number(bounds.get("north")), Json.number(bounds.get("east"))), CELL_METRES, solid);
+        return new CampusMap((String) pack.get("campus"), buildings, landmarks, ground);
+    }
+
+    private static List<GeoPoint> ring(Object value) {
+        return Json.array(value).stream().map(item -> {
             List<Object> lonLat = Json.array(item);
-            nodes.add(new GeoPoint(Json.number(lonLat.get(1)), Json.number(lonLat.get(0))));
-        }
-        List<int[]> edges = new ArrayList<>();
-        for (Object item : Json.array(walkways.get("edges"))) {
-            List<Object> edge = Json.array(item);
-            edges.add(new int[]{(int) Json.number(edge.get(0)), (int) Json.number(edge.get(1))});
-        }
-        return new CampusMap((String) pack.get("campus"), buildings, landmarks, new WalkGraph(nodes, edges));
+            return new GeoPoint(Json.number(lonLat.get(1)), Json.number(lonLat.get(0)));
+        }).toList();
     }
 }

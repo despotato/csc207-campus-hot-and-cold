@@ -2,7 +2,6 @@ package campus.domain.explore;
 
 import campus.domain.explore.CampusMap.Building;
 import campus.domain.explore.CampusMap.CampusLandmark;
-import campus.domain.explore.WalkGraph.Position;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -11,23 +10,23 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.OptionalDouble;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.random.RandomGenerator;
-import java.util.stream.IntStream;
 
 /**
- * One two-stage round. Stage one: walk the campus paths and use limited hot/cold checks to reach
+ * One two-stage round. Stage one: walk freely around campus and use limited hot/cold checks to reach
  * the zone. Stage two: choose a hint difficulty blind, then identify the building inside the zone.
  */
 public final class Expedition {
     public static final int GUESS_LIMIT = 3;
     /** The target sits at most this far from the zone centre, so the centre never gives it away exactly. */
     static final double MAX_ZONE_OFFSET = 50;
-    /** Fast jog with slack for network jitter; anything quicker is treated as teleporting. */
-    static final double MAX_SPEED = 9;
+    /** A sprint with slack for network jitter; anything quicker is treated as teleporting. */
+    static final double MAX_SPEED = 14;
+    static final double SPEED_SLACK_SECONDS = 0.75;
     static final double MAX_STEP = 60;
+    static final int MAX_POINTS_PER_MOVE = 64;
     static final int MIN_ZONE_BUILDINGS = 4;
 
     public enum Stage { FIND_ZONE, IDENTIFY, FINISHED }
@@ -59,15 +58,15 @@ public final class Expedition {
     private final CampusMap map;
     private final CampusLandmark target;
     private final Zone zone;
-    private final Position start;
+    private final GeoPoint start;
     private final double shortestToZone;
-    private final List<Integer> shortestRoute;
+    private final List<GeoPoint> shortestRoute;
     private final Instant startedAt;
     private final List<GeoPoint> track = new ArrayList<>();
     private final List<Check> checks = new ArrayList<>();
     private final List<Integer> guesses = new ArrayList<>();
 
-    private Position position;
+    private GeoPoint position;
     private Instant lastMoveAt;
     private double metresWalked;
     private Stage stage = Stage.FIND_ZONE;
@@ -76,34 +75,34 @@ public final class Expedition {
     private String outsideClue;
     private boolean won;
 
-    Expedition(CampusMap map, CampusLandmark target, Zone zone, int startNode, Instant now) {
-        this(Difficulty.NORMAL, map, target, zone, startNode, now);
+    Expedition(CampusMap map, CampusLandmark target, Zone zone, GeoPoint start, Instant now) {
+        this(Difficulty.NORMAL, map, target, zone, start, now);
     }
 
-    Expedition(Difficulty difficulty, CampusMap map, CampusLandmark target, Zone zone, int startNode, Instant now) {
+    Expedition(Difficulty difficulty, CampusMap map, CampusLandmark target, Zone zone, GeoPoint start, Instant now) {
         this.difficulty = Objects.requireNonNull(difficulty);
         this.map = Objects.requireNonNull(map);
         this.target = Objects.requireNonNull(target);
         this.zone = Objects.requireNonNull(zone);
-        WalkGraph walkways = map.walkways();
-        if (!walkways.isMainNetwork(startNode)) {
-            throw new IllegalArgumentException("The start must be on the main walkway network.");
+        OpenSpace ground = map.openSpace();
+        if (!ground.isOpen(start)) {
+            throw new IllegalArgumentException("The start must be on open ground.");
         }
         if (!zone.contains(map.buildingOf(target).centre())) {
             throw new IllegalArgumentException("The target must be inside the zone.");
         }
-        if (zone.contains(walkways.node(startNode))) {
+        if (zone.contains(start)) {
             throw new IllegalArgumentException("The start must be outside the zone.");
         }
-        WalkGraph.Route route = walkways.shortestRoute(startNode, node -> zone.contains(walkways.node(node)))
+        OpenSpace.Route route = ground.shortestRoute(start, zone::contains)
                 .orElseThrow(() -> new IllegalArgumentException("The zone cannot be reached on foot."));
-        this.start = walkways.at(startNode);
+        this.start = start;
         this.position = start;
         this.shortestToZone = route.metres();
-        this.shortestRoute = route.nodes();
+        this.shortestRoute = route.points();
         this.startedAt = Objects.requireNonNull(now);
         this.lastMoveAt = now;
-        track.add(walkways.node(startNode));
+        track.add(start);
     }
 
     /** Picks a random target, an offset zone around it, and a start a long walk away. */
@@ -112,8 +111,7 @@ public final class Expedition {
     }
 
     public static Expedition begin(Difficulty difficulty, CampusMap map, RandomGenerator random, Instant now) {
-        WalkGraph walkways = map.walkways();
-        int[] network = IntStream.range(0, walkways.size()).filter(walkways::isMainNetwork).toArray();
+        List<GeoPoint> open = map.openSpace().openCells(3);
         for (int attempt = 0; attempt < 200; attempt++) {
             CampusLandmark target = map.landmarks().get(random.nextInt(map.landmarks().size()));
             GeoPoint targetCentre = map.buildingOf(target).centre();
@@ -123,15 +121,15 @@ public final class Expedition {
             if (map.buildingsIn(zone).size() < MIN_ZONE_BUILDINGS) {
                 continue;
             }
-            int[] starts = IntStream.of(network).filter(node -> {
-                double distance = walkways.node(node).distanceTo(zone.centre());
+            List<GeoPoint> starts = open.stream().filter(point -> {
+                double distance = point.distanceTo(zone.centre());
                 return distance >= difficulty.minStartDistance() && distance <= difficulty.maxStartDistance();
-            }).toArray();
-            if (starts.length == 0) {
+            }).toList();
+            if (starts.isEmpty()) {
                 continue;
             }
             try {
-                return new Expedition(difficulty, map, target, zone, starts[random.nextInt(starts.length)], now);
+                return new Expedition(difficulty, map, target, zone, starts.get(random.nextInt(starts.size())), now);
             } catch (IllegalArgumentException unreachable) {
                 // Try another target.
             }
@@ -139,26 +137,43 @@ public final class Expedition {
         throw new IllegalStateException("Could not set up a round on this campus.");
     }
 
-    /** Walks to a new spot on the paths. Every metre counts, including backtracking. */
-    public void moveTo(Position next, Instant now) {
+    /**
+     * Walks through the given points in order (the path walked since the last update). Every metre counts,
+     * including backtracking. Buildings are solid, and the whole walk must fit the speed limit.
+     */
+    public void moveAlong(List<GeoPoint> points, Instant now) {
         requireStage(Stage.FIND_ZONE, "Movement ends once you reach the zone.");
+        if (points.isEmpty() || points.size() > MAX_POINTS_PER_MOVE) {
+            throw new IllegalArgumentException("Send between 1 and " + MAX_POINTS_PER_MOVE + " points.");
+        }
         double seconds = Math.max(0, Duration.between(lastMoveAt, now).toMillis() / 1000.0);
-        double allowed = Math.min(MAX_STEP, MAX_SPEED * (seconds + 0.5));
-        OptionalDouble step = map.walkways().walkingDistance(position, next, allowed);
-        if (step.isEmpty()) {
-            throw new IllegalArgumentException("That move is too far or not along a path.");
+        double allowed = Math.min(MAX_STEP, MAX_SPEED * (seconds + SPEED_SLACK_SECONDS));
+        OpenSpace ground = map.openSpace();
+        double total = 0;
+        GeoPoint at = position;
+        for (GeoPoint next : points) {
+            total += at.distanceTo(next);
+            if (total > allowed) {
+                throw new IllegalArgumentException("That move is too fast.");
+            }
+            if (!ground.clearPath(at, next)) {
+                throw new IllegalArgumentException("You can't walk through buildings.");
+            }
+            at = next;
         }
-        metresWalked += step.getAsDouble();
-        position = next;
         lastMoveAt = now;
-        GeoPoint point = map.walkways().pointAt(next);
-        if (point.distanceTo(track.getLast()) >= 3) {
-            track.add(point);
-        }
-        if (zone.contains(point)) {
-            track.add(point);
-            stage = Stage.IDENTIFY;
-            zoneReachedAt = now;
+        for (GeoPoint next : points) {
+            metresWalked += position.distanceTo(next);
+            position = next;
+            if (next.distanceTo(track.getLast()) >= 3) {
+                track.add(next);
+            }
+            if (zone.contains(next)) {
+                track.add(next);
+                stage = Stage.IDENTIFY;
+                zoneReachedAt = now;
+                return;
+            }
         }
     }
 
@@ -168,7 +183,7 @@ public final class Expedition {
         if (checksRemaining() == 0) {
             throw new IllegalStateException("No checks remaining. Keep exploring.");
         }
-        GeoPoint here = map.walkways().pointAt(position);
+        GeoPoint here = position;
         double distance = here.distanceTo(zone.centre());
         Heat heat = distance < 150 ? Heat.HOT : distance < 300 ? Heat.WARM : distance < 500 ? Heat.COOL : Heat.COLD;
         Trend trend = Trend.FIRST;
@@ -270,8 +285,8 @@ public final class Expedition {
     public UUID id() { return id; }
     public CampusMap map() { return map; }
     public Stage stage() { return stage; }
-    public Position position() { return position; }
-    public Position start() { return start; }
+    public GeoPoint position() { return position; }
+    public GeoPoint start() { return start; }
     public double metresWalked() { return metresWalked; }
     public int checksRemaining() { return difficulty.checks() - checks.size(); }
     public int checksUsed() { return checks.size(); }
@@ -296,9 +311,7 @@ public final class Expedition {
 
     /** The shortest route to the zone, for the end-of-round replay only. */
     public Optional<List<GeoPoint>> revealedShortestRoute() {
-        return stage == Stage.FINISHED
-                ? Optional.of(shortestRoute.stream().map(map.walkways()::node).toList())
-                : Optional.empty();
+        return stage == Stage.FINISHED ? Optional.of(shortestRoute) : Optional.empty();
     }
 
     public double shortestToZone() { return shortestToZone; }
