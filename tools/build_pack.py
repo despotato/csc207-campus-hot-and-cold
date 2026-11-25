@@ -92,6 +92,9 @@ LANDMARKS = [
     ("w258167657", "Goldring Centre", "Athletics", "Goldring Centre for High Performance Sport"),
 ]
 
+# Open-air landmarks highlighted at ground level instead of as a raised block.
+FLAT = {"w6147259"}
+
 HIGHWAYS = {"footway", "path", "pedestrian", "steps", "living_street", "residential", "service",
             "tertiary", "secondary", "primary", "unclassified", "cycleway", "corridor"}
 
@@ -132,13 +135,38 @@ def join_rings(ways):
     return rings
 
 
+def member_rings(e, role):
+    return join_rings([[(p["lon"], p["lat"]) for p in m["geometry"]] for m in e.get("members", [])
+                       if m.get("role") == role and m.get("geometry")])
+
+
 def outer_rings(e):
     if e["type"] == "way":
         ring = ring_from_way(e)
         return [ring] if len(ring) >= 4 and ring[0] == ring[-1] else []
-    outers = [[(p["lon"], p["lat"]) for p in m["geometry"]] for m in e.get("members", [])
-              if m.get("role") == "outer" and m.get("geometry")]
-    return join_rings(outers)
+    return member_rings(e, "outer")
+
+
+def inside(point, ring):
+    x, y = point
+    hit = False
+    for (x0, y0), (x1, y1) in zip(ring, ring[1:]):
+        if (y0 > y) != (y1 > y) and x < (x1 - x0) * (y - y0) / (y1 - y0) + x0:
+            hit = not hit
+    return hit
+
+
+def polygons(e):
+    """Outer rings, each followed by the courtyards (inner rings) it contains."""
+    outers = outer_rings(e)
+    result = [[ring] for ring in outers]
+    if e["type"] == "relation":
+        for hole in member_rings(e, "inner"):
+            for polygon in result:
+                if inside(hole[0], polygon[0]):
+                    polygon.append(hole)
+                    break
+    return result
 
 
 def height(tags):
@@ -180,39 +208,54 @@ def r6(ring):
     return [[round(x, 6), round(y, 6)] for x, y in ring]
 
 
+def footprint(e, flat):
+    shapes = polygons(e)
+    return {
+        "height": 0.6 if flat else height(e["tags"]),
+        "minHeight": 0.0 if flat else min_height(e["tags"]),
+        # Each polygon is [outer ring, courtyard rings...] as [lon, lat] pairs.
+        "outline": [[r6(r) for r in shape] for shape in shapes],
+    } if shapes else None
+
+
+def centre(outline):
+    parts = [area_centroid(polygon[0]) for polygon in outline]
+    total = sum(p[2] for p in parts)
+    return (round(sum(p[1] * p[2] for p in parts) / total, 7),
+            round(sum(p[0] * p[2] for p in parts) / total, 7))
+
+
 def main(src, dst):
     elements = json.load(open(src))["elements"]
     by_key = {key(e): e for e in elements}
+    landmark_keys = {k for k, *_ in LANDMARKS}
+
+    buildings = []
+    building_ids = {}
+    for e in elements:
+        tags = e["tags"]
+        k = key(e)
+        if k not in landmark_keys:
+            if "building" not in tags or tags.get("building") in ("roof", "construction", "train_station"):
+                continue
+            if tags.get("layer", "0").startswith("-") or tags.get("location") == "underground":
+                continue
+        shape = footprint(e, k in FLAT)
+        if shape is None:
+            continue
+        lat, lon = centre(shape["outline"])
+        building_ids[k] = len(buildings) + 1
+        buildings.append({"id": len(buildings) + 1, "name": tags.get("name"), "lat": lat, "lon": lon,
+                          "flat": k in FLAT, **shape})
 
     landmarks = []
     for next_id, (k, name, category, wiki) in enumerate(LANDMARKS, start=1):
-        e = by_key.get(k)
-        if e is None:
-            sys.exit(f"missing {k} {name}")
-        rings = outer_rings(e)
-        if not rings:
-            sys.exit(f"no outline for {k} {name}")
-        parts = [area_centroid(r) for r in rings]
-        total = sum(p[2] for p in parts)
-        lon = sum(p[0] * p[2] for p in parts) / total
-        lat = sum(p[1] * p[2] for p in parts) / total
-        landmarks.append({
-            "id": next_id, "osm": k, "name": name, "category": category, "wikipedia": wiki,
-            "lat": round(lat, 7), "lon": round(lon, 7),
-            "height": height(e["tags"]), "minHeight": min_height(e["tags"]),
-            "outline": [r6(r) for r in rings],
-        })
-
-    obstacles = []
-    for e in elements:
-        tags = e["tags"]
-        if "building" not in tags or tags.get("building") in ("roof", "construction", "train_station"):
-            continue
-        if tags.get("layer", "0").startswith("-") or tags.get("location") == "underground":
-            continue
-        for ring in outer_rings(e):
-            obstacles.append(r6(ring))
-    # Stadiums are walkable fields, so the stadium outline is not an obstacle.
+        if k not in building_ids:
+            sys.exit(f"missing outline for {k} {name}")
+        building = buildings[building_ids[k] - 1]
+        building["name"] = name
+        landmarks.append({"id": next_id, "building": building["id"], "osm": k, "name": name,
+                          "category": category, "wikipedia": wiki})
 
     nodes = {}
     coords = []
@@ -234,16 +277,17 @@ def main(src, dst):
             previous = n
 
     pack = {
+        "version": 2,
         "campus": "University of Toronto — St. George",
         "bounds": {"south": 43.6565, "west": -79.4040, "north": 43.6695, "east": -79.3875},
         "attribution": "Building outlines and paths © OpenStreetMap contributors (ODbL)",
         "landmarks": landmarks,
-        "obstacles": obstacles,
+        "buildings": buildings,
         "walkways": {"nodes": coords, "edges": sorted(edges)},
     }
     with open(dst, "w") as out:
         json.dump(pack, out, separators=(",", ":"), ensure_ascii=False)
-    print(f"{len(landmarks)} landmarks, {len(obstacles)} obstacles, "
+    print(f"{len(landmarks)} landmarks, {len(buildings)} buildings, "
           f"{len(coords)} walk nodes, {len(edges)} walk edges")
 
 
