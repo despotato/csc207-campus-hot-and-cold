@@ -1,6 +1,5 @@
 package campus.application;
 
-import campus.domain.Guess;
 import campus.domain.Round;
 
 import java.util.List;
@@ -10,17 +9,10 @@ import java.util.Objects;
 public final class SubmitGuessInteractor implements SubmitGuessInputBoundary {
     private final GameSession session;
     private final SubmitGuessOutputBoundary output;
-    private final CampusViewerGateway viewer;
 
     public SubmitGuessInteractor(GameSession session, SubmitGuessOutputBoundary output) {
-        this(session, output, CampusViewerGateway.NONE);
-    }
-
-    public SubmitGuessInteractor(GameSession session, SubmitGuessOutputBoundary output,
-                                 CampusViewerGateway viewer) {
         this.session = Objects.requireNonNull(session);
         this.output = Objects.requireNonNull(output);
-        this.viewer = Objects.requireNonNull(viewer);
     }
 
     @Override
@@ -35,15 +27,8 @@ public final class SubmitGuessInteractor implements SubmitGuessInputBoundary {
             return;
         }
         try {
-            Guess guess = round.submitGuess(request.landmarkId());
+            round.submitGuess(request.landmarkId());
             output.present(response(round, true, null));
-            viewer.showGuess(round.guesses().size(), guess.landmark(), guess.heat(), guess.trend(),
-                    round.guessesRemaining());
-            round.completedResult().ifPresent(result -> viewer.reveal(result.answer(), result.won(),
-                    result.score(), result.guesses().stream()
-                            .map(attempt -> new CampusViewerGateway.RevealedGuess(
-                                    attempt.landmark(), attempt.distanceMetres()))
-                            .toList()));
         } catch (IllegalArgumentException exception) {
             output.present(response(round, false, safeDomainMessage(exception)));
         } catch (IllegalStateException exception) {
