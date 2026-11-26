@@ -1920,12 +1920,10 @@ const LocalRules = (() => {
     const words = name.split(/\s+/).length;
     return `Little is recorded about its history. Its name is ${words === 1 ? 'one word' : words + ' words'} long and starts with "${name[0].toUpperCase()}".`;
   }
-  function positionClue() {
-    const named = zoneBuildings(round.zone).filter(b => b.name).sort((a, b) =>
-      a.center[0] - b.center[0] || a.center[1] - b.center[1] || a.id - b.id);
-    const index = named.findIndex(b => b.id === round.building.id);
-    if (index < 0) throw new Error('The target is not a named building in the zone.');
-    return `Among named buildings, count from west to east: it's #${index + 1} of ${named.length}.`;
+  /** Easy's name clue: the first letter and how many words the name has (never where it is). */
+  function nameClue() {
+    const name = round.target.name.trim(), words = name.split(/\s+/).length;
+    return `Its name starts with "${name[0].toUpperCase()}" and is ${words === 1 ? 'one word' : words + ' words'} long.`;
   }
   async function hint(body) {
     if (round.stage === 'finished') return fail('This round is over.');
@@ -1935,7 +1933,7 @@ const LocalRules = (() => {
     if (!MULT[level]) return fail('Choose easy, normal, or hard.');
     const t = round.target, category = t.category.toLowerCase(), article = /^[aeiou]/.test(category) ? 'an ' : 'a ';
     let text;
-    if (level === 'easy') text = appearance() + ' ' + positionClue();
+    if (level === 'easy') text = appearance() + ' ' + nameClue();
     else {
       // Reviewed facts stored in the pack come first; the live encyclopedia lookup is the fallback.
       const list = ((t.facts || []).length ? t.facts : await facts(t.wikipedia, t.name)).filter(f => !givesAway(f, t.name));

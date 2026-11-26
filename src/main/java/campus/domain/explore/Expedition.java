@@ -405,7 +405,7 @@ public final class Expedition {
         String category = target.category().toLowerCase(Locale.ROOT);
         String article = category.matches("^[aeiou].*") ? "an " : "a ";
         return Optional.of(switch (hintLevel) {
-            case EASY -> appearance() + " " + positionClue();
+            case EASY -> appearance() + " " + nameClue();
             // Normal is what students know: no location clue (only easy, which describes what you can see).
             case NORMAL -> "It's " + article + category + " building. " + (outsideClue != null ? outsideClue
                     : "Its name starts with \"" + Character.toUpperCase(target.name().charAt(0)) + "\".");
@@ -414,18 +414,11 @@ public final class Expedition {
     }
 
     /** A spatial clue for the easier hints, including when an encyclopedia fact is vague. */
-    private String positionClue() {
-        List<Building> named = map.buildingsIn(zone).stream().filter(building -> building.name() != null)
-                .sorted(java.util.Comparator.comparingDouble((Building building) -> building.centre().longitude())
-                        .thenComparingDouble(building -> building.centre().latitude())
-                        .thenComparingInt(Building::id)).toList();
-        for (int i = 0; i < named.size(); i++) {
-            if (named.get(i).id() == target.buildingId()) {
-                return "Among named buildings, count from west to east: it's #" + (i + 1) + " of "
-                        + named.size() + ".";
-            }
-        }
-        throw new IllegalStateException("The target is not a named building in the zone.");
+    /** Easy's name clue: the first letter and how many words the name has (never where it is). */
+    private String nameClue() {
+        int words = target.name().trim().split("\\s+").length;
+        return "Its name starts with \"" + Character.toUpperCase(target.name().charAt(0)) + "\" and is "
+                + (words == 1 ? "one word" : words + " words") + " long.";
     }
 
     /** Guesses a building inside the zone. Returns true if it is the target. */

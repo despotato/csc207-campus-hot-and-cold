@@ -145,7 +145,7 @@ class CampusPackLoaderTest {
         daily.travelTo(destination, Instant.EPOCH.plusSeconds(1));
         assertTrue(daily.check(Instant.EPOCH.plusSeconds(2)).inZone());
         String hint = daily.chooseHint(Expedition.HintLevel.EASY);
-        assertTrue(hint.contains("#2 of 4"), "easy identifies one named building by its position");
+        assertTrue(hint.contains("Its name starts with"), "easy gives a name clue, not a position");
         assertFalse(hint.contains(map.landmark(puzzle.landmarkId()).orElseThrow().name()));
         assertTrue(map.buildingsIn(zone).size() >= 5);
         for (int seed = 0; seed < 10; seed++) {

@@ -227,7 +227,7 @@ class ExpeditionTest {
         reachZone(round);
         assertThrows(IllegalStateException.class, () -> round.guess(1));
         assertEquals("It's the tallest of the 5 buildings in the zone: a 6-storey brick building. "
-                        + "Among named buildings, count from west to east: it's #2 of 4.",
+                        + "Its name starts with \"T\" and is 2 words long.",
                 round.chooseHint(HintLevel.EASY), "easy: what anyone can see");
         assertThrows(IllegalStateException.class, () -> round.chooseHint(HintLevel.HARD));
     }
@@ -272,7 +272,7 @@ class ExpeditionTest {
         Expedition easy = new Expedition(map, map.landmarks().getFirst(), new Zone(at(1000, 75), 90), START, T0);
         reachZone(easy);
         assertEquals("It's the tallest of the 5 buildings in the zone: a 6-storey stone building with a courtyard. "
-                        + "Among named buildings, count from west to east: it's #2 of 4.",
+                        + "Its name starts with \"T\" and is 2 words long.",
                 easy.chooseHint(HintLevel.EASY));
     }
 

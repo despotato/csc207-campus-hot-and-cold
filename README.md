@@ -141,7 +141,7 @@ Explore is the two-stage version of the game, played in a pixel-art 3D model of 
 - Distance travelled and time are shown at all times.
 
 **Stage 2: guess the building**
-- The camera rises over the zone and its buildings light up; drag or use the arrow keys to look around. You pick one of three face-down hint cards: **easy ×1** (what anyone can see: height rank, storeys, facade, courtyard), **normal ×1.5** (what students know: its category and best-known fact) or **hard ×2** (campus history: a historical fact). Easy also says where it sits among the zone's named buildings; normal and hard never give location or size. You only see the hint after choosing. Facts are reviewed sentences stored in each campus pack (drawn from Wikipedia, name blanked out); the live Wikipedia lookup is only a fallback.
+- The camera rises over the zone and its buildings light up; drag or use the arrow keys to look around. You pick one of three face-down hint cards: **easy ×1** (what anyone can see: height rank, storeys, facade, courtyard), **normal ×1.5** (what students know: its category and best-known fact) or **hard ×2** (campus history: a historical fact). Easy also gives a name clue (first letter and number of words); normal and hard never give location or size. You only see the hint after choosing. Facts are reviewed sentences stored in each campus pack (drawn from Wikipedia, name blanked out); the live Wikipedia lookup is only a fallback.
 - Hover a highlighted building to see its name, and click it to guess. You get 3 guesses.
 
 **Results**
