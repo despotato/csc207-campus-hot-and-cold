@@ -155,7 +155,7 @@
 <div id="travelCursor" class="hidden"></div>
 <div id="checkLabels"></div>
 <div id="help" class="panel hidden">
-  Drag or <kbd>←</kbd><kbd>→</kbd> to look around · pinch/scroll zoom · <kbd>Space</kbd> check · <kbd>M</kbd> map: click to travel
+  Drag to move · right-drag to turn · <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> <kbd>Q</kbd><kbd>E</kbd> fly · <kbd>C</kbd> back to you · <kbd>Space</kbd> check · <kbd>M</kbd> map: click to travel
 </div>
 <div id="mapTitle" class="panel hidden">Campus map<small>Click anywhere to travel there · pinch or scroll to zoom · <kbd>M</kbd>/<kbd>Esc</kbd> to return</small></div>
 <div id="travelling" class="hidden"><div>Travelling…<div class="bar"><i></i></div></div></div>
@@ -183,7 +183,7 @@
       <li>Click the building you think it is. Fewer guesses and shorter walks score more.</li>
     </ol>
     <div class="controls">
-      <span>Drag to look around</span>
+      <span>Drag to move, right-drag to turn</span>
       <span><kbd>Space</kbd> check</span><span><kbd>M</kbd> map &amp; travel</span><span>Pinch/scroll to zoom</span>
     </div>
     <!-- Difficulty selector: the start request already sends { difficulty }. See the team task "Difficulty levels". -->
@@ -776,6 +776,13 @@ function initMap() {
     pitch: 60, bearing: -20, attributionControl: { compact: true }, fadeDuration: 0,
     canvasContextAttributes: { antialias: false, preserveDrawingBuffer: DEBUG },
   });
+  // MapLibre sets its far clipping plane from the screen, so zooming in shrank the view distance (in metres) and
+  // cut off distant buildings. It reads transform.farZ right after setting it, so a getter can keep ~3 km visible.
+  const transform = map.transform;
+  let rawFar = transform.farZ;
+  Object.defineProperty(transform, 'farZ', { configurable: true,
+    get() { return Math.max(rawFar || 0, 3000 * (this._pixelPerMeter || 0)); },
+    set(v) { rawFar = v; } });
   map.on('styleimagemissing', e => { if (e.id === 'paving') map.addImage('paving', pavingImage(), { pixelRatio: 1 }); });
   return new Promise(resolve => map.on('load', resolve));
 }
@@ -1641,7 +1648,7 @@ async function replay() {
 
 // ---------- tutorial ----------
 const TUTORIAL = [
-  ['Look around, travel by map', 'Drag or <kbd>←</kbd><kbd>→</kbd> to look around · pinch or scroll to zoom<br><kbd>M</kbd> or the 🗺 Map button · click a spot to travel there',
+  ['Look around, travel by map', 'Drag to move the camera, right-drag to turn · <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> <kbd>Q</kbd><kbd>E</kbd> fly · <kbd>C</kbd> back to you<br><kbd>M</kbd> or the 🗺 Map button · click a spot to travel there',
     "You're somewhere on campus. Somewhere 450 to 900 m away is a hidden zone around one building. Look around where you stand, then open the map and click where to go next. Each trip counts as the shortest walk there."],
   ['Check the temperature', '<kbd>Space</kbd> → <span style="color:#ff4d2e">40°C hot</span> … <span style="color:#6f8cff">-10°C cold</span><br>▲ +4° warmer · ▼ -3° colder than your last check',
     'You have 6 checks. Each gives a temperature: 40°C at the zone centre, a degree cooler for every 20 m away. Checks are numbered on the right and on the map. Your avatar has a 3 m reach: touching the zone edge counts. Press Space there to find it. Out of checks? Your next Space is a final search.'],
@@ -2312,11 +2319,14 @@ function frame(now) {
     map.jumpTo({ bearing: map.getBearing() + dt * 4 });
   } else if (LOOK_PHASES.has(game.phase) && !game.mapView) {
     if (game.phase === 'walk') renderHud();
-    const k = game.keys;
-    const turn = (k.right || k.strafeRight ? 1 : 0) - (k.left || k.strafeLeft ? 1 : 0), tilt = (k.fwd ? 1 : 0) - (k.back ? 1 : 0);
-    if (turn || tilt) {
+    const k = game.keys, on = (a, b) => (k[a] ? 1 : 0) - (k[b] ? 1 : 0);
+    const fwd = on('fwd', 'back'), side = on('strafeRight', 'strafeLeft'), turn = on('right', 'left');
+    const tilt = on('tiltUp', 'tiltDown'), lift = on('up', 'down');
+    if (fwd || side || turn || tilt || lift) {
       game.orbiting = false;
-      map.jumpTo({ bearing: map.getBearing() + turn * 70 * dt, pitch: Math.max(5, Math.min(75, map.getPitch() + tilt * 40 * dt)) });
+      if (fwd || side) map.panBy([side * 520 * dt, -fwd * 520 * dt], { duration: 0 });
+      map.jumpTo({ bearing: map.getBearing() + turn * 70 * dt, pitch: Math.max(0, Math.min(78, map.getPitch() + tilt * 40 * dt)),
+        zoom: Math.max(15, Math.min(21.5, map.getZoom() - lift * 1.4 * dt)) });
     }
   }
   if (map) $('needle').style.transform = `rotate(${-map.getBearing()}deg)`;
@@ -2360,10 +2370,15 @@ const hide = id => $(id).classList.add('hidden');
 // You don't walk: you look around where you are and travel with the map. Every in-round phase is a look-around phase.
 const LOOK_PHASES = new Set(['walk', 'zone', 'hint', 'guess', 'done']);
 /** Around the zone: drag orbits (no panning away), pinch/scroll zooms. */
+/**
+ * Free camera: drag to move anywhere on campus, right-drag (or Ctrl-drag) to rotate and tilt, scroll or pinch to
+ * zoom; WASD move, Q/E lower/raise, arrows turn/tilt, C returns to the mascot. The camera stays over the campus.
+ */
 function lookAroundMode() {
   setInteractive(false);
-  map.scrollZoom.enable();
-  map.touchZoomRotate.enable();
+  for (const h of ['dragPan', 'dragRotate', 'scrollZoom', 'touchZoomRotate', 'touchPitch', 'doubleClickZoom']) map[h].enable();
+  const b = pack.bounds, padLon = 0.004, padLat = 0.003;
+  map.setMaxBounds([[b.west - padLon, b.south - padLat], [b.east + padLon, b.north + padLat]]);
 }
 function setInteractive(on) {
   for (const h of ['dragPan', 'dragRotate', 'scrollZoom', 'touchZoomRotate', 'doubleClickZoom', 'keyboard']) on ? map[h].enable() : map[h].disable();
@@ -2373,8 +2388,8 @@ function flyTo(options) {
 }
 
 // W/S and ↑/↓ move, A/D strafe, ←/→ turn. Around the zone, A/D and ←/→ both orbit and W/S tilt.
-const KEYMAP = { KeyW: 'fwd', ArrowUp: 'fwd', KeyS: 'back', ArrowDown: 'back', KeyA: 'strafeLeft', KeyD: 'strafeRight',
-  ArrowLeft: 'left', ArrowRight: 'right' };
+const KEYMAP = { KeyW: 'fwd', KeyS: 'back', KeyA: 'strafeLeft', KeyD: 'strafeRight', KeyQ: 'down', KeyE: 'up',
+  ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'tiltUp', ArrowDown: 'tiltDown' };
 addEventListener('keydown', e => {
   if (e.code === 'Escape' && !$('tutorial').classList.contains('hidden')) { closeTutorial(); return; }
   if (e.code === 'Enter' && game.phase === 'title' && $('tutorial').classList.contains('hidden')) { startRound(); return; }
@@ -2385,6 +2400,7 @@ addEventListener('keydown', e => {
     if (e.code === 'Space' && !e.repeat) { doCheck(); e.preventDefault(); return; }
   }
   if (LOOK_PHASES.has(game.phase) && !game.mapView && KEYMAP[e.code]) { game.keys[KEYMAP[e.code]] = true; e.preventDefault(); }
+  if (LOOK_PHASES.has(game.phase) && !game.mapView && e.code === 'KeyC' && game.pos) map.easeTo({ center: game.pos, duration: 600 });
 });
 addEventListener('keyup', e => { if (KEYMAP[e.code]) game.keys[KEYMAP[e.code]] = false; });
 addEventListener('blur', () => (game.keys = {}));
@@ -2398,14 +2414,12 @@ addEventListener('pointerdown', e => {
   if (e.target.tagName !== 'CANVAS' || game.mapView) return;
   if (LOOK_PHASES.has(game.phase)) { game.dragX = e.clientX; game.dragY = e.clientY; game.dragged = 0; }
 });
+// MapLibre moves the camera itself now; we only measure how far the pointer travelled.
 addEventListener('pointermove', e => {
   if (game.dragX == null) return;
-  const dx = e.clientX - game.dragX, dy = e.clientY - game.dragY;
-  game.dragged += Math.abs(dx) + Math.abs(dy);
-  // Orbit around where you are (or the zone): left/right turns, up/down tilts.
-  game.orbiting = false;
-  map.jumpTo({ bearing: map.getBearing() - dx * 0.35, pitch: Math.max(5, Math.min(75, map.getPitch() - dy * 0.25)) });
+  game.dragged += Math.abs(e.clientX - game.dragX) + Math.abs(e.clientY - game.dragY);
   game.dragX = e.clientX; game.dragY = e.clientY;
+  game.orbiting = false;
 });
 addEventListener('pointerup', () => { game.dragX = null; game.justDragged = game.dragged > 6; });
 $('startBtn').addEventListener('click', startRound);
