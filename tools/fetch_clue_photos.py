@@ -1,22 +1,28 @@
 #!/usr/bin/env python3
-"""Fetch and crop the start-of-round clue photos for a campus pack, ahead of time.
+"""Pick the start-of-round clue views for a campus pack, ahead of time.
 
-Players never call a photo service: this script runs once per campus (by a developer), saves cropped street photos of
-ordinary buildings next to the packs, and lists them in the pack as "cluePhotos". At the start of a round the game
-shows the photo of one of those buildings that stands inside the hidden zone (Expedition.clueBuilding).
+At the start of a round the game shows a street view of an ordinary building inside the hidden zone
+(Expedition.clueBuilding). This script runs once per campus (by a developer) and lists one view per region of the
+campus in the pack as "cluePhotos".
 
-The campus is split into square regions (60 m by default). Each region gets one photo: its tallest ordinary building
-(not a landmark, 6 m or taller) that some street photo faces from 12-60 m away. A 90 m zone covers several regions,
-so most zones have a photo.
+The campus is split into square regions (60 m by default). Each region gets one view: its tallest ordinary building
+(not a landmark, 6 m or taller) that street imagery faces from close by. A 90 m zone covers several regions, so most
+zones have a view.
 
-Source: Mapillary (photos are CC BY-SA 4.0, faces and number plates already blurred). Each photo keeps its author and
-a link. Google Street View is not used: its terms don't allow downloading and re-hosting the images.
+Sources (--source):
+  google (default): Google Street View. This script only calls the Street View *metadata* endpoint, which Google
+    doesn't charge for and which uses no quota, to find the nearest panorama and aim the camera at the building.
+    It stores the panorama ID and camera angle, never an image (Google's terms don't allow storing them). Players'
+    browsers then show it through the Maps Embed API, which Google provides at no charge with unlimited use. With
+    the keys restricted as in docs/CLUE_PHOTOS.md, neither step can ever be billed.
+  mapillary: open CC BY-SA photos (faces and plates blurred), downloaded, cropped around the building and stored
+    next to the packs (clues/<campus>/<building>.jpg).
 
 Usage:
-    pip install pillow
-    MAPILLARY_TOKEN=MLY|... python3 tools/fetch_clue_photos.py src/main/resources/campus/packs/st-george.json
-Options: --region 60 (metres), --refresh (re-fetch regions that already have a photo; default keeps them, so
-photos players have seen don't change).
+    GOOGLE_METADATA_KEY=... python3 tools/fetch_clue_photos.py src/main/resources/campus/packs/st-george.json
+    pip install pillow; MAPILLARY_TOKEN=MLY|... python3 tools/fetch_clue_photos.py --source mapillary <pack>
+Options: --region 60 (metres), --refresh (redo regions that already have a view; by default they're kept, so views
+players have seen don't change).
 """
 import argparse
 import io
@@ -29,9 +35,13 @@ import time
 import urllib.parse
 import urllib.request
 
-from PIL import Image
+try:
+    from PIL import Image   # only for --source mapillary
+except ImportError:
+    Image = None
 
 API = "https://graph.mapillary.com/images"
+SV_METADATA = "https://maps.googleapis.com/maps/api/streetview/metadata"
 FIELDS = "id,thumb_2048_url,computed_compass_angle,compass_angle,computed_geometry,geometry,is_pano,creator,captured_at"
 M_PER_DEG = 111320
 MIN_HEIGHT = 6          # metres: a real building, not a shed
@@ -68,6 +78,32 @@ def mapillary(token, west, south, east, north):
                 print(f"  ! Mapillary request failed: {error}", file=sys.stderr)
                 return []
             time.sleep(2 ** attempt)
+
+
+def google_view(key, building):
+    """Aim at the building from the nearest outdoor Street View panorama (metadata only: free, no quota)."""
+    query = urllib.parse.urlencode({"location": f"{building['lat']},{building['lon']}", "radius": 50,
+                                    "source": "outdoor", "key": key})
+    try:
+        with urllib.request.urlopen(f"{SV_METADATA}?{query}", timeout=30) as response:
+            meta = json.load(response)
+    except Exception as error:
+        print(f"  ! metadata request failed: {error}", file=sys.stderr)
+        return None
+    if meta.get("status") != "OK":
+        if meta.get("status") in ("REQUEST_DENIED", "OVER_QUERY_LIMIT"):
+            sys.exit(f"Street View metadata: {meta.get('status')} {meta.get('error_message', '')}")
+        return None
+    at = (meta["location"]["lng"], meta["location"]["lat"])
+    centre = (building["lon"], building["lat"])
+    distance = metres(at, centre)
+    if not 8 <= distance <= 60:
+        return None
+    pitch = math.degrees(math.atan((building["height"] * 0.45 - 2.5) / distance))
+    return {"building": building["id"], "pano": meta["pano_id"], "location": [round(at[0], 7), round(at[1], 7)],
+            "heading": round(bearing(at, centre)), "pitch": round(min(30, max(0, pitch))),
+            "fov": round(min(55, max(20, 2 * math.degrees(math.atan(7 / distance))))),
+            "taken": meta.get("date")}
 
 
 def best_view(building, images):
@@ -121,10 +157,15 @@ def main():
     parser.add_argument("pack")
     parser.add_argument("--region", type=float, default=60)
     parser.add_argument("--refresh", action="store_true")
+    parser.add_argument("--source", choices=["google", "mapillary"], default="google")
     args = parser.parse_args()
-    token = os.environ.get("MAPILLARY_TOKEN")
+    google = args.source == "google"
+    token = os.environ.get("GOOGLE_METADATA_KEY" if google else "MAPILLARY_TOKEN")
     if not token:
-        sys.exit("Set MAPILLARY_TOKEN (a Mapillary client token: mapillary.com/dashboard/developers).")
+        sys.exit("Set GOOGLE_METADATA_KEY (see docs/CLUE_PHOTOS.md)." if google
+                 else "Set MAPILLARY_TOKEN (a Mapillary client token: mapillary.com/dashboard/developers).")
+    if not google and Image is None:
+        sys.exit("pip install pillow")
 
     pack_path = pathlib.Path(args.pack)
     pack = json.loads(pack_path.read_text(encoding="utf-8"))
@@ -151,12 +192,21 @@ def main():
         x, y = to_xy(b["lon"], b["lat"])
         regions.setdefault((math.floor(x / args.region), math.floor(y / args.region)), []).append(b)
 
-    kept = {p["building"]: p for p in pack.get("cluePhotos", []) if (out_dir / f"{p['building']}.jpg").exists()}
+    kept = {p["building"]: p for p in pack.get("cluePhotos", [])
+            if p.get("pano") or (out_dir / f"{p['building']}.jpg").exists()}
     photos = []
     for n, (key, members) in enumerate(sorted(regions.items()), 1):
         already = [kept[b["id"]] for b in members if b["id"] in kept]
         if already and not args.refresh:
             photos.extend(already)
+            continue
+        if google:
+            for b in sorted(members, key=lambda m: (-m["height"], m["id"])):
+                view = google_view(token, b)
+                if view:
+                    photos.append(view)
+                    break
+            print(f"\r{campus}: region {n}/{len(regions)}, {len(photos)} views", end="", flush=True)
             continue
         pad_lat = (args.region + 70) / M_PER_DEG
         pad_lon = pad_lat / math.cos(math.radians(lat0))
@@ -187,8 +237,9 @@ def main():
     print()
 
     used = {p["building"] for p in photos}
+    stored = {p["building"] for p in photos if p.get("file")}
     for stale in out_dir.glob("*.jpg"):   # photos of regions that no longer qualify
-        if int(stale.stem) not in used:
+        if int(stale.stem) not in stored:
             stale.unlink()
     pack["cluePhotos"] = sorted(photos, key=lambda p: p["building"])
     with pack_path.open("w", encoding="utf-8") as out:
@@ -204,7 +255,10 @@ def main():
                    for i in used)
     covered = sum(1 for p in upcoming if has_clue(p))
     size = sum(f.stat().st_size for f in out_dir.glob("*.jpg")) / 1e6
-    print(f"{campus}: {len(photos)} photos ({size:.1f} MB) for {len(regions)} regions; "
+    for folder in (out_dir, out_dir.parent):   # no stored photos: leave no empty folders behind
+        if folder.exists() and not any(folder.iterdir()):
+            folder.rmdir()
+    print(f"{campus}: {len(photos)} views ({size:.1f} MB stored) for {len(regions)} regions; "
           f"{covered}/{len(upcoming)} upcoming dailies have a photo")
 
 

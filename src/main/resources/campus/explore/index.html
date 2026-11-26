@@ -132,6 +132,11 @@
   #clueCard { z-index: 20; background: #0b0d1ed9; }
   #clueCard .card { max-width: 560px; width: 100%; }
   #clueCard .cluePhoto { border: 3px solid var(--paper); margin: 8px 0 2px; }
+  .cluePhoto { position: relative; overflow: hidden; }
+  .cluePhoto iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+  .cluePhoto .shield { position: absolute; left: 0; right: 0; top: 0; bottom: 26px; cursor: default; }
+  #clueThumb.icon .cluePhoto { aspect-ratio: auto; height: 44px; background: #0b0d1e no-repeat center / 32px 32px
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 11 11' shape-rendering='crispEdges'%3E%3Cpath fill='%23fff8e7' d='M1 3h9v6H1zM3 2h3v1H3z'/%3E%3Cpath fill='%231b1f3a' d='M4 4h3v4H4z'/%3E%3Cpath fill='%234cf0d4' d='M5 5h1v2H5z'/%3E%3Cpath fill='%23ffd23f' d='M8 4h1v1H8z'/%3E%3C/svg%3E"); }
   #clueCredit { display: block; font-size: 10px; opacity: .7; text-align: right; }
   #clueThumb { position: fixed; left: 12px; bottom: 12px; width: 190px; padding: 0; border: 3px solid var(--paper);
     background: #1b1f3a; color: var(--paper); cursor: zoom-in; box-shadow: var(--shadow); }
@@ -339,7 +344,7 @@
     <div class="buttons"><button id="clueClose">Find the zone</button></div>
   </div>
 </section>
-<button id="clueThumb" class="hidden" aria-label="Show the photo of a building in the zone"><span class="cluePhoto" id="clueThumbPhoto"></span><small>In the zone</small></button>
+<button id="clueThumb" class="hidden" aria-label="Show the photo of a building in the zone"><span class="cluePhoto" id="clueThumbPhoto"></span><small>Zone photo</small></button>
 
 <section id="achievements" class="screen hidden" role="dialog" aria-modal="true" aria-labelledby="achTitle">
   <div class="card panel">
@@ -2203,25 +2208,50 @@ function fillResults(r, saveError) {
 
 // ---------- start-of-round photo clue ----------
 /**
- * The photo was taken and cropped ahead of time (tools/fetch_clue_photos.py) and ships with the campus pack, so
- * playing never calls a photo service.
+ * Views are chosen ahead of time (tools/fetch_clue_photos.py) and listed in the campus pack: either a stored photo
+ * (file) or a Street View camera (pano, heading, pitch, fov). Street View is shown through Google's Maps Embed API,
+ * which Google provides at no charge with unlimited use. Restrict this key to the Maps Embed API and this site's
+ * addresses (docs/CLUE_PHOTOS.md), so it can never be billed. Empty = Street View views are skipped.
  */
+const GOOGLE_EMBED_KEY = '';
 const loadImage = src => new Promise(res => { const img = new Image(); img.onload = () => res(true); img.onerror = () => res(false); img.src = src; });
 async function findClue(buildingId) {
   const stored = (pack.cluePhotos || []).find(p => p.building === buildingId);
   if (buildingId == null || !stored) return null;
+  if (stored.pano) {
+    if (!GOOGLE_EMBED_KEY) return null;
+    const q = new URLSearchParams({ key: GOOGLE_EMBED_KEY, pano: stored.pano, heading: stored.heading, pitch: stored.pitch,
+      fov: stored.fov, location: `${stored.location[1]},${stored.location[0]}` });
+    return { embed: 'https://www.google.com/maps/embed/v1/streetview?' + q,
+      credit: 'Google Street View' + (stored.taken ? ' · ' + stored.taken : '') };
+  }
   const photo = { src: 'packs/' + stored.file, credit: stored.credit };
   return await loadImage(photo.src) ? photo : null;
 }
 function paintPhoto(el, photo) {
-  el.style.backgroundImage = `url("${photo.src}")`;
+  el.innerHTML = '';
+  el.style.backgroundImage = photo.src ? `url("${photo.src}")` : '';
+}
+/**
+ * A Street View embed, locked to its camera angle: a clear shield stops players walking off to read street signs,
+ * leaving Google's credit and terms links along the bottom visible and clickable.
+ */
+function embedView(el, photo) {
+  el.innerHTML = ''; el.style.backgroundImage = '';
+  const frame = document.createElement('iframe');
+  frame.src = photo.embed; frame.loading = 'eager'; frame.title = 'Street View of a building in the zone';
+  frame.referrerPolicy = 'strict-origin-when-cross-origin';
+  const shield = document.createElement('span'); shield.className = 'shield';
+  el.append(frame, shield);
 }
 let closeClueCard = () => {};
 /** Shows the photo card (resolves when closed) and keeps a thumbnail on screen for the rest of the round. */
 function showClue(photo, open) {
   game.cluePhoto = photo;
   if (!photo) return Promise.resolve();
-  paintPhoto($('cluePhoto'), photo); paintPhoto($('clueThumbPhoto'), photo);
+  if (photo.embed) { embedView($('cluePhoto'), photo); paintPhoto($('clueThumbPhoto'), {}); }
+  else { paintPhoto($('cluePhoto'), photo); paintPhoto($('clueThumbPhoto'), photo); }
+  $('clueThumb').classList.toggle('icon', !!photo.embed);
   $('clueCredit').textContent = photo.credit;
   show('clueThumb');
   return open ? openClueCard() : Promise.resolve();
