@@ -55,6 +55,27 @@
       "short": "UVic",
       "file": "uvic.json",
       "timezone": "America/Vancouver"
+    },
+    {
+      "id": "ualberta",
+      "name": "University of Alberta — North campus",
+      "short": "UAlberta",
+      "file": "ualberta.json",
+      "timezone": "America/Edmonton"
+    },
+    {
+      "id": "ucalgary",
+      "name": "University of Calgary — Main campus",
+      "short": "UCalgary",
+      "file": "ucalgary.json",
+      "timezone": "America/Edmonton"
+    },
+    {
+      "id": "usask",
+      "name": "University of Saskatchewan",
+      "short": "USask",
+      "file": "usask.json",
+      "timezone": "America/Regina"
     }
   ]
 }
