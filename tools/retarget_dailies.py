@@ -38,7 +38,7 @@ def main(config_path, pack_path, first):
     start_bounds = bounds if config.get("dailyStartInsideBounds") else None
     fresh = build_pack.daily_schedule(pack["buildings"], good, walk["nodes"], walk["edges"], lat0,
                                       config["id"] + "-retarget", datetime.date.fromisoformat(stale[0]),
-                                      start_bounds)
+                                      start_bounds, pack["landmarks"])
     missing = [d for d in stale if d not in fresh]
     for date in stale:
         if date in fresh:

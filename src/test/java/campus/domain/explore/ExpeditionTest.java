@@ -409,4 +409,13 @@ class ExpeditionTest {
             assertTrue(round.shortestToZone() > 300);
         }
     }
+
+    @Test void startsStayOnCampusNotInTheSurroundingCity() {
+        CampusMap map = campus();
+        // Far Hall stands at (100, 140): a start 40 m from it is on campus, one 300 m from every landmark is not.
+        assertEquals(List.of(at(100, 100)), Expedition.onCampus(map, List.of(at(100, 100), at(400, 100))));
+        // When nothing is near campus, the candidates closest to it are kept rather than none.
+        assertEquals(List.of(at(300, 140), at(320, 140)),
+                Expedition.onCampus(map, List.of(at(300, 140), at(320, 140), at(700, 140))));
+    }
 }

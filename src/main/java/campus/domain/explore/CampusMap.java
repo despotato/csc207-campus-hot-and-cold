@@ -137,6 +137,15 @@ public final class CampusMap {
         return buildings.get(landmark.buildingId());
     }
 
+    /**
+     * How far {@code point} is from the nearest campus landmark building, in metres. The pack's bounds also take in
+     * the surrounding city, so this is how rounds tell campus ground from a street several blocks away.
+     */
+    public double metresFromCampus(GeoPoint point) {
+        return landmarks.stream().mapToDouble(landmark -> buildingOf(landmark).centre().distanceTo(point))
+                .min().orElse(Double.POSITIVE_INFINITY);
+    }
+
     /** Buildings whose centre lies inside the zone: the choices for stage two. */
     public List<Building> buildingsIn(Zone zone) {
         return buildings.values().stream().filter(building -> zone.contains(building.centre()))

@@ -14,6 +14,7 @@ import sys
 # Daily puzzles: the same target, zone and start for every player on a given date.
 DAILY_DAYS = 400
 ZONE_RADIUS, MIN_START, MAX_START = 90, 450, 900
+CAMPUS_REACH = 120   # a start is on campus within this many metres of a landmark building's centre
 
 HIGHWAYS = {"footway", "path", "pedestrian", "steps", "living_street", "residential", "service",
             "tertiary", "secondary", "primary", "unclassified", "cycleway", "corridor"}
@@ -219,8 +220,17 @@ def offset(p, bearing, dist, lat0):
     return [p[0] + math.sin(r) * dist / (m_lat * math.cos(math.radians(lat0))), p[1] + math.cos(r) * dist / m_lat]
 
 
-def daily_schedule(buildings, landmarks, coords, edges, lat0, campus_id, daily_from, start_bounds=None):
-    """Deterministic daily puzzles. Starts are footpath points on the main network, clear of buildings."""
+def on_campus(starts, landmark_centres, lat0):
+    """The starts near a landmark building (mirrors Expedition.onCampus): the bounds also cover the city around."""
+    if not starts:
+        return starts
+    away = [min(metres(p, c, lat0) for c in landmark_centres) for p in starts]
+    limit = max(CAMPUS_REACH, min(away) + CAMPUS_REACH / 2)
+    return [p for p, a in zip(starts, away) if a <= limit]
+
+
+def start_network(buildings, coords, edges, lat0, start_bounds=None):
+    """Footpath points on the main network that may start a puzzle, and a test that a point is clear of buildings."""
     parent = list(range(len(coords)))
 
     def find(x):
@@ -254,7 +264,15 @@ def daily_schedule(buildings, landmarks, coords, edges, lat0, campus_id, daily_f
                 and start_bounds["south"] + margin_lat <= p[1] <= start_bounds["north"] - margin_lat)
 
     network = [coords[i] for i in range(len(coords)) if find(i) == main_root and within_bounds(coords[i])]
+    return network, clear
+
+
+def daily_schedule(buildings, landmarks, coords, edges, lat0, campus_id, daily_from, start_bounds=None,
+                   all_landmarks=None):
+    """Deterministic daily puzzles. Starts are footpath points on the main network, clear of buildings."""
+    network, clear = start_network(buildings, coords, edges, lat0, start_bounds)
     by_id = {b["id"]: b for b in buildings}
+    landmark_centres = [[by_id[l["building"]]["lon"], by_id[l["building"]]["lat"]] for l in all_landmarks or landmarks]
     schedule = {}
     for day in range(DAILY_DAYS):
         date = (daily_from + datetime.timedelta(days=day)).isoformat()
@@ -268,7 +286,8 @@ def daily_schedule(buildings, landmarks, coords, edges, lat0, campus_id, daily_f
                 continue
             if not any(metres(p, zone, lat0) <= ZONE_RADIUS - 10 for p in network):
                 continue
-            starts = [p for p in network if MIN_START <= metres(p, zone, lat0) <= MAX_START]
+            starts = on_campus([p for p in network if MIN_START <= metres(p, zone, lat0) <= MAX_START],
+                               landmark_centres, lat0)
             rng.shuffle(starts)
             start = next((p for p in starts[:40] if clear(p)), None)
             if start:

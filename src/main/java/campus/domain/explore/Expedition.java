@@ -6,6 +6,7 @@ import campus.domain.explore.CampusMap.CampusLandmark;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -22,6 +23,8 @@ public final class Expedition {
     public static final int GUESS_LIMIT = 3;
     /** The target sits at most this far from the zone centre, so the centre never gives it away exactly. */
     static final double MAX_ZONE_OFFSET = 50;
+    /** A start counts as on campus within this many metres of a landmark building's centre. */
+    static final double CAMPUS_REACH = 120;
     /** Players have a 3 m footprint, so touching the edge counts as reaching the zone. */
     static final double PLAYER_RADIUS = 3;
     /** A fast sprint with slack for network jitter; anything quicker is treated as teleporting. */
@@ -230,6 +233,7 @@ public final class Expedition {
             if (starts.isEmpty()) {
                 continue;
             }
+            starts = onCampus(map, starts);
             try {
                 return new Expedition(difficulty, map, target, zone, starts.get(random.nextInt(starts.size())), now);
             } catch (IllegalArgumentException unreachable) {
@@ -237,6 +241,23 @@ public final class Expedition {
             }
         }
         throw new IllegalStateException("Could not set up a round on this campus.");
+    }
+
+    /**
+     * The candidate starts that are on campus (near a landmark building). A compact campus may have none at the
+     * required walking distance; then the ones closest to campus are used, so a round never starts in the suburbs.
+     */
+    static List<GeoPoint> onCampus(CampusMap map, List<GeoPoint> starts) {
+        double[] away = starts.stream().mapToDouble(map::metresFromCampus).toArray();
+        double nearest = Arrays.stream(away).min().orElse(0);
+        double limit = Math.max(CAMPUS_REACH, nearest + CAMPUS_REACH / 2);
+        List<GeoPoint> chosen = new ArrayList<>();
+        for (int i = 0; i < away.length; i++) {
+            if (away[i] <= limit) {
+                chosen.add(starts.get(i));
+            }
+        }
+        return chosen;
     }
 
     static boolean offersARealChoice(CampusMap map, Zone zone) {
