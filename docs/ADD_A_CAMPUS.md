@@ -104,9 +104,13 @@ out geom;
 2. Check the printed summary: the landmark count matches your list, and there are hundreds of buildings, thousands of
    walk nodes and about 400 daily puzzles. **Far fewer daily puzzles means most zones fail the "real choice" rule.**
    Add more landmarks in built-up areas, or check the bounds. Look at a few puzzles: start points must be outdoors.
-3. Add the campus to `src/main/resources/campus/packs/index.json` (`file` must match `[a-z0-9-]+\.json`). Order
+3. Run `python3 -I tools/repair_daily_starts.py tools/campuses/<id>.json src/main/resources/campus/packs/<id>.json`.
+   It re-picks any daily start that falls outside the map or hugs a building (the walkability grid treats outside
+   the bounds as blocked, so such a daily can't be set up). It should normally report `0 daily starts repaired`.
+   Also set `"dailyStartInsideBounds": true` in the config so new packs avoid the problem.
+4. Add the campus to `src/main/resources/campus/packs/index.json` (`file` must match `[a-z0-9-]+\.json`). Order
    matters: the first entry is the default campus.
-4. Keep the pack around 1 MB or less (St. George is about 1 MB). If it's much bigger, shrink the bounds.
+5. Keep the pack around 1 MB or less (St. George is about 1 MB). If it's much bigger, shrink the bounds.
 
 ## Step 4: tests
 
@@ -114,7 +118,10 @@ out geom;
   `PackCatalog.campusIds()`). Update them to include the new campus, and add a test that loads the new pack: landmarks
   present, a daily puzzle for a date in range starts on open ground (`Expedition.daily`), and 10 random
   `Expedition.begin` rounds set up with `shortestToZone() > 300`.
-- Run `mvn verify` (tests **and** Checkstyle; the build fails on style violations). Everything must pass.
+- Run `mvn verify` (tests **and** Checkstyle; the build fails on style violations). Everything must pass. The
+  tests already set up the start of every daily on every campus in the index and walk the shortest route in small
+  steps for 20 dailies per campus, so a broken pack fails here. Prefer a recognisable landmark list over a long
+  one: tiny sheds and obscure labs make poor targets (weak hints, sparse zones).
 
 ## Step 5: check it visually (Playwright)
 
