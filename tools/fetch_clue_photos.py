@@ -6,7 +6,7 @@ At the start of a round the game shows a street view of an ordinary building ins
 campus in the pack as "cluePhotos".
 
 The campus is split into square regions (60 m by default). Each region gets one view: its tallest ordinary building
-(not a landmark, 6 m or taller) that street imagery faces from close by. A 90 m zone covers several regions, so most
+(not a landmark, 200 m² or more) that street imagery faces from close by. A 90 m zone covers several regions, so most
 zones have a view.
 
 Sources (--source):
@@ -55,7 +55,8 @@ API = "https://graph.mapillary.com/images"
 SV_METADATA = "https://maps.googleapis.com/maps/api/streetview/metadata"
 FIELDS = "id,thumb_2048_url,computed_compass_angle,compass_angle,computed_geometry,geometry,is_pano,creator,captured_at"
 M_PER_DEG = 111320
-MIN_HEIGHT = 6          # metres: a real building, not a shed
+MIN_HEIGHT = 4          # metres; most buildings have no height in OpenStreetMap and default to about 5 m
+MIN_FOOTPRINT = 200     # square metres: a real building, not a shed or a kiosk
 NEAR_LANDMARKS = 180    # metres: zones always surround a landmark, so photos further out are never used
 OUT_W, OUT_H = 640, 400
 PHOTO_FOV = 70          # degrees: typical horizontal view of a phone or dashcam photo
@@ -153,6 +154,17 @@ def google_view(key, building):
             "taken": meta.get("date")}
 
 
+def footprint(building, lat0):
+    """Ground area in square metres (outer rings of the outline)."""
+    k = M_PER_DEG * math.cos(math.radians(lat0))
+    area = 0.0
+    for polygon in building.get("outline") or []:
+        ring = polygon[0] if polygon else []
+        area += abs(sum((a[0] * k) * (b[1] * M_PER_DEG) - (b[0] * k) * (a[1] * M_PER_DEG)
+                        for a, b in zip(ring, ring[1:] + ring[:1]))) / 2
+    return area
+
+
 def best_view(building, images):
     """The photo that shows this building best: 12-60 m away, facing it (any panorama faces everything)."""
     centre = (building["lon"], building["lat"])
@@ -187,11 +199,11 @@ def crop(photo, pano, off, distance):
         rolled.paste(photo, (shift, 0))
         rolled.paste(photo, (shift - width if shift > 0 else shift + width, 0))
         photo, centre_x = rolled, width / 2
-        centre_y = height * 0.47
+        centre_y = height * 0.42   # a little above the horizon: walls, not pavement
     else:
         centre_x = width * (0.5 + off / PHOTO_FOV)
-        crop_w = min(width * 0.6, max(width * 0.3, width * view / PHOTO_FOV))
-        centre_y = height * 0.45
+        crop_w = min(width * 0.65, max(width * 0.45, width * view / PHOTO_FOV))
+        centre_y = height * 0.36   # street photos put the road in the lower half
     crop_h = crop_w * OUT_H / OUT_W
     left = min(max(0, centre_x - crop_w / 2), width - crop_w)
     top = min(max(0, centre_y - crop_h / 2), height - crop_h)
@@ -234,66 +246,103 @@ def main():
 
     regions = {}
     for b in pack["buildings"]:
-        if b["id"] in landmark_ids or (b.get("height") or 0) < MIN_HEIGHT or not near_campus(b):
+        if (b["id"] in landmark_ids or b.get("flat") or (b.get("height") or 0) < MIN_HEIGHT
+                or not near_campus(b)):
+            continue
+        b["_size"] = footprint(b, lat0)
+        if b["_size"] < MIN_FOOTPRINT:
             continue
         x, y = to_xy(b["lon"], b["lat"])
         regions.setdefault((math.floor(x / args.region), math.floor(y / args.region)), []).append(b)
 
     kept = {p["building"]: p for p in pack.get("cluePhotos", [])
-            if p.get("pano") or (out_dir / f"{p['building']}.jpg").exists()}
-    photos = []
+            if p["building"] in by_id and p["building"] not in landmark_ids
+            and (p.get("pano") or (out_dir / f"{p['building']}.jpg").exists())}
+    photos = {} if args.refresh else dict(kept)   # building id -> entry; existing views stay unless --refresh
+
+    def mapillary_entry(b, images):
+        view = best_view(b, images)
+        if not view:
+            return None
+        _, image, off, distance = view
+        try:
+            with urllib.request.urlopen(image["thumb_2048_url"], timeout=60) as response:
+                original = Image.open(io.BytesIO(response.read())).convert("RGB")
+        except Exception as error:
+            print(f"  ! download failed for building {b['id']}: {error}", file=sys.stderr)
+            return None
+        crop(original, bool(image.get("is_pano")), off, distance).save(
+            out_dir / f"{b['id']}.jpg", "JPEG", quality=80, optimize=True, progressive=True)
+        author = (image.get("creator") or {}).get("username") or "a Mapillary contributor"
+        taken = time.strftime("%Y", time.gmtime(image["captured_at"] / 1000)) if image.get("captured_at") else None
+        return {"building": b["id"], "file": f"clues/{campus}/{b['id']}.jpg",
+                "credit": f"© {author}" + (f", {taken}" if taken else "") + " · Mapillary · CC BY-SA 4.0 (cropped)",
+                "source": f"https://www.mapillary.com/app/?pKey={image['id']}"}
+
+    def first_view(candidates):
+        """A view of the first candidate that has one (candidates are tried biggest first)."""
+        images = None
+        if not google and candidates:
+            pad_lat = 130 / M_PER_DEG
+            pad_lon = pad_lat / math.cos(math.radians(lat0))
+            cx = sum(b["lon"] for b in candidates) / len(candidates)
+            cy = sum(b["lat"] for b in candidates) / len(candidates)
+            images = mapillary(token, cx - pad_lon, cy - pad_lat, cx + pad_lon, cy + pad_lat)
+            time.sleep(0.2)
+        for b in candidates:
+            entry = google_view(token, b) if google else mapillary_entry(b, images)
+            if entry:
+                photos[b["id"]] = entry
+                return entry
+        return None
+
+    biggest_first = lambda bs: sorted(bs, key=lambda m: (-m["_size"] * m["height"], m["id"]))
     for n, (key, members) in enumerate(sorted(regions.items()), 1):
-        already = [kept[b["id"]] for b in members if b["id"] in kept]
-        if already and not args.refresh:
-            photos.extend(already)
-            continue
-        if google:
-            for b in sorted(members, key=lambda m: (-m["height"], m["id"])):
-                view = google_view(token, b)
-                if view:
-                    photos.append(view)
-                    break
-            print(f"\r{campus}: region {n}/{len(regions)}, {len(photos)} views", end="", flush=True)
-            continue
-        pad_lat = (args.region + 70) / M_PER_DEG
-        pad_lon = pad_lat / math.cos(math.radians(lat0))
-        cx = sum(b["lon"] for b in members) / len(members)
-        cy = sum(b["lat"] for b in members) / len(members)
-        images = mapillary(token, cx - pad_lon, cy - pad_lat, cx + pad_lon, cy + pad_lat)
-        for b in sorted(members, key=lambda m: (-m["height"], m["id"])):
-            view = best_view(b, images)
-            if not view:
-                continue
-            _, image, off, distance = view
-            try:
-                with urllib.request.urlopen(image["thumb_2048_url"], timeout=60) as response:
-                    original = Image.open(io.BytesIO(response.read())).convert("RGB")
-            except Exception as error:
-                print(f"  ! download failed for building {b['id']}: {error}", file=sys.stderr)
-                continue
-            crop(original, bool(image.get("is_pano")), off, distance).save(
-                out_dir / f"{b['id']}.jpg", "JPEG", quality=80, optimize=True, progressive=True)
-            author = (image.get("creator") or {}).get("username") or "a Mapillary contributor"
-            taken = time.strftime("%Y", time.gmtime(image["captured_at"] / 1000)) if image.get("captured_at") else None
-            photos.append({"building": b["id"], "file": f"clues/{campus}/{b['id']}.jpg",
-                           "credit": f"© {author}" + (f", {taken}" if taken else "") + " · Mapillary · CC BY-SA 4.0 (cropped)",
-                           "source": f"https://www.mapillary.com/app/?pKey={image['id']}"})
-            break
-        print(f"\r{campus}: region {n}/{len(regions)}, {len(photos)} photos", end="", flush=True)
-        time.sleep(0.2)
+        if not any(b["id"] in photos for b in members):
+            first_view(biggest_first(members))
+        print(f"\r{campus}: region {n}/{len(regions)}, {len(photos)} views", end="", flush=True)
     print()
+
+    # Daily zones still without a view: try every ordinary building inside, small ones too (sparse campuses).
+    today = time.strftime("%Y-%m-%d")
+    def zone_xy(puzzle):
+        return to_xy(*puzzle["zone"]) if isinstance(puzzle["zone"], list) else to_xy(
+            puzzle["zone"]["lon"], puzzle["zone"]["lat"])
+    def inside(b, xy, radius=80):
+        bx, by_ = to_xy(b["lon"], b["lat"])
+        return math.hypot(bx - xy[0], by_ - xy[1]) <= radius
+    tried = set()
+    for date, puzzle in sorted(pack.get("daily", {}).items()):
+        if date < today:
+            continue
+        xy = zone_xy(puzzle)
+        if any(inside(by_id[i], xy) for i in photos):
+            continue
+        candidates = [b for b in pack["buildings"] if b["id"] not in landmark_ids and b["id"] not in tried
+                      and not b.get("flat") and inside(b, xy, 78)]
+        for b in candidates:
+            b.setdefault("_size", footprint(b, lat0))
+            b["_height"] = b.get("height") or 0
+        tried.update(b["id"] for b in candidates)
+        if first_view(sorted(candidates, key=lambda m: (-m["_size"] * max(m["_height"], 1), m["id"]))):
+            print(f"\r{campus}: daily fill, {len(photos)} views", end="", flush=True)
+    print()
+    for b in pack["buildings"]:
+        b.pop("_height", None)
+    photos = list(photos.values())
 
     used = {p["building"] for p in photos}
     stored = {p["building"] for p in photos if p.get("file")}
     for stale in out_dir.glob("*.jpg"):   # photos of regions that no longer qualify
         if int(stale.stem) not in stored:
             stale.unlink()
+    for b in pack["buildings"]:
+        b.pop("_size", None)
     pack["cluePhotos"] = sorted(photos, key=lambda p: p["building"])
     with pack_path.open("w", encoding="utf-8") as out:
         json.dump(pack, out, separators=(",", ":"), ensure_ascii=False)
 
     # How many upcoming dailies will show a photo (same choice as Expedition.clueBuilding).
-    today = time.strftime("%Y-%m-%d")
     upcoming = [p for d, p in pack.get("daily", {}).items() if d >= today]
     def has_clue(puzzle):
         zx, zy = to_xy(puzzle["zone"][0], puzzle["zone"][1]) if isinstance(puzzle["zone"], list) else to_xy(
