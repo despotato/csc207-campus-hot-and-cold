@@ -87,6 +87,14 @@
       "file": "usask.json",
       "timezone": "America/Regina",
       "region": "Saskatchewan"
+    },
+    {
+      "id": "western",
+      "name": "Western University",
+      "short": "Western",
+      "file": "western.json",
+      "timezone": "America/Toronto",
+      "region": "Ontario"
     }
   ]
 }

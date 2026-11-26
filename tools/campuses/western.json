@@ -1,0 +1,451 @@
+{
+  "id": "western",
+  "name": "Western University",
+  "timezone": "America/Toronto",
+  "bounds": {
+    "south": 42.99451,
+    "west": -81.28654,
+    "north": 43.01609,
+    "east": -81.26586
+  },
+  "mascot": {
+    "name": "J.W. the Mustang",
+    "species": "mustang",
+    "colors": {
+      "fur": "#7A4B2A",
+      "belly": "#A0673C",
+      "dark": "#2b1a0e",
+      "primary": "#4F2683",
+      "secondary": "#FFFFFF"
+    },
+    "school": "Western University"
+  },
+  "flat": [],
+  "dailyFrom": "2026-11-01",
+  "landmarks": [
+    {
+      "osm": "w118764108",
+      "name": "Weldon Library",
+      "category": "Library",
+      "wikipedia": "D. B. Weldon Library",
+      "facts": [
+        "It is the main library for the arts, humanities and social sciences.",
+        "It was renovated in 1997–1998, 2006–2007 and 2008–2011."
+      ]
+    },
+    {
+      "osm": "w118764094",
+      "name": "Thompson Arena",
+      "category": "Athletics",
+      "wikipedia": null,
+      "facts": [
+        "It has an NHL-sized ice rink with an indoor track around it.",
+        "It was built in 1971."
+      ]
+    },
+    {
+      "osm": "w118764110",
+      "name": "Spencer Engineering Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w126668336",
+      "name": "Huron University College",
+      "category": "College",
+      "wikipedia": null
+    },
+    {
+      "osm": "w141710485",
+      "name": "Taylor Library",
+      "category": "Library",
+      "wikipedia": "Allyn and Betty Taylor Library"
+    },
+    {
+      "osm": "r7379137",
+      "name": "Richard Ivey Building",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It is the business school's home.",
+        "The business school moved into it from its old building across campus in September 2013."
+      ]
+    },
+    {
+      "osm": "w119875065",
+      "name": "Althouse",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It is the education faculty's building.",
+        "Its most unusual feature is a circular library added in 1966, nicknamed the flying saucer."
+      ]
+    },
+    {
+      "osm": "w147379460",
+      "name": "Elborn College",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "The library and information science program was housed here from 1982 to 1998."
+      ]
+    },
+    {
+      "osm": "w141710486",
+      "name": "University Community Center",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w141710484",
+      "name": "Social Science Center",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w310134768",
+      "name": "Ontario Hall",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w310132539",
+      "name": "Western Student Recreation Centre",
+      "category": "Athletics",
+      "wikipedia": null,
+      "facts": [
+        "It is the main gym for fitness classes, intramural sports and clubs.",
+        "It opened in January 2009."
+      ]
+    },
+    {
+      "osm": "w558927474",
+      "name": "FIMS & Nursing Building",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It is shared by the Faculty of Information and Media Studies and the Nursing program, at Lambton Drive and Huron Drive.",
+        "It was built in 2016."
+      ]
+    },
+    {
+      "osm": "w119875060",
+      "name": "London Hall",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w126668347",
+      "name": "Saugeen Maitland Hall (Residence)",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w682172580",
+      "name": "Dental Sciences Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w141710483",
+      "name": "Robarts Research Institute",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w119875073",
+      "name": "Essex Hall",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w310130110",
+      "name": "Brescia University College",
+      "category": "College",
+      "wikipedia": null,
+      "facts": [
+        "It was Canada's last women's university college.",
+        "It was affiliated with Western from 1919 until 2024."
+      ]
+    },
+    {
+      "osm": "r7932251",
+      "name": "Biological & Geological Sciences",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w118764095",
+      "name": "Thames Hall",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "Before the recreation centre opened in 2009, it housed the athletics department, with a pool and a gym."
+      ]
+    },
+    {
+      "osm": "w118764097",
+      "name": "Law School",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w141710482",
+      "name": "Medical Sciences Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w310135962",
+      "name": "Perth Hall",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w142286122",
+      "name": "Physics Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w142286116",
+      "name": "North Campus Building",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "The information and media studies faculty was based here from 2006 to 2017."
+      ]
+    },
+    {
+      "osm": "w116779543",
+      "name": "Talbot College",
+      "category": "College",
+      "wikipedia": null,
+      "facts": [
+        "The music library has been on its second floor since 1972.",
+        "It was renovated and expanded together with the Music Building, finishing in 2018."
+      ]
+    },
+    {
+      "osm": "w142216964",
+      "name": "Somerville House",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w1203774692",
+      "name": "Arts & Humanities",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "r7380709",
+      "name": "John Labatt Visual Art Centre",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w626520018",
+      "name": "Amit Chakma Engineering Building",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It is the newest engineering building, named after a former university president.",
+        "Its name was announced on October 12, 2018."
+      ]
+    },
+    {
+      "osm": "w118764092",
+      "name": "University College",
+      "category": "College",
+      "wikipedia": null,
+      "facts": [
+        "It is one of the two oldest academic buildings on the central campus, with its Gothic tower.",
+        "It was built as the Arts Building and completed in 1924, designed by John Moore and Co."
+      ]
+    },
+    {
+      "osm": "w116779542",
+      "name": "Natural Sciences Building",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "A science reading room opened in it in 1947 because the main library was out of space."
+      ]
+    },
+    {
+      "osm": "w141710478",
+      "name": "Delaware Hall (Residence)",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w1346111803",
+      "name": "Burnlea Hall",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "r7932252",
+      "name": "Chemistry Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w142216959",
+      "name": "Alumni Hall",
+      "category": "Campus life",
+      "wikipedia": null,
+      "facts": [
+        "It is used for convocation, basketball, volleyball and other indoor events.",
+        "It was built as a multi-purpose hall in the late 1960s."
+      ]
+    },
+    {
+      "osm": "w118764098",
+      "name": "Thompson Engineering Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w1264685790",
+      "name": "Music Building",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It was renovated and expanded together with Talbot College, finishing in 2018."
+      ]
+    },
+    {
+      "osm": "w126668540",
+      "name": "Siebens Centre",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w126668341",
+      "name": "Lambton Hall (Residence)",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w126668543",
+      "name": "Health Sciences Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w126668520",
+      "name": "Bayfield Hall (Residence)",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w118764099",
+      "name": "Middlesex College",
+      "category": "College",
+      "wikipedia": null,
+      "facts": [
+        "Its clock tower is a campus landmark, and the computer science department is based here.",
+        "The library and information science program was housed here from 1998 to 2004."
+      ]
+    },
+    {
+      "osm": "w118764093",
+      "name": "Western Science Centre",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w142216960",
+      "name": "J W Little Memorial Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w126668339",
+      "name": "Beaver Hall (Residence)",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w126668340",
+      "name": "Ausable Hall (Residence)",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w237302165",
+      "name": "Lawson Hall",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It houses the History, English and Writing Studies, Classical Studies and Women's Studies departments."
+      ]
+    },
+    {
+      "osm": "w118764109",
+      "name": "Stevenson Hall",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w527547917",
+      "name": "Western Interdisciplinary Research Building",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "Students call it WIRB; it houses the Brain and Mind Institute."
+      ]
+    },
+    {
+      "osm": "w126668534",
+      "name": "Huron Dining Hall",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w126668348",
+      "name": "Westminister Hall",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w255852502",
+      "name": "Western Centre for Public Health and Family Medicine",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w141710480",
+      "name": "Kresge Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w562894113",
+      "name": "Dr. Don Rix Clinical Skills Learning Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w310131575",
+      "name": "South Hall",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w310131577",
+      "name": "Hellmuth Hall",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w118764089",
+      "name": "Collip Medical Research Building",
+      "category": "Teaching",
+      "wikipedia": null
+    }
+  ],
+  "dailyStartInsideBounds": true
+}
