@@ -236,9 +236,8 @@ class ExpeditionTest {
         List<String> facts = List.of("It opened in 1931 as a library.", "A film crew used its roof in 2009.");
         Expedition normal = round();
         reachZone(normal);
-        assertEquals("It's a library building. It opened in 1931 as a library. "
-                        + "Among named buildings, count from west to east: it's #2 of 4.",
-                normal.chooseHint(HintLevel.NORMAL, target -> facts), "normal: category plus best-known fact");
+        assertEquals("It's a library building. It opened in 1931 as a library.",
+                normal.chooseHint(HintLevel.NORMAL, target -> facts), "normal: category plus best-known fact, no location");
         Expedition hard = round();
         reachZone(hard);
         assertEquals("A film crew used its roof in 2009.", hard.chooseHint(HintLevel.HARD, target -> facts),
@@ -248,8 +247,7 @@ class ExpeditionTest {
         assertEquals("It stands about 6 storeys tall.", none.chooseHint(HintLevel.HARD, target -> List.of()));
         Expedition student = round();
         reachZone(student);
-        assertEquals("It's a library building. Its name starts with \"T\". "
-                        + "Among named buildings, count from west to east: it's #2 of 4.",
+        assertEquals("It's a library building. Its name starts with \"T\".",
                 student.chooseHint(HintLevel.NORMAL, target -> List.of()), "normal fallback: what students know");
     }
 

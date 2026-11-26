@@ -399,9 +399,9 @@ public final class Expedition {
         String article = category.matches("^[aeiou].*") ? "an " : "a ";
         return Optional.of(switch (hintLevel) {
             case EASY -> appearance() + " " + positionClue();
+            // Normal is what students know: no location clue (only easy, which describes what you can see).
             case NORMAL -> "It's " + article + category + " building. " + (outsideClue != null ? outsideClue
-                    : "Its name starts with \"" + Character.toUpperCase(target.name().charAt(0)) + "\".")
-                    + " " + positionClue();
+                    : "Its name starts with \"" + Character.toUpperCase(target.name().charAt(0)) + "\".");
             case HARD -> outsideClue != null ? outsideClue : recordedHistory();
         });
     }
