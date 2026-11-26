@@ -139,6 +139,10 @@
   .cluePhoto .shield { position: absolute; left: 0; right: 0; top: 0; bottom: 26px; cursor: default; }
   #clueThumb.icon .cluePhoto { aspect-ratio: auto; height: 44px; background: #0b0d1e no-repeat center / 32px 32px
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 11 11' shape-rendering='crispEdges'%3E%3Cpath fill='%23fff8e7' d='M1 3h9v6H1zM3 2h3v1H3z'/%3E%3Cpath fill='%231b1f3a' d='M4 4h3v4H4z'/%3E%3Cpath fill='%234cf0d4' d='M5 5h1v2H5z'/%3E%3Cpath fill='%23ffd23f' d='M8 4h1v1H8z'/%3E%3C/svg%3E"); }
+  #clueWords { font-size: 18px; line-height: 1.5; color: var(--gold); margin: 12px 0 4px; }
+  button.link { background: none; border: 0; box-shadow: none; padding: 2px 0; color: var(--paper); opacity: .75;
+    text-decoration: underline; font-size: 11px; cursor: pointer; }
+  #clueThumb.words .cluePhoto { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 11 11' shape-rendering='crispEdges'%3E%3Cpath fill='%23fff8e7' d='M2 1h6v1h1v8H2z'/%3E%3Cpath fill='%231b1f3a' d='M3 3h5v1H3zM3 5h5v1H3zM3 7h3v1H3z'/%3E%3C/svg%3E"); }
   #clueCredit { display: block; font-size: 10px; opacity: .7; text-align: right; }
   #clueThumb { position: fixed; left: 12px; bottom: 12px; width: 190px; padding: 0; border: 3px solid var(--paper);
     background: #1b1f3a; color: var(--paper); cursor: zoom-in; box-shadow: var(--shadow); }
@@ -342,7 +346,9 @@
     <h2 id="clueTitle">Somewhere in the zone</h2>
     <div class="cluePhoto" id="cluePhoto" role="img" aria-label="Street photo of a building in the hidden zone"></div>
     <small id="clueCredit"></small>
-    <p class="lead">This building stands in the hidden zone. It isn't the one you're looking for, but find it and you've found the zone. The photo stays in the corner.</p>
+    <button id="clueSwap" class="link hidden">Photo didn't load? Read a written clue instead</button>
+    <p id="clueWords" class="hidden"></p>
+    <p id="clueLead" class="lead"></p>
     <div class="buttons"><button id="clueClose">Find the zone</button></div>
   </div>
 </section>
@@ -2247,23 +2253,52 @@ function embedView(el, photo) {
   el.append(frame, shield);
 }
 let closeClueCard = () => {};
-/** Shows the photo card (resolves when closed) and keeps a thumbnail on screen for the rest of the round. */
-function showClue(photo, open) {
+/** Resolves true once the frame has loaded, false after `ms` (offline, blocked, or Google not answering). */
+const frameLoaded = (frame, ms) => new Promise(res => {
+  const timer = setTimeout(() => res(false), ms);
+  frame.addEventListener('load', () => { clearTimeout(timer); res(true); }, { once: true });
+});
+/** Photo mode, or the written clue (no photo, or it didn't load). */
+function clueMode(words) {
+  const text = words && !!game.clueText;
+  $('cluePhoto').classList.toggle('hidden', text); $('clueCredit').classList.toggle('hidden', text);
+  $('clueSwap').classList.toggle('hidden', text || !game.clueText);
+  $('clueWords').classList.toggle('hidden', !text);
+  $('clueWords').textContent = game.clueText || '';
+  $('clueTitle').textContent = text ? 'A clue to the zone' : 'Somewhere in the zone';
+  $('clueLead').textContent = text
+    ? "It isn't the building you're looking for, but it's in the zone. The clue stays in the corner."
+    : "This building stands in the hidden zone. It isn't the one you're looking for, but find it and you've found the zone. The photo stays in the corner.";
+  $('clueThumb').classList.toggle('icon', text || !!game.cluePhoto?.embed);
+  $('clueThumb').classList.toggle('words', text);
+  $('clueThumb').querySelector('small').textContent = text ? 'Zone clue' : 'Zone photo';
+  game.clueWords = text;
+}
+/**
+ * Shows the clue card (resolves when closed) and keeps a corner button for the rest of the round. A photo is used
+ * when there is one and it loads; otherwise the written clue; with neither, nothing is shown.
+ */
+async function showClue(photo, open) {
   game.cluePhoto = photo;
-  if (!photo) return Promise.resolve();
-  if (photo.embed) { embedView($('cluePhoto'), photo); paintPhoto($('clueThumbPhoto'), {}); }
-  else { paintPhoto($('cluePhoto'), photo); paintPhoto($('clueThumbPhoto'), photo); }
-  $('clueThumb').classList.toggle('icon', !!photo.embed);
-  $('clueCredit').textContent = photo.credit;
+  if (photo?.embed) {
+    embedView($('cluePhoto'), photo); paintPhoto($('clueThumbPhoto'), {});
+    if (!await frameLoaded($('cluePhoto').querySelector('iframe'), 8000)) game.cluePhoto = null;
+  } else if (photo) {
+    paintPhoto($('cluePhoto'), photo); paintPhoto($('clueThumbPhoto'), photo);
+  }
+  if (!game.cluePhoto && !game.clueText) return;
+  if (game.cluePhoto) $('clueCredit').textContent = game.cluePhoto.credit;
+  clueMode(!game.cluePhoto);
   show('clueThumb');
-  return open ? openClueCard() : Promise.resolve();
+  if (open) await openClueCard();
 }
 function openClueCard() {
-  if (!game.cluePhoto) return Promise.resolve();
+  if (!game.cluePhoto && !game.clueText) return Promise.resolve();
   show('clueCard');
   $('clueClose').focus();
   return new Promise(res => { closeClueCard = () => { hide('clueCard'); closeClueCard = () => {}; res(); }; });
 }
+$('clueSwap').addEventListener('click', () => clueMode(true));
 $('clueClose').addEventListener('click', () => closeClueCard());
 $('clueCard').addEventListener('click', e => { if (e.target.id === 'clueCard') closeClueCard(); });
 $('clueThumb').addEventListener('click', openClueCard);
@@ -2434,15 +2469,35 @@ const LocalRules = (() => {
   const ok = body => ({ status: 200, body });
   const fail = (error, status = 400) => ({ status, body: { type: 'error', error } });
   const inZone = (z, p) => distOf(z.centre, p) <= z.radius;
-  /** Mirrors Expedition.clueBuilding: a photographed ordinary building 10 m inside the zone, chosen from its centre. */
-  function clueBuilding(zone) {
+  /** Mirrors Expedition's clue choices: ordinary buildings 10 m inside the zone, picked by an index from its centre. */
+  function ordinaryInZone(zone) {
     const landmarkIds = new Set(pack.landmarks.map(l => l.building)), inner = { centre: zone.centre, radius: zone.radius - 10 };
-    const photographed = new Set((pack.cluePhotos || []).map(p => p.building));
-    const pool = pack.buildings.filter(b => photographed.has(b.id) && !landmarkIds.has(b.id) && inZone(inner, b.center))
-      .sort((a, b) => a.id - b.id);
+    return pack.buildings.filter(b => !landmarkIds.has(b.id) && inZone(inner, b.center)).sort((a, b) => a.id - b.id);
+  }
+  function pickClue(zone, pool) {
     if (!pool.length) return null;
     const seed = Math.round(zone.centre[1] * 1e6) + Math.round(zone.centre[0] * 1e6);
-    return pool[((seed % pool.length) + pool.length) % pool.length].id;
+    return pool[((seed % pool.length) + pool.length) % pool.length];
+  }
+  /** Mirrors Expedition.clueBuilding: a photographed ordinary building. */
+  function clueBuilding(zone) {
+    const photographed = new Set((pack.cluePhotos || []).map(p => p.building));
+    return pickClue(zone, ordinaryInZone(zone).filter(b => photographed.has(b.id)))?.id ?? null;
+  }
+  /** Mirrors Expedition.clueText and describe: recorded history first, else storeys and facade; never a name. */
+  const usableFormerName = b => !!b.formerName && (!b.name || !givesAway(b.formerName, b.name));
+  function describeClue(b) {
+    if (usableFormerName(b)) return `One building in the zone used to be called ${b.formerName}.`;
+    if (b.architect) return `One building in the zone was designed by ${b.architect}.`;
+    if (b.built != null) return `One building in the zone dates from the ${Math.floor(b.built / 10) * 10}s.`;
+    const floors = Math.max(1, Math.round(b.height / 3.66));
+    return `One building in the zone is ${floors} ${floors === 1 ? 'storey' : 'storeys'}, ${b.material || 'brick'}.`;
+  }
+  function clueText(zone) {
+    const photoId = clueBuilding(zone), ordinary = ordinaryInZone(zone);
+    const b = photoId != null ? buildings.get(photoId)
+      : pickClue(zone, ordinary.filter(o => usableFormerName(o) || o.architect || o.built != null)) || pickClue(zone, ordinary);
+    return b ? describeClue(b) : null;
   }
   const playerInZone = (z, p) => distOf(z.centre, p) <= z.radius + PLAYER_RADIUS;
   const zoneBuildings = z => pack.buildings.filter(b => inZone(z, b.center));
@@ -2534,7 +2589,7 @@ const LocalRules = (() => {
       start: startPoint, walked: 0, track: [startPoint], checks: [], guesses: [], stage: 'find', hint: null,
       startedAt: Date.now(), zoneAt: null, shortest: route, won: false, fact: null };
     return ok({ type: 'started', roundId: round.id, campusId: pack.id, campus: pack.campus, point: startPoint,
-      checksRemaining: CHECKS, guessLimit: GUESSES, difficulty: 'normal', mode, date, clueBuilding: clueBuilding(round.zone),
+      checksRemaining: CHECKS, guessLimit: GUESSES, difficulty: 'normal', mode, date, clueBuilding: clueBuilding(round.zone), clueText: clueText(round.zone),
       message: `Find the zone. Check inside it to know you're there. ${CHECKS} checks.` });
   }
 
@@ -2868,7 +2923,7 @@ function saveDailyRun() {
     zoneElapsed: game.zoneAt ? performance.now() - game.zoneAt : null,
     checksLeft: game.checksLeft, checkCount: game.checkCount, checks: game.checkHistory,
     trail: game.trail, zone: game.zone, hint: game.hint, guessed: [...game.guessed],
-    zoneBuildings: [...game.zoneBuildings], clueBuilding: game.clueBuilding ?? null, rules: STATIC ? LocalRules.snapshot() : null };
+    zoneBuildings: [...game.zoneBuildings], clueBuilding: game.clueBuilding ?? null, clueText: game.clueText ?? null, rules: STATIC ? LocalRules.snapshot() : null };
   store.set(dailyRunKey(game.date), JSON.stringify(run));
 }
 function storedDailyResult() {
@@ -3070,7 +3125,7 @@ function runFromServer(body) {
     elapsed: body.elapsedSeconds * 1000, zoneElapsed: body.zoneElapsedSeconds == null ? null : body.zoneElapsedSeconds * 1000,
     checksLeft: body.checksRemaining, checkCount: body.checks.length, checks: body.checks, trail: body.trail,
     zone: body.zone || null, hint: body.hint || null, guessed: body.guesses, zoneBuildings: body.zoneBuildings,
-    clueBuilding: body.clueBuilding ?? null, rules: null };
+    clueBuilding: body.clueBuilding ?? null, clueText: body.clueText ?? null, rules: null };
 }
 
 async function loadCampusPack() {
@@ -3096,7 +3151,7 @@ function restoreDailyRun(run) {
   game.checkHistory = run.checks || [];
   game.zone = run.zone; game.hint = run.hint;
   game.guessed = new Set(run.guessed || []); game.zoneBuildings = new Set(run.zoneBuildings || []);
-  game.clueBuilding = run.clueBuilding ?? null;
+  game.clueBuilding = run.clueBuilding ?? null; game.clueText = run.clueText ?? null;
   findClue(game.clueBuilding).then(photo => { if (game.phase !== 'done') showClue(photo, false); });
   pack.guessLimit = 3;
   hide('title');
@@ -3186,7 +3241,7 @@ async function startRound() {
   game.camBearing = game.heading;
   game.startedAt = performance.now();
   game.phase = 'walk';
-  game.clueBuilding = r.body.clueBuilding ?? null;
+  game.clueBuilding = r.body.clueBuilding ?? null; game.clueText = r.body.clueText ?? null;
   const photo = findClue(game.clueBuilding);
   saveDailyRun();
   renderHud();
@@ -3196,6 +3251,7 @@ async function startRound() {
   await flyTo({ center: game.pos, zoom: LOOK_ZOOM, pitch: 55, bearing: game.heading, duration: 3200 });
   lookAroundMode();
   await showClue(await Promise.race([photo, new Promise(res => setTimeout(() => res(null), 6000))]), true);
+  if (!game.cluePhoto && !game.clueText) toast('NO ZONE CLUE', 'warm', 'No photo or clue for this zone. Use your checks.');
   toast('FIND THE ZONE', 'warm', 'Open the map (M) and click where to go. Space checks the temperature.');
   setTimeout(() => { if (game.phase === 'walk' && !game.usedMap) toast('HOW TO MOVE', 'warm', 'Press M or the Map button, then click a spot to travel there.'); }, 20000);
   setTimeout(() => $('mapBtn').classList.remove('pulse'), 20000);
