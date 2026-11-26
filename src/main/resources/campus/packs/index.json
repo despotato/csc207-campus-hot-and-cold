@@ -151,6 +151,38 @@
       "file": "concordia.json",
       "timezone": "America/Toronto",
       "region": "Quebec"
+    },
+    {
+      "id": "umontreal",
+      "name": "Université de Montréal — Main campus",
+      "short": "UdeM",
+      "file": "umontreal.json",
+      "timezone": "America/Toronto",
+      "region": "Quebec"
+    },
+    {
+      "id": "ulaval",
+      "name": "Université Laval",
+      "short": "Laval",
+      "file": "ulaval.json",
+      "timezone": "America/Toronto",
+      "region": "Quebec"
+    },
+    {
+      "id": "dal",
+      "name": "Dalhousie University — Studley campus",
+      "short": "Dal",
+      "file": "dal.json",
+      "timezone": "America/Halifax",
+      "region": "Nova Scotia"
+    },
+    {
+      "id": "mun",
+      "name": "Memorial University of Newfoundland — St. John's campus",
+      "short": "Memorial",
+      "file": "mun.json",
+      "timezone": "America/St_Johns",
+      "region": "Newfoundland and Labrador"
     }
   ]
 }

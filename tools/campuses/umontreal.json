@@ -1,0 +1,230 @@
+{
+  "id": "umontreal",
+  "name": "Université de Montréal — Main campus",
+  "timezone": "America/Toronto",
+  "bounds": {
+    "south": 45.49535,
+    "west": -73.62517,
+    "north": 45.51585,
+    "east": -73.60463
+  },
+  "mascot": {
+    "name": "Carabin",
+    "species": "carabin",
+    "colors": {
+      "fur": "#E0B38A",
+      "belly": "#0057AC",
+      "dark": "#2b1a0e",
+      "primary": "#0057AC",
+      "secondary": "#FFC72C"
+    },
+    "school": "Université de Montréal"
+  },
+  "flat": [],
+  "dailyFrom": "2026-11-01",
+  "landmarks": [
+    {
+      "osm": "w24221180",
+      "name": "CEPSUM",
+      "category": "Athletics",
+      "wikipedia": null,
+      "facts": [
+        "It is the university's sports centre, home of the Carabins.",
+        "It hosted fencing at the 1976 Summer Olympics."
+      ]
+    },
+    {
+      "osm": "w26417603",
+      "name": "HEC Montréal – Édifice Côte-Sainte-Catherine",
+      "category": "College",
+      "wikipedia": "HEC Montréal",
+      "facts": [
+        "Its business school was the first school of management in Canada.",
+        "That school was founded in 1907 by the city's Board of Trade."
+      ]
+    },
+    {
+      "osm": "r38813",
+      "name": "Pavillon de la faculté de l'aménagement",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w143810519",
+      "name": "Faculté de musique de Université de Montréal",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w4637289",
+      "name": "Pavillon Roger-Gaudry",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "Its Art Deco tower, designed by Ernest Cormier, can be seen from all over the campus and the mountain.",
+        "It was called the Main Pavilion until 2003, when it was renamed after a former rector."
+      ]
+    },
+    {
+      "osm": "r17696790",
+      "name": "Pavillon Principal",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "r34365",
+      "name": "Pavillon Marie-Victorin",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It is named after the botanist who founded the Montreal Botanical Garden."
+      ]
+    },
+    {
+      "osm": "w26417834",
+      "name": "HEC Montréal, Édifice Decelles",
+      "category": "College",
+      "wikipedia": null
+    },
+    {
+      "osm": "w27334101",
+      "name": "Pavillon 3200 Jean-Brillant",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w597456700",
+      "name": "Aréna du CEPSUM",
+      "category": "Athletics",
+      "wikipedia": null
+    },
+    {
+      "osm": "w24150964",
+      "name": "Pavillons Lassonde",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "They belong to Polytechnique, the university's affiliated school of engineering."
+      ]
+    },
+    {
+      "osm": "w47332145",
+      "name": "Pavillon Samuel-Bronfman;Bibliothèque des lettres et sciences humaines",
+      "category": "Library",
+      "wikipedia": null,
+      "facts": [
+        "It houses the library for the humanities and social sciences."
+      ]
+    },
+    {
+      "osm": "w26414681",
+      "name": "Pavillon André-Aisenstadt",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It houses the computer science department and a mathematics research centre."
+      ]
+    },
+    {
+      "osm": "w26414619",
+      "name": "Pavillon Joseph-Armand Bombardier",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "r2109148",
+      "name": "Pavillon Lionel-Groulx",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It is named after a priest and historian of French Canada."
+      ]
+    },
+    {
+      "osm": "w986096642",
+      "name": "Pavillon Jean-Coutu",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It houses the Faculty of Pharmacy and is named after the founder of a Quebec drugstore chain."
+      ]
+    },
+    {
+      "osm": "w24221187",
+      "name": "Pavillon Marguerite-d'Youville",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w986096641",
+      "name": "Pavillon Marcelle-Coutu",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w26418481",
+      "name": "Pavillon Maximilien-Caron",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It is home to the Faculty of Law.",
+        "It took its current name in 1978, in honour of a jurist."
+      ]
+    },
+    {
+      "osm": "w26417780",
+      "name": "Pavillon Paul-G.-Desmarais",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w26418417",
+      "name": "Pavillon J.-A.-DeSève",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w26417764",
+      "name": "Pavillon Claire-McNicoll",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w26414712",
+      "name": "Pavillon Liliane de Stewart",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w155074308",
+      "name": "Université de Montréal - Pavillon de géographie",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w27336451",
+      "name": "Résidence A",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w371450126",
+      "name": "Département de philosophie",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w986096640",
+      "name": "Agora Morris-et-Rosalind-Goodman",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w242514439",
+      "name": "Pavillon René-J.-A.-Lévesque",
+      "category": "Teaching",
+      "wikipedia": null
+    }
+  ],
+  "dailyStartInsideBounds": true
+}

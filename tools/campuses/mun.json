@@ -1,0 +1,286 @@
+{
+  "id": "mun",
+  "name": "Memorial University of Newfoundland — St. John's campus",
+  "timezone": "America/St_Johns",
+  "bounds": {
+    "south": 47.56665,
+    "west": -52.746,
+    "north": 47.58135,
+    "east": -52.723
+  },
+  "mascot": {
+    "name": "Sea-Hawk",
+    "species": "seahawk",
+    "colors": {
+      "fur": "#6B4A33",
+      "belly": "#F2F2F2",
+      "dark": "#1f140b",
+      "primary": "#7A0019",
+      "secondary": "#FFFFFF"
+    },
+    "school": "Memorial University of Newfoundland"
+  },
+  "flat": [],
+  "dailyFrom": "2026-11-01",
+  "landmarks": [
+    {
+      "osm": "r9072451",
+      "name": "Queen Elizabeth II Library",
+      "category": "Library",
+      "wikipedia": null,
+      "facts": [
+        "It is the main library on the St. John's campus."
+      ]
+    },
+    {
+      "osm": "w111293428",
+      "name": "John C Perlin Arts and Culture Centre",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w111293421",
+      "name": "Education",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w118119217",
+      "name": "Ocean, Coastal and River Engineering",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w649775723",
+      "name": "Faculty of Engineering",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "r1590151",
+      "name": "Science",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w649161547",
+      "name": "The Works/Field House",
+      "category": "Athletics",
+      "wikipedia": null
+    },
+    {
+      "osm": "w649775110",
+      "name": "Earth Sciences",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "r10766153",
+      "name": "Physics and Chemistry",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w649256219",
+      "name": "Aquarena Fitness Centre",
+      "category": "Athletics",
+      "wikipedia": null
+    },
+    {
+      "osm": "w649770927",
+      "name": "University Centre",
+      "category": "Campus life",
+      "wikipedia": null,
+      "facts": [
+        "It is home to the food court, the bookstore, the Breezeway campus bar and the campus radio station."
+      ]
+    },
+    {
+      "osm": "w111662183",
+      "name": "Bruneau Center",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w649256222",
+      "name": "Physical Education",
+      "category": "Athletics",
+      "wikipedia": null
+    },
+    {
+      "osm": "w111662179",
+      "name": "Arts and Administration",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w118116907",
+      "name": "Music",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w118117186",
+      "name": "Henrietta Harvey",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w118112560",
+      "name": "Business Administration",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w118111301",
+      "name": "Coughlan College",
+      "category": "Residence",
+      "wikipedia": null,
+      "facts": [
+        "It was originally one of four denominational residences, and became part of Paton College in the mid-1990s."
+      ]
+    },
+    {
+      "osm": "w118116951",
+      "name": "Shiwak Hall",
+      "category": "Residence",
+      "wikipedia": null,
+      "facts": [
+        "It is a residential wing named in 2014 after a Labrador Inuit soldier of the First World War."
+      ]
+    },
+    {
+      "osm": "w220573542",
+      "name": "Cluett Hall",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w118112557",
+      "name": "R. Gushue Hall",
+      "category": "Residence",
+      "wikipedia": null,
+      "facts": [
+        "It is the dining hall for students in residence."
+      ]
+    },
+    {
+      "osm": "w118111296",
+      "name": "St. John's College",
+      "category": "College",
+      "wikipedia": null
+    },
+    {
+      "osm": "w373252210",
+      "name": "Queen's College",
+      "category": "College",
+      "wikipedia": null
+    },
+    {
+      "osm": "w118116966",
+      "name": "Guy",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w118113297",
+      "name": "Hatcher",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w118116925",
+      "name": "Gilbert",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w118116926",
+      "name": "Cabot",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w118116887",
+      "name": "Cartier",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w118111300",
+      "name": "Spencer Hall",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w118111283",
+      "name": "Field Hall",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w118113298",
+      "name": "Barnes",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w118116947",
+      "name": "Corte Real",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w118113296",
+      "name": "Blackall",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w118116956",
+      "name": "Curtis",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w118116922",
+      "name": "Bowater",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w118116952",
+      "name": "Squires",
+      "category": "Residence",
+      "wikipedia": null,
+      "facts": [
+        "It is a residence house that switched from all-female to co-ed in 2008."
+      ]
+    },
+    {
+      "osm": "w118113294",
+      "name": "Doyle",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w118113295",
+      "name": "Rothemere",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w118116946",
+      "name": "Burke",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w118116932",
+      "name": "Baltimore Court",
+      "category": "Residence",
+      "wikipedia": null
+    }
+  ],
+  "dailyStartInsideBounds": true
+}

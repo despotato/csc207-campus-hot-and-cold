@@ -1,0 +1,217 @@
+{
+  "id": "ulaval",
+  "name": "Université Laval",
+  "timezone": "America/Toronto",
+  "bounds": {
+    "south": 46.77285,
+    "west": -71.29117,
+    "north": 46.79045,
+    "east": -71.26103
+  },
+  "mascot": {
+    "name": "Rouge et Or student",
+    "species": "student",
+    "colors": {
+      "fur": "#E0B38A",
+      "belly": "#E30513",
+      "dark": "#2b1a0e",
+      "primary": "#E30513",
+      "secondary": "#FFC103"
+    },
+    "school": "Université Laval"
+  },
+  "flat": [],
+  "dailyFrom": "2026-11-01",
+  "landmarks": [
+    {
+      "osm": "w27437938",
+      "name": "Pavillon de l'éducation physique et des sports",
+      "category": "Athletics",
+      "wikipedia": null,
+      "facts": [
+        "It is the main athletics complex, with pools, gyms and an indoor stadium."
+      ]
+    },
+    {
+      "osm": "r35018",
+      "name": "Pavillon Adrien-Pouliot",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "r35017",
+      "name": "Pavillon Alexandre-Vachon",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "r35015",
+      "name": "Pavillon Charles-De Koninck",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w128523972",
+      "name": "Pavillon Louis-Jacques-Casault",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "r3728043",
+      "name": "Pavillon Ferdinand-Vandry",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It houses health sciences faculties."
+      ]
+    },
+    {
+      "osm": "w148704391",
+      "name": "Stade TELUS",
+      "category": "Athletics",
+      "wikipedia": null,
+      "facts": [
+        "It is the home field of the Rouge et Or football team."
+      ]
+    },
+    {
+      "osm": "r35020",
+      "name": "Pavillon Agathe-Lacerte",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "r35019",
+      "name": "Pavillon Paul-Comtois",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w27438173",
+      "name": "Pavillon Jean-Charles-Bonenfant",
+      "category": "Library",
+      "wikipedia": null,
+      "facts": [
+        "It houses the university's main library."
+      ]
+    },
+    {
+      "osm": "w162322156",
+      "name": "Pavillon Alphonse-Desjardins",
+      "category": "Campus life",
+      "wikipedia": null,
+      "facts": [
+        "It is the student centre, named after the founder of Quebec's credit union movement."
+      ]
+    },
+    {
+      "osm": "r3741236",
+      "name": "Pavillon Alphonse-Marie-Parent",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w27438075",
+      "name": "Pavillon Palasis-Prince",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "r3728532",
+      "name": "Pavillon Gene-H.-Kruger",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w195278975",
+      "name": "Pavillon Maurice-Pollack",
+      "category": "Campus life",
+      "wikipedia": null,
+      "facts": [
+        "It houses student services, set up with help from a businessman's foundation."
+      ]
+    },
+    {
+      "osm": "r3728533",
+      "name": "Pavillon Abitibi-Price",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w127680668",
+      "name": "Pavillon H.-Biermans-L.-Moraud",
+      "category": "Residence",
+      "wikipedia": null,
+      "facts": [
+        "It is a residence hall named after two donors, one of them a Belgian businessman."
+      ]
+    },
+    {
+      "osm": "w27438340",
+      "name": "Pavillon Charles-Eugène-Marchand",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w27438478",
+      "name": "Pavillon Ernest-Lemieux",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w27438123",
+      "name": "Pavillon La Laurentiennne",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w27438088",
+      "name": "Pavillon J.-A.-DeSève",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w308294330",
+      "name": "Pavillon des sciences de l'éducation",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w308294329",
+      "name": "Pavillon Félix-Antoine-Savard",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "r7145131",
+      "name": "Centre d'optique, photonique et laser",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w128588311",
+      "name": "Pavillon de la Médecine dentaire",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w1457055926",
+      "name": "Milieu de vie YAHNDAWA'",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w1527421414",
+      "name": "Institut Nordique du Québec (CSINQ)",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w1456522858",
+      "name": "Bibliothèque scientifique",
+      "category": "Library",
+      "wikipedia": null
+    }
+  ],
+  "dailyStartInsideBounds": true
+}

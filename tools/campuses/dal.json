@@ -1,0 +1,338 @@
+{
+  "id": "dal",
+  "name": "Dalhousie University — Studley campus",
+  "timezone": "America/Halifax",
+  "bounds": {
+    "south": 44.63131,
+    "west": -63.5997,
+    "north": 44.64569,
+    "east": -63.5695
+  },
+  "mascot": {
+    "name": "Dal Tiger",
+    "species": "tiger",
+    "colors": {
+      "fur": "#E08A1E",
+      "belly": "#F7E2B5",
+      "dark": "#1a1a1a",
+      "primary": "#242424",
+      "secondary": "#FFD400"
+    },
+    "school": "Dalhousie University"
+  },
+  "flat": [],
+  "dailyFrom": "2026-11-01",
+  "landmarks": [
+    {
+      "osm": "w360737203",
+      "name": "Killam Memorial Library",
+      "category": "Library",
+      "wikipedia": "Killam Library",
+      "facts": [
+        "It claims to be the largest academic library in Atlantic Canada.",
+        "Construction began in 1966 and finished in 1971, funded by a $30 million gift in memory of a financier."
+      ]
+    },
+    {
+      "osm": "w400827426",
+      "name": "Dalhousie Arts Centre",
+      "category": "Campus life",
+      "wikipedia": null,
+      "facts": [
+        "Its lowest level has housed the university's public art gallery since 1971."
+      ]
+    },
+    {
+      "osm": "w360737198",
+      "name": "Shirreff Hall",
+      "category": "Residence",
+      "wikipedia": null,
+      "facts": [
+        "It is a historic women's residence on the Studley campus."
+      ]
+    },
+    {
+      "osm": "r8322255",
+      "name": "Howe Hall",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w360737204",
+      "name": "DalPlex",
+      "category": "Athletics",
+      "wikipedia": null,
+      "facts": [
+        "It is the main fitness and recreation complex, with a pool and an indoor track."
+      ]
+    },
+    {
+      "osm": "r6813418",
+      "name": "Marion McCain Arts and Social Sciences Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w309351215",
+      "name": "Weldon Law Building and Law Library",
+      "category": "Library",
+      "wikipedia": null
+    },
+    {
+      "osm": "w94668822",
+      "name": "Collaborative Health Education Building",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It was completed in 2015, one of the newest buildings on campus."
+      ]
+    },
+    {
+      "osm": "w360737247",
+      "name": "LeMarchant Place",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w272768558",
+      "name": "Kenneth C. Rowe Management Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "r8306861",
+      "name": "Health Professions Complex",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w623243681",
+      "name": "Emera IDEA Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w360737208",
+      "name": "Mona Campbell Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w360737261",
+      "name": "Sir James Dunn Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w360737221",
+      "name": "Steele Ocean Sciences Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w360737227",
+      "name": "Life Sciences Centre",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w268844432",
+      "name": "Risley Hall",
+      "category": "Residence",
+      "wikipedia": null,
+      "facts": [
+        "Its floors compete every year in a week-long contest called the Prez Cup."
+      ]
+    },
+    {
+      "osm": "w272768556",
+      "name": "Student Union Building",
+      "category": "Campus life",
+      "wikipedia": null,
+      "facts": [
+        "Students know it as the SUB; it is the centre of student government and clubs.",
+        "It opened on November 8, 1968, after a 1960 referendum in which 90% of voters backed it."
+      ]
+    },
+    {
+      "osm": "w1175763409",
+      "name": "Fountain School of Performing Arts",
+      "category": "College",
+      "wikipedia": null
+    },
+    {
+      "osm": "w360737222",
+      "name": "Dentistry Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w360737232",
+      "name": "Chemistry Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w96322745",
+      "name": "Ralph M. Medjuck Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w373834324",
+      "name": "Goldberg Computer Science Building",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It houses the faculty that teaches programming and software.",
+        "It took its current name in June 2008 in recognition of a donation."
+      ]
+    },
+    {
+      "osm": "w360737245",
+      "name": "Newcombe House",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w360737251",
+      "name": "Tupper Tower",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w588785746",
+      "name": "H.R. Theakston Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w360737272",
+      "name": "Studley Gym",
+      "category": "Athletics",
+      "wikipedia": null
+    },
+    {
+      "osm": "w636434843",
+      "name": "Design Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w360737217",
+      "name": "Forrest Building",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "The university moved into it in 1887; it took its current name in 1919."
+      ]
+    },
+    {
+      "osm": "w96322807",
+      "name": "A.L. MacDonald Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w96322724",
+      "name": "F.H. Sexton Memorial Gymnasium",
+      "category": "Athletics",
+      "wikipedia": null
+    },
+    {
+      "osm": "w82668564",
+      "name": "Ira McNab Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w360735535",
+      "name": "Muir Gymnasium",
+      "category": "Athletics",
+      "wikipedia": null
+    },
+    {
+      "osm": "w360735551",
+      "name": "Alexandra Hall",
+      "category": "Residence",
+      "wikipedia": null,
+      "facts": [
+        "It is the traditional women's residence of the University of King's College.",
+        "It became co-ed for the first time in 2006."
+      ]
+    },
+    {
+      "osm": "w360735536",
+      "name": "Chase Building of Math and Statistics",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w360737265",
+      "name": "Burbidge Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w82668552",
+      "name": "G.H. Murray Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w360735550",
+      "name": "King's Library",
+      "category": "Library",
+      "wikipedia": null,
+      "facts": [
+        "It holds rare Anglican church documents, original artwork and Renaissance and medieval books."
+      ]
+    },
+    {
+      "osm": "w360735542",
+      "name": "New Academic Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w360737263",
+      "name": "Dining Hall",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w360735534",
+      "name": "Arts & Administration Building",
+      "category": "Campus life",
+      "wikipedia": null,
+      "facts": [
+        "Its famous cupola was restored using the original blueprints."
+      ]
+    },
+    {
+      "osm": "w96322801",
+      "name": "O'Brien Hall",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w360737238",
+      "name": "University Club",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w82668570",
+      "name": "Gerard Hall",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w360735540",
+      "name": "Prince Hall",
+      "category": "Teaching",
+      "wikipedia": null
+    }
+  ],
+  "dailyStartInsideBounds": true
+}

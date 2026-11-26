@@ -248,7 +248,7 @@ def daily_schedule(buildings, landmarks, coords, edges, lat0, campus_id, daily_f
     for day in range(DAILY_DAYS):
         date = (daily_from + datetime.timedelta(days=day)).isoformat()
         rng = random.Random(int(hashlib.sha256((campus_id + date).encode()).hexdigest(), 16))
-        for _ in range(500):
+        for _ in range(4000):   # sparse campuses need more tries; earlier days are unaffected (same sequence)
             landmark = rng.choice(landmarks)
             centre = [by_id[landmark["building"]]["lon"], by_id[landmark["building"]]["lat"]]
             zone = offset(centre, rng.uniform(0, 360), rng.uniform(0, 50), lat0)
