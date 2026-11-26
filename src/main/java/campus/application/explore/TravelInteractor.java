@@ -32,6 +32,7 @@ public final class TravelInteractor implements TravelInputBoundary {
             output.present(new ExploreResponse.Failed(exception.getMessage()));
             return;
         }
+        session.checkpoint(true);
         var track = expedition.track();
         output.present(new ExploreResponse.Travelled(expedition.position(), track.subList(before, track.size()),
                 expedition.metresWalked(), expedition.secondsElapsed(clock.instant())));

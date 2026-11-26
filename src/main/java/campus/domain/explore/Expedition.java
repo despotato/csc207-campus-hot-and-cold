@@ -85,7 +85,7 @@ public final class Expedition {
     static final int[] GUESS_POINTS = {250, 200, 150};
     static final int CHECK_POINTS = 100;
 
-    private final UUID id = UUID.randomUUID();
+    private final UUID id;
     private final Difficulty difficulty;
     private final CampusMap map;
     private final CampusLandmark target;
@@ -113,6 +113,12 @@ public final class Expedition {
     }
 
     Expedition(Difficulty difficulty, CampusMap map, CampusLandmark target, Zone zone, GeoPoint start, Instant now) {
+        this(UUID.randomUUID(), difficulty, map, target, zone, start, now);
+    }
+
+    private Expedition(UUID id, Difficulty difficulty, CampusMap map, CampusLandmark target, Zone zone, GeoPoint start,
+                       Instant now) {
+        this.id = Objects.requireNonNull(id);
         this.difficulty = Objects.requireNonNull(difficulty);
         this.map = Objects.requireNonNull(map);
         this.target = Objects.requireNonNull(target);
@@ -136,6 +142,52 @@ public final class Expedition {
         this.startedAt = Objects.requireNonNull(now);
         this.lastMoveAt = now;
         track.add(start);
+    }
+
+    /**
+     * Everything needed to rebuild this round later (e.g. a daily after the app restarts). The shortest route
+     * is not stored: it is recomputed from the start, which gives the same result.
+     */
+    public record Snapshot(UUID id, String difficulty, int targetLandmarkId, GeoPoint zoneCentre,
+                           double zoneRadius, GeoPoint start, Instant startedAt, GeoPoint position,
+                           Instant lastMoveAt, double metresWalked, double travelSeconds, Stage stage,
+                           Instant zoneReachedAt, HintLevel hintLevel, String outsideClue, boolean won,
+                           List<GeoPoint> track, List<Check> checks, List<Integer> guesses) {
+        public Snapshot {
+            Objects.requireNonNull(id);
+            Objects.requireNonNull(stage);
+            track = List.copyOf(track);
+            checks = List.copyOf(checks);
+            guesses = List.copyOf(guesses);
+        }
+    }
+
+    public Snapshot snapshot() {
+        return new Snapshot(id, difficulty.name(), target.id(), zone.centre(), zone.radiusMetres(), start, startedAt,
+                position, lastMoveAt, metresWalked, travelSeconds, stage, zoneReachedAt, hintLevel, outsideClue, won,
+                track, checks, guesses);
+    }
+
+    /** Rebuilds a round from {@link #snapshot()} on the same campus. */
+    public static Expedition restore(CampusMap map, Snapshot saved) {
+        CampusLandmark target = map.landmark(saved.targetLandmarkId())
+                .orElseThrow(() -> new IllegalArgumentException("The saved round names an unknown landmark."));
+        Expedition round = new Expedition(saved.id(), Difficulty.named(saved.difficulty()), map, target,
+                new Zone(saved.zoneCentre(), saved.zoneRadius()), saved.start(), saved.startedAt());
+        round.track.clear();
+        round.track.addAll(saved.track().isEmpty() ? List.of(saved.start()) : saved.track());
+        round.checks.addAll(saved.checks());
+        round.guesses.addAll(saved.guesses());
+        round.position = Objects.requireNonNull(saved.position());
+        round.lastMoveAt = saved.lastMoveAt();
+        round.metresWalked = saved.metresWalked();
+        round.travelSeconds = saved.travelSeconds();
+        round.stage = saved.stage();
+        round.zoneReachedAt = saved.zoneReachedAt();
+        round.hintLevel = saved.hintLevel();
+        round.outsideClue = saved.outsideClue();
+        round.won = saved.won();
+        return round;
     }
 
     /** The shared daily puzzle for {@code date}: the same target, zone and start for every player. */

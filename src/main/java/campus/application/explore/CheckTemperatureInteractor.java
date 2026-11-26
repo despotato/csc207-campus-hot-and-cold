@@ -31,6 +31,7 @@ public final class CheckTemperatureInteractor implements CheckTemperatureInputBo
         try {
             if (expedition.checksRemaining() > 0) {
                 Expedition.Check check = expedition.check(clock.instant());
+                session.checkpoint(true);
                 // The exact distance stays hidden: the band, a whole-degree temperature, and the change since last.
                 var checks = expedition.checks();
                 Integer change = checks.size() < 2 ? null
@@ -40,6 +41,7 @@ public final class CheckTemperatureInteractor implements CheckTemperatureInputBo
                         check.temperature(), change));
             } else {
                 boolean found = expedition.finalSearch(clock.instant());
+                session.checkpoint(true);
                 output.present(new ExploreResponse.Checked(expedition.position(), null, null, 0, true,
                         found ? zone(expedition) : null, found ? null : finisher.finish(expedition),
                         expedition.checksUsed() + 1, null, null));

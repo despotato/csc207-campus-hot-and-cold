@@ -33,6 +33,7 @@ public final class MoveInteractor implements MoveInputBoundary {
                     expedition.metresWalked()));
             return;
         }
+        session.checkpoint(false);
         output.present(new ExploreResponse.Moved(expedition.metresWalked(),
                 expedition.secondsElapsed(clock.instant())));
     }

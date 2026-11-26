@@ -97,6 +97,25 @@ class CampusPackLoaderTest {
         assertThrows(java.io.IOException.class, () -> attempts.claim("../escape", date));
     }
 
+    @Test void dailyRunsSurviveARoundTripAndCorruptFilesAreIgnored(@org.junit.jupiter.api.io.TempDir java.nio.file.Path dir)
+            throws Exception {
+        var store = new FileDailyRunStore(dir);
+        var date = java.time.LocalDate.of(2026, 11, 25);
+        var map = campus.domain.explore.TestCampus.withDaily();
+        var round = Expedition.daily(map, campus.domain.explore.TestCampus.DAILY_DATE, Instant.EPOCH);
+        round.check(Instant.EPOCH.plusSeconds(5));
+        store.save("test", date, round.snapshot());
+        var restored = Expedition.restore(map, store.load("test", date).orElseThrow());
+        assertEquals(round.id(), restored.id());
+        assertEquals(round.position(), restored.position());
+        assertEquals(round.checks(), restored.checks());
+        assertEquals(round.shortestToZone(), restored.shortestToZone(), 1e-9);
+        assertTrue(store.load("test", date.plusDays(1)).isEmpty());
+        java.nio.file.Files.writeString(dir.resolve("test-" + date + ".run.json"), "{not json");
+        assertTrue(store.load("test", date).isEmpty(), "a corrupt file reads as nothing saved");
+        assertThrows(java.io.IOException.class, () -> store.load("../x", date));
+    }
+
     @Test void rejectsUnsupportedPacks() {
         assertThrows(IllegalArgumentException.class, () -> CampusPackLoader.parse("{\"version\":1}"));
     }

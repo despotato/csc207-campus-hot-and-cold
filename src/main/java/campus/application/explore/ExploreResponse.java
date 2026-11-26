@@ -46,6 +46,30 @@ public sealed interface ExploreResponse {
 
     record Failed(String message) implements ExploreResponse { }
 
+    /**
+     * Today's daily for a campus: {@code available} (not started), {@code inProgress}, {@code finished} (with the
+     * result), {@code used} (started on this device but nothing to resume), or {@code unavailable} (no puzzle today).
+     */
+    record DailyStatus(String campusId, String date, String status, Result result) implements ExploreResponse { }
+
+    /** A daily round picked up where it was left, with everything the page needs to redraw it. */
+    record Resumed(UUID roundId, String campusId, String campus, String date, String stage, GeoPoint position,
+                   double metresWalked, long elapsedSeconds, Long zoneElapsedSeconds, int checksRemaining,
+                   List<CheckView> checks, List<GeoPoint> trail, ZoneView zone, HintView hint,
+                   List<Integer> zoneBuildings, List<Integer> guesses, int guessLimit) implements ExploreResponse {
+        public Resumed {
+            checks = List.copyOf(checks);
+            trail = List.copyOf(trail);
+            zoneBuildings = List.copyOf(zoneBuildings);
+            guesses = List.copyOf(guesses);
+        }
+    }
+
+    /** {@code heat} is {@code "zone"} for the check that found it. */
+    record CheckView(int number, GeoPoint point, String heat, Integer temperature, Integer change) { }
+
+    record HintView(Expedition.HintLevel level, double multiplier, String text) { }
+
     record ZoneView(GeoPoint centre, double radiusMetres) { }
 
     /** The end of a round: the reveal, plus {@code saveError} when saving it failed. */

@@ -22,6 +22,13 @@ public final class RoundFinisher {
         this.clock = Objects.requireNonNull(clock);
     }
 
+    /** The reveal for a finished round, without saving it again (e.g. showing today's daily after a restart). */
+    public ExploreResponse.Result describe(Expedition expedition) {
+        CampusLandmark target = expedition.revealedTarget()
+                .orElseThrow(() -> new IllegalStateException("The round isn't over."));
+        return result(expedition, target);
+    }
+
     /** Call once, after the expedition has finished. */
     public ExploreResponse.Finished finish(Expedition expedition) {
         CampusLandmark target = expedition.revealedTarget()

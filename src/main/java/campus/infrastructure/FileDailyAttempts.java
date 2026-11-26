@@ -17,6 +17,14 @@ public final class FileDailyAttempts implements DailyAttempts {
     }
 
     @Override
+    public boolean claimed(String campusId, LocalDate date) throws IOException {
+        if (!campusId.matches("[a-z0-9-]+")) {
+            throw new IOException("Invalid campus ID.");
+        }
+        return Files.exists(directory.resolve(campusId + "-" + date));
+    }
+
+    @Override
     public boolean claim(String campusId, LocalDate date) throws IOException {
         if (!campusId.matches("[a-z0-9-]+")) {
             throw new IOException("Invalid campus ID.");

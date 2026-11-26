@@ -30,6 +30,7 @@ public final class GuessBuildingInteractor implements GuessBuildingInputBoundary
             output.present(new ExploreResponse.Failed(exception.getMessage()));
             return;
         }
+        session.checkpoint(true);
         int remaining = Expedition.GUESS_LIMIT - expedition.guesses().size();
         ExploreResponse.Finished finished = expedition.stage() == Expedition.Stage.FINISHED
                 ? finisher.finish(expedition) : null;

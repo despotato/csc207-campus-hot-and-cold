@@ -66,7 +66,15 @@ public final class StartExpeditionInteractor implements StartExpeditionInputBoun
             output.present(new ExploreResponse.Failed("Could not set up a round. Please retry."));
             return;
         }
-        session.start(expedition);
+        if (daily) {
+            try {
+                session.startDaily(expedition, map.id(), today);
+            } catch (IOException exception) {
+                session.start(expedition);   // still playable; just not resumable after a restart
+            }
+        } else {
+            session.start(expedition);
+        }
         Difficulty difficulty = daily ? Difficulty.NORMAL : request.difficulty();
         output.present(new ExploreResponse.Started(expedition.id(), map.id(), map.name(), expedition.start(),
                 expedition.checksRemaining(), Expedition.GUESS_LIMIT, difficulty.name(),

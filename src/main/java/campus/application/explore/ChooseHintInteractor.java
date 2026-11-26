@@ -35,6 +35,7 @@ public final class ChooseHintInteractor implements ChooseHintInputBoundary {
         try {
             String hint = expedition.chooseHint(level, target -> facts.facts(target.wikipediaTitle(), target.name(),
                     expedition.map().name()));
+            session.checkpoint(true);
             var zone = expedition.revealedZone().orElseThrow();
             output.present(new ExploreResponse.HintChosen(level, level.multiplier(), hint,
                     expedition.map().buildingsIn(zone).stream().map(CampusMap.Building::id).toList()));

@@ -1,6 +1,8 @@
 package campus.adapters.explore;
 
 import campus.application.explore.CheckTemperatureInputBoundary;
+import campus.application.explore.DailyStatusInputBoundary;
+import campus.application.explore.ResumeDailyInputBoundary;
 import campus.application.explore.ChooseHintInputBoundary;
 import campus.application.explore.GuessBuildingInputBoundary;
 import campus.application.explore.MoveInputBoundary;
@@ -32,6 +34,8 @@ public final class ExploreController {
     private final ChooseHintInputBoundary hint;
     private final GuessBuildingInputBoundary guess;
     private final ExplorePresenter presenter;
+    private DailyStatusInputBoundary dailyStatus;
+    private ResumeDailyInputBoundary resumeDaily;
 
     public ExploreController(StartExpeditionInputBoundary start, MoveInputBoundary move, TravelInputBoundary travel,
                              CheckTemperatureInputBoundary check, ChooseHintInputBoundary hint,
@@ -54,6 +58,11 @@ public final class ExploreController {
                 case "check" -> check.execute(round(fields));
                 case "hint" -> hint.execute(round(fields), level(fields.get("level")));
                 case "guess" -> guess.execute(round(fields), integer(fields, "buildingId"));
+                case "dailyStatus" -> requireDaily().status(campus(fields));
+                case "resumeDaily" -> {
+                    requireDaily();
+                    resumeDaily.resume(campus(fields));
+                }
                 default -> {
                     return new ExploreViewModel(404, Map.of("type", "error", "error", "Unknown action."));
                 }
@@ -62,6 +71,24 @@ public final class ExploreController {
             return new ExploreViewModel(400, Map.of("type", "error", "error", exception.getMessage()));
         }
         return presenter.viewModel();
+    }
+
+    /** Adds the daily status and resume actions (optional, so simpler setups and tests can skip them). */
+    public ExploreController withDailyRuns(DailyStatusInputBoundary status, ResumeDailyInputBoundary resume) {
+        this.dailyStatus = Objects.requireNonNull(status);
+        this.resumeDaily = Objects.requireNonNull(resume);
+        return this;
+    }
+
+    private DailyStatusInputBoundary requireDaily() {
+        if (dailyStatus == null) {
+            throw new IllegalArgumentException("Daily runs aren't available here.");
+        }
+        return dailyStatus;
+    }
+
+    private static String campus(Map<String, Object> fields) {
+        return fields.get("campus") instanceof String campus ? campus : null;
     }
 
     private static StartRequest startRequest(Map<String, Object> fields) {

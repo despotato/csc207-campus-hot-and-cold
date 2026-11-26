@@ -74,6 +74,16 @@ public final class ExplorePresenter implements ExploreOutputBoundary {
                         : "Not this one. " + guessed.guessesRemaining() + " guesses left.");
                 guessed.result().ifPresent(finished -> putFinished(body, finished));
             }
+            case ExploreResponse.DailyStatus daily -> {
+                body.put("type", "dailyStatus");
+                body.put("campusId", daily.campusId());
+                body.put("date", daily.date());
+                body.put("status", daily.status());
+                if (daily.result() != null) {
+                    body.put("result", result(daily.result()));
+                }
+            }
+            case ExploreResponse.Resumed resumed -> resumed(resumed, body);
             case ExploreResponse.Failed failed -> {
                 status = 400;
                 body.put("type", "error");
@@ -106,6 +116,42 @@ public final class ExplorePresenter implements ExploreOutputBoundary {
         if (checked.finished() != null) {
             putFinished(body, checked.finished());
         }
+    }
+
+    private static void resumed(ExploreResponse.Resumed r, Map<String, Object> body) {
+        body.put("type", "resumed");
+        body.put("roundId", r.roundId().toString());
+        body.put("campusId", r.campusId());
+        body.put("campus", r.campus());
+        body.put("mode", "daily");
+        body.put("date", r.date());
+        body.put("stage", r.stage());
+        body.put("point", point(r.position()));
+        body.put("metresWalked", round(r.metresWalked()));
+        body.put("elapsedSeconds", r.elapsedSeconds());
+        body.put("zoneElapsedSeconds", r.zoneElapsedSeconds());
+        body.put("checksRemaining", r.checksRemaining());
+        body.put("checks", r.checks().stream().map(c -> {
+            Map<String, Object> check = new LinkedHashMap<>();
+            check.put("number", c.number());
+            check.put("point", point(c.point()));
+            check.put("heat", c.heat());
+            check.put("zoneFound", "zone".equals(c.heat()));
+            check.put("temperature", c.temperature());
+            check.put("change", c.change());
+            return check;
+        }).toList());
+        body.put("trail", r.trail().stream().map(ExplorePresenter::point).toList());
+        if (r.zone() != null) {
+            body.put("zone", Map.of("centre", point(r.zone().centre()), "radius", r.zone().radiusMetres()));
+        }
+        if (r.hint() != null) {
+            body.put("hint", Map.of("level", name(r.hint().level()), "multiplier", r.hint().multiplier(),
+                    "hint", r.hint().text(), "zoneBuildings", r.zoneBuildings()));
+        }
+        body.put("zoneBuildings", r.zoneBuildings());
+        body.put("guesses", r.guesses());
+        body.put("guessLimit", r.guessLimit());
     }
 
     private static void putFinished(Map<String, Object> body, ExploreResponse.Finished finished) {

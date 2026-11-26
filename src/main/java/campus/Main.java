@@ -14,6 +14,7 @@ import campus.application.StartRoundInteractor;
 import campus.application.SubmitGuessInteractor;
 import campus.application.explore.CheckTemperatureInteractor;
 import campus.application.explore.ChooseHintInteractor;
+import campus.application.explore.DailyRunInteractor;
 import campus.application.explore.ExpeditionResultRepository;
 import campus.application.explore.ExpeditionSession;
 import campus.application.explore.GuessBuildingInteractor;
@@ -25,6 +26,7 @@ import campus.domain.Campus;
 import campus.domain.explore.GeoPoint;
 import campus.infrastructure.BrowserLandmarkMapGateway;
 import campus.infrastructure.FileDailyAttempts;
+import campus.infrastructure.FileDailyRunStore;
 import campus.infrastructure.PackCatalog;
 import campus.infrastructure.ExploreWebServer;
 import campus.infrastructure.FileRoundRepository;
@@ -52,6 +54,9 @@ import java.util.random.RandomGenerator;
 
 /** Composition root: the only place that wires UI, adapters, use cases, and infrastructure together. */
 public final class Main {
+    /** A stable address keeps the browser's per-site storage (settings, daily results) across launches. */
+    static final int PREFERRED_PORT = 8790;
+
     private Main() { }
 
     public static void main(String[] args) throws IOException, InterruptedException {
@@ -77,25 +82,33 @@ public final class Main {
                 () -> classicGame(client).show()).show());
     }
 
-    /** Explore mode: the 3D browser game. Set -Dcampus.explore.port to fix the port. */
+    /**
+     * Explore mode: the 3D browser game. Uses port 8790 when it's free (so the browser keeps its saved settings
+     * between launches), otherwise any free port; -Dcampus.explore.port chooses one explicitly.
+     */
     static ExploreWebServer startExplore(HttpClient client) throws IOException {
         var campuses = new PackCatalog();
-        var session = new ExpeditionSession();
-        var presenter = new ExplorePresenter();
         var clock = Clock.systemUTC();
+        Path daily = Path.of(System.getProperty("user.home"), ".campus-hot-and-cold", "daily");
+        var dailyAttempts = new FileDailyAttempts(daily);
+        var dailyRuns = new FileDailyRunStore(daily);
+        var session = new ExpeditionSession(dailyRuns, clock);
+        var presenter = new ExplorePresenter();
         // Team task: replace DISABLED with a file-backed result repository.
         var finisher = new RoundFinisher(new WikipediaSummaryGateway(client),
                 ExpeditionResultRepository.DISABLED, clock);
         var controller = new ExploreController(
-                new StartExpeditionInteractor(campuses, new FileDailyAttempts(Path.of(System.getProperty("user.home"),
-                        ".campus-hot-and-cold", "daily")), RandomGenerator.getDefault(), clock, session, presenter),
+                new StartExpeditionInteractor(campuses, dailyAttempts, RandomGenerator.getDefault(), clock, session,
+                        presenter),
                 new MoveInteractor(clock, session, presenter),
                 new TravelInteractor(clock, session, presenter),
                 new CheckTemperatureInteractor(clock, session, finisher, presenter),
                 new ChooseHintInteractor(session, new WikipediaFactsGateway(client), presenter),
                 new GuessBuildingInteractor(session, finisher, presenter),
                 presenter);
-        int port = Integer.getInteger("campus.explore.port", 0);
+        var dailyRun = new DailyRunInteractor(campuses, dailyAttempts, dailyRuns, session, finisher, clock, presenter);
+        controller.withDailyRuns(dailyRun, dailyRun);
+        Integer chosenPort = Integer.getInteger("campus.explore.port");
         // Debug only: the hidden zone and a shortest route to it, so automated visual tests can walk there.
         Supplier<Map<String, Object>> debug = Boolean.getBoolean("campus.explore.debug") ? () ->
                 session.current().map(round -> Map.<String, Object>of(
@@ -105,7 +118,14 @@ public final class Main {
                                         round.zoneForDiagnostics()::contains)
                                 .map(route -> route.points().stream().map(Main::point).toList())
                                 .orElse(List.of()))).orElse(Map.of()) : null;
-        return new ExploreWebServer(controller, campuses, port, debug);
+        if (chosenPort != null) {
+            return new ExploreWebServer(controller, campuses, chosenPort, debug);
+        }
+        try {
+            return new ExploreWebServer(controller, campuses, PREFERRED_PORT, debug);
+        } catch (java.net.BindException busy) {
+            return new ExploreWebServer(controller, campuses, 0, debug);
+        }
     }
 
     private static List<Double> point(GeoPoint point) {

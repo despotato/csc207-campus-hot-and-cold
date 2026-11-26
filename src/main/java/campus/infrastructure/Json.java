@@ -214,8 +214,8 @@ public final class Json {
                 if (!Double.isFinite(d)) {
                     throw new IllegalArgumentException("JSON numbers must be finite.");
                 }
-                out.append(d == Math.rint(d) && Math.abs(d) < 1e15 ? Long.toString((long) d)
-                        : String.format(Locale.ROOT, "%.7f", d).replaceAll("0+$", ""));
+                // Shortest exact form, so saved rounds come back exactly (e.g. 0.5, 43.66067449120444).
+                out.append(d == Math.rint(d) && Math.abs(d) < 1e15 ? Long.toString((long) d) : Double.toString(d));
             }
             case Map<?, ?> map -> {
                 out.append('{');
