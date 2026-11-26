@@ -1,0 +1,214 @@
+{
+  "id": "laurier",
+  "name": "Wilfrid Laurier University — Waterloo campus",
+  "timezone": "America/Toronto",
+  "bounds": {
+    "south": 43.468,
+    "west": -80.535,
+    "north": 43.4795,
+    "east": -80.519
+  },
+  "mascot": {
+    "name": "Hawk",
+    "species": "hawk",
+    "school": "Wilfrid Laurier University",
+    "colors": {
+      "fur": "#C99700",
+      "belly": "#F6E7B8",
+      "dark": "#2b1a0e",
+      "primary": "#330072",
+      "secondary": "#F2A900"
+    }
+  },
+  "flat": [],
+  "dailyFrom": "2026-11-01",
+  "landmarks": [
+    {
+      "osm": "w43250600",
+      "name": "Laurier Library",
+      "category": "Library",
+      "wikipedia": null
+    },
+    {
+      "osm": "w113045569",
+      "name": "Bouckaert Residence",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w113045568",
+      "name": "Bricker Residence",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "r1584007",
+      "name": "Clara Conrad Residence",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "r5228258",
+      "name": "Dag Hammarskjold Residence",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w113045575",
+      "name": "Euler Residence",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w118662073",
+      "name": "King Street Residence",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w113045571",
+      "name": "Leopold Residence",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w113045579",
+      "name": "Little House Residence",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w113027056",
+      "name": "MacDonald House",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w118662080",
+      "name": "Regina Residence",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w253521058",
+      "name": "Spruce Street Residence",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w43250655",
+      "name": "Martin Luther University College",
+      "category": "College",
+      "wikipedia": "Martin Luther University College"
+    },
+    {
+      "osm": "w267589632",
+      "name": "Lazaridis Hall",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w113042945",
+      "name": "Bricker Academic Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w43250659",
+      "name": "Dr. Alvin Woods Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w113010274",
+      "name": "Frank C. Peters Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w104690857",
+      "name": "Schlegel Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w113042392",
+      "name": "Science Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w193317591",
+      "name": "Science Research Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w113021038",
+      "name": "John Aird Centre",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w628586186",
+      "name": "Arts Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w221152637",
+      "name": "Centre for Cold Regions and Water Science",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w113021799",
+      "name": "Theatre Auditorium",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w43250661",
+      "name": "Fred Nichols Campus Centre",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w1022988079",
+      "name": "Student Services Building",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w113016892",
+      "name": "Dining Hall",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w113045583",
+      "name": "Alumni Hall",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w290274349",
+      "name": "Solarium",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w193320731",
+      "name": "Co-operative Education Centre",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w113040012",
+      "name": "Athletic Complex",
+      "category": "Athletics",
+      "wikipedia": null
+    }
+  ],
+  "dailyStartInsideBounds": true
+}

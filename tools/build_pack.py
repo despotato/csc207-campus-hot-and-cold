@@ -64,7 +64,8 @@ def outer_rings(e):
     if e["type"] == "way":
         ring = ring_from_way(e)
         return [ring] if len(ring) >= 4 and ring[0] == ring[-1] else []
-    return member_rings(e, "outer")
+    # Multipolygons use "outer"; 3D building relations (type=building) give the footprint as "outline".
+    return member_rings(e, "outer") or member_rings(e, "outline")
 
 
 def inside(point, ring):

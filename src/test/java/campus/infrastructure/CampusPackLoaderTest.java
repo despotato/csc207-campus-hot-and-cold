@@ -51,7 +51,7 @@ class CampusPackLoaderTest {
 
     @Test void catalogListsCampusesAndLoadsTheirDailyPuzzles() throws Exception {
         var catalog = new PackCatalog();
-        assertEquals(List.of("st-george", "uwaterloo", "mcmaster"), catalog.campusIds());
+        assertEquals(List.of("st-george", "uwaterloo", "mcmaster", "guelph", "laurier"), catalog.campusIds());
         CampusMap map = catalog.campus("st-george").orElseThrow();
         assertEquals("America/Toronto", map.timezone().getId());
         var date = java.time.LocalDate.of(2026, 11, 25);
@@ -144,8 +144,8 @@ class CampusPackLoaderTest {
         var destination = map.openSpace().nearestOpen(puzzle.zoneCentre(), 90).orElseThrow();
         daily.travelTo(destination, Instant.EPOCH.plusSeconds(1));
         assertTrue(daily.check(Instant.EPOCH.plusSeconds(2)).inZone());
-        String hint = daily.chooseHint(Expedition.HintLevel.NORMAL);
-        assertTrue(hint.contains("#2 of 4"), "fallback identifies one named building by its position");
+        String hint = daily.chooseHint(Expedition.HintLevel.EASY);
+        assertTrue(hint.contains("#2 of 4"), "easy identifies one named building by its position");
         assertFalse(hint.contains(map.landmark(puzzle.landmarkId()).orElseThrow().name()));
         assertTrue(map.buildingsIn(zone).size() >= 5);
         for (int seed = 0; seed < 10; seed++) {

@@ -1,0 +1,306 @@
+{
+  "id": "guelph",
+  "name": "University of Guelph — Main campus",
+  "timezone": "America/Toronto",
+  "bounds": {
+    "south": 43.5225,
+    "west": -80.2395,
+    "north": 43.54,
+    "east": -80.217
+  },
+  "mascot": {
+    "name": "Gryph",
+    "species": "gryphon",
+    "school": "University of Guelph",
+    "colors": {
+      "fur": "#C69214",
+      "belly": "#FFD966",
+      "dark": "#2b2b2b",
+      "primary": "#C20430",
+      "secondary": "#FFC72A"
+    }
+  },
+  "flat": [
+    "w427653708"
+  ],
+  "dailyFrom": "2026-11-01",
+  "landmarks": [
+    {
+      "osm": "w136469097",
+      "name": "McLaughlin Library",
+      "category": "Library",
+      "wikipedia": null
+    },
+    {
+      "osm": "w136469992",
+      "name": "Johnston Hall",
+      "category": "Residence",
+      "wikipedia": "Johnston Hall (University of Guelph)"
+    },
+    {
+      "osm": "w161122676",
+      "name": "Lambton Hall",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w259232883",
+      "name": "Lanark Hall",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w161122674",
+      "name": "Lennox/Addington Hall",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w161118800",
+      "name": "Mills Hall",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w161122672",
+      "name": "Watson Hall",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w161122682",
+      "name": "Macdonald Hall",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w469285183",
+      "name": "Maids Hall",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w136469993",
+      "name": "Drew Hall",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w259232882",
+      "name": "Glengarry Hall",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w772844978",
+      "name": "Dundas Hall",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w161132806",
+      "name": "South Residence",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "r10716740",
+      "name": "East Village Townhouses",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w136468433",
+      "name": "MacKinnon Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w136547108",
+      "name": "MacNaughton Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w238265421",
+      "name": "Albert A. Thornbrough Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w136472615",
+      "name": "Reynolds Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w136467970",
+      "name": "Rozanski Hall",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w136546715",
+      "name": "Summerlee Science Complex",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w136547109",
+      "name": "Alexander Hall",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w136472508",
+      "name": "Zavitz Hall",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w136470007",
+      "name": "Trent Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w136472614",
+      "name": "J.D. MacLachlan Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w136472575",
+      "name": "H.L. Hutt Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w784115082",
+      "name": "Crop Science Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w137354259",
+      "name": "Animal Science and Nutrition Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w1303731290",
+      "name": "Food Science Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "r9891053",
+      "name": "Landscape Architecture Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w161133731",
+      "name": "Ontario Veterinary College",
+      "category": "Teaching",
+      "wikipedia": "Ontario Veterinary College"
+    },
+    {
+      "osm": "w237589010",
+      "name": "Centre for Biodiversity Genomics",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w136549177",
+      "name": "Hagen Aqualab",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w238265422",
+      "name": "Richards Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w139195384",
+      "name": "Graham Hall",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w161123001",
+      "name": "Macdonald Institute",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w711504139",
+      "name": "Massey Hall",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w136472535",
+      "name": "University Centre",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w161118801",
+      "name": "War Memorial Hall",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w161123311",
+      "name": "Macdonald Stewart Hall",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w161109531",
+      "name": "Art Gallery of Guelph",
+      "category": "Campus life",
+      "wikipedia": "Art Gallery of Guelph"
+    },
+    {
+      "osm": "w136467969",
+      "name": "Day Hall",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w161119744",
+      "name": "Creelman Hall",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w136468152",
+      "name": "Gryphon Athletic Centre",
+      "category": "Athletics",
+      "wikipedia": null
+    },
+    {
+      "osm": "w136457585",
+      "name": "Gryphon Centre Twinpad Arena",
+      "category": "Athletics",
+      "wikipedia": null
+    },
+    {
+      "osm": "w208501832",
+      "name": "Gryphon Field House",
+      "category": "Athletics",
+      "wikipedia": null
+    },
+    {
+      "osm": "w427653708",
+      "name": "Alumni Stadium",
+      "category": "Athletics",
+      "wikipedia": "Alumni Stadium (Guelph)"
+    }
+  ],
+  "dailyStartInsideBounds": true
+}
