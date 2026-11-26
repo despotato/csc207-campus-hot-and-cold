@@ -121,6 +121,17 @@
   #results.hidden { display: none; }
   #results > * { flex-shrink: 0; }
   #resultsBody { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+  #badges { display: flex; flex-wrap: wrap; gap: 6px; margin: 2px 0 6px; }
+  #badges:empty { display: none; }
+  .badge { position: relative; display: flex; align-items: center; gap: 8px; padding: 5px 10px 5px 8px; border: 3px solid var(--gold);
+    background: #0005; animation: badgeIn 520ms cubic-bezier(.3, 1.6, .5, 1) both; }
+  .badge .ico { font-size: 22px; line-height: 1; }
+  .badge b { display: block; color: var(--gold); font-size: 12px; font-weight: normal; }
+  .badge small { display: block; font-size: 10px; opacity: .8; }
+  .badge em { position: absolute; top: -9px; right: -6px; font-style: normal; font-size: 9px; padding: 1px 4px;
+    background: var(--hot); color: var(--paper); }
+  @keyframes badgeIn { from { transform: scale(.3) rotate(-8deg); opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .badge { animation: none; } }
   #results .big { font-size: 34px; color: var(--gold); margin: 4px 0; }
   #tally td { padding: 4px 0; border-bottom: 2px dashed #fff8e733; }
   #tally td small { display: block; font-size: 10px; opacity: .7; }
@@ -154,6 +165,8 @@
     #targetCat, #modeLabel, #outcome { font-size: 10px; }
     #bigScore { font-size: 34px; margin: 0; text-shadow: 3px 3px 0 var(--hot); white-space: nowrap; }
     #bigScore small { font-size: 12px; }
+    #badges { margin: 2px 0 4px; } .badge { padding: 3px 8px 3px 6px; gap: 6px; } .badge .ico { font-size: 16px; }
+    .badge b { font-size: 10px; } .badge small { font-size: 9px; }
     #tally { margin: 4px 0; }
     #tally td { padding: 2px 0; font-size: 11px; }
     #tally td small { display: none; }
@@ -312,6 +325,7 @@
     <div><div class="big" id="targetName"></div><div id="targetCat"></div></div>
     <div id="bigScore"><span id="total">0</span><small> / 1000</small></div>
   </div>
+  <div id="badges"></div>
   <div id="resultsBody">
   <table id="tally"></table>
   <table id="stats">
@@ -2097,7 +2111,7 @@ function fillResults(r, saveError) {
   $('modeLabel').textContent = game.mode === 'daily' ? `Daily · ${game.date} · ${$('campusName').textContent}` : 'Unlimited';
   const fmt = m => m >= 1000 ? (m / 1000).toFixed(2) + ' km' : m + ' m';
   $('outcome').textContent = r.won ? `Identified in ${r.guessesUsed} ${r.guessesUsed === 1 ? 'guess' : 'guesses'}`
-    : r.secondsToZone == null ? 'Zone not found' : 'Out of guesses';
+    : r.secondsToZone == null ? (r.score.nearMiss ? 'Ahh, almost almost!' : 'Zone not found') : 'Out of guesses';
   $('targetName').textContent = r.target.name;
   $('targetCat').textContent = r.target.category;
   const sc = r.score, ordinal = ['1st', '2nd', '3rd'][r.guessesUsed - 1];
@@ -2108,6 +2122,9 @@ function fillResults(r, saveError) {
     ['Hint bonus', r.hintLevel ? `${r.hintLevel[0].toUpperCase() + r.hintLevel.slice(1)} hint ×${sc.multiplier}` : 'No hint', sc.hintBonus],
     ['Checks saved', r.secondsToZone == null ? 'Zone not found' : `${Math.max(0, 6 - r.checksUsed)} of 5 saveable (the finding check is free)`, sc.checkBonus],
   ];
+  if (r.secondsToZone == null) lines.push(['Near miss', r.metresShort == null ? 'No checks made'
+    : `Closest check was ${r.metresShort} m short of the zone (points within 150 m)`, sc.nearMiss || 0]);
+  showBadges(r.achievements || []);
   const tally = $('tally');
   tally.innerHTML = '';
   for (const [title, why, points] of lines) {
@@ -2137,6 +2154,29 @@ function fillResults(r, saveError) {
     $('wikiLink').classList.toggle('hidden', !w.url);
     if (w.url) $('wikiLink').href = w.url;
   }
+}
+
+const BADGE_ICONS = { almost_almost: '🤏', absolute_zero: '🧊', supernova: '💥' };
+/** This round's achievements; ones never earned before on this device are marked NEW. */
+function showBadges(earned) {
+  let seen = {};
+  try { seen = JSON.parse(store.get('achievements') || '{}') || {}; } catch (e) { seen = {}; }
+  const box = $('badges');
+  box.innerHTML = '';
+  earned.forEach((a, i) => {
+    const el = document.createElement('div');
+    el.className = 'badge'; el.style.animationDelay = (600 + i * 250) + 'ms';
+    el.innerHTML = '<span class="ico"></span><span><b></b><small></small></span>';
+    el.querySelector('.ico').textContent = BADGE_ICONS[a.id] || '🏅';
+    el.querySelector('b').textContent = a.title;
+    el.querySelector('small').textContent = a.subtitle;
+    if (!seen[a.id]) {
+      const tag = document.createElement('em'); tag.textContent = 'NEW'; el.append(tag);
+      seen[a.id] = game.date || new Date().toISOString().slice(0, 10);
+    }
+    box.append(el);
+  });
+  store.set('achievements', JSON.stringify(seen));
 }
 
 function countUp(el, target) {
@@ -2533,13 +2573,30 @@ const LocalRules = (() => {
     const guessPts = round.won ? GUESS_POINTS[round.guesses.length - 1] : 0, multiplier = MULT[round.hint] || 1;
     const hintBonus = Math.round(guessPts * (multiplier - 1));
     const checkBonus = found ? Math.round(100 * Math.min(CHECKS - 1, CHECKS - round.checks.length) / (CHECKS - 1)) : 0;
-    return { route, efficiency: Math.round(efficiency * 100), guess: guessPts, hintBonus, checkBonus, multiplier,
-      total: route + guessPts + hintBonus + checkBonus, max: 1000 };
+    const short = metresShort(), nearMiss = short == null ? 0 : Math.round(100 * Math.max(0, 1 - short / NEAR_MISS));
+    return { route, efficiency: Math.round(efficiency * 100), guess: guessPts, hintBonus, checkBonus, nearMiss, multiplier,
+      total: route + guessPts + hintBonus + checkBonus + nearMiss, max: 1000 };
+  }
+  /** Mirrors Expedition.metresShortOfZone: unfound zone, closest check (or the final search) beyond a check's reach. */
+  const NEAR_MISS = 150;
+  function metresShort() {
+    if (round.zoneAt != null) return null;
+    const spots = round.checks.map(c => c.metres);
+    if (round.stage === 'finished') spots.push(distOf(round.pos, round.zone.centre));
+    return spots.length ? Math.max(0, Math.min(...spots) - round.zone.radius - PLAYER_RADIUS) : null;
+  }
+  /** Mirrors Expedition.achievements and the Achievement enum. */
+  function achievements(sc) {
+    return [
+      sc.nearMiss > 0 && ['almost_almost', 'Ahh, almost almost', 'So close you could feel the heat'],
+      round.zoneAt != null && round.checks.length === 1 && ['absolute_zero', 'Absolute Zero', 'Too cold'],
+      sc.total === 1000 && ['supernova', 'Supernova', 'Too hot to handle'],
+    ].filter(Boolean).map(([id, title, subtitle]) => ({ id, title, subtitle }));
   }
   function finished(summary = null) {
-    const t = round.target;
+    const t = round.target, sc = score(), short = metresShort();
     return { result: { won: round.won, target: { name: t.name, category: t.category, buildingId: round.building.id, centre: round.building.center },
-      score: score(), metresWalked: Math.round(round.walked), shortestMetres: Math.round(round.shortest.metres),
+      score: sc, achievements: achievements(sc), metresShort: short == null ? null : Math.round(short), metresWalked: Math.round(round.walked), shortestMetres: Math.round(round.shortest.metres),
       secondsToZone: round.zoneAt ? Math.round((round.zoneAt - round.startedAt + (round.travelMs || 0)) / 1000) : null,
       zone: { centre: round.zone.centre, radius: round.zone.radius }, checksUsed: round.checks.length,
       guessesUsed: round.guesses.length, hintLevel: round.hint, route: round.track, shortestRoute: round.shortest.points,
@@ -3137,7 +3194,8 @@ $('shareBtn').addEventListener('click', async () => {
   const checks = r.checks.map(c => heat[c.heat] || '⬜').join('');
   const guesses = '❌'.repeat(Math.max(0, r.guessesUsed - (r.won ? 1 : 0))) + (r.won ? '✅' : '');
   const title = game.mode === 'daily' ? `Campus Hot & Cold · ${$('campusName').textContent} daily ${game.date}` : 'Campus Hot & Cold';
-  const text = `${title}\n${r.score.total}/1000 · ${r.hintLevel || 'no'} hint\nChecks ${checks}\nGuesses ${guesses}\n${location.origin + location.pathname}`;
+  const badges = (r.achievements || []).map(a => `${BADGE_ICONS[a.id] || '🏅'} ${a.title}`).join(' · ');
+  const text = `${title}\n${r.score.total}/1000 · ${r.hintLevel || 'no'} hint\nChecks ${checks}\nGuesses ${guesses}\n${badges ? badges + '\n' : ''}${location.origin + location.pathname}`;
   try { await navigator.clipboard.writeText(text); toast('COPIED', 'warm', 'Paste it to your friends.'); }
   catch (e) { prompt('Copy your result:', text); }
 });
