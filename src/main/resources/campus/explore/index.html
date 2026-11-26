@@ -26,6 +26,8 @@
   button { font: inherit; color: var(--ink); background: var(--gold); border: 3px solid var(--ink); box-shadow: 0 4px 0 var(--ink);
     padding: 8px 14px; cursor: pointer; text-transform: uppercase; }
   button:hover { filter: brightness(1.08); }
+  button:disabled { opacity: .45; cursor: not-allowed; filter: grayscale(.6); }
+  button:disabled:active { transform: none; box-shadow: 0 4px 0 var(--ink); }
   button:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
   button.secondary { background: var(--paper); }
   kbd { display: inline-block; min-width: 1.6em; padding: 0 4px; border: 2px solid var(--paper); border-bottom-width: 4px; text-align: center; font: inherit; }
@@ -1486,6 +1488,7 @@ const LocalRules = (() => {
   function redact(sentence, name) {
     if (sentence.length < 45 || sentence.length > 260 || !FACTUAL.test(sentence) || sentence.includes('may refer to')) return null;
     let out = sentence.replace(new RegExp(name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), 'this building');
+    out = out.replace(/\b(the|a|an) this building/gi, 'this building');
     for (const w of distinctive(name)) out = out.replace(new RegExp(`\\b${w}('s)?\\b`, 'gi'), '____');
     out = out.replace(/(____\s*)+/g, '____ ').trim();
     return givesAway(out, name) ? null : out;
@@ -1704,15 +1707,27 @@ function renderChoices() {
   }
   for (const b of document.querySelectorAll('#modeChoice button')) b.setAttribute('aria-checked', String(b.dataset.mode === chosenMode));
   $('dailyDate').textContent = pack.daily ? campusDate() : '';
-  const played = store.get(dailyKey());
-  const claimed = Boolean(store.get('claimed:' + dailyKey()));
-  const saved = storedDailyResult();
-  const resumable = storedDailyRun();
-  const restartable = legacyDailyRestart();
+  // In the Java app, Java is the source of truth for today's daily (it survives app restarts);
+  // the website keeps it in browser storage.
+  const server = !STATIC && serverDaily;
+  const played = server ? (serverDaily.status === 'finished' ? String(serverDaily.result.score.total)
+    : serverDaily.status === 'used' ? 'unfinished' : null) : store.get(dailyKey());
+  const claimed = server ? serverDaily.status !== 'available' : Boolean(store.get('claimed:' + dailyKey()));
+  const saved = server ? (serverDaily.status === 'finished' ? serverDaily.result : null) : storedDailyResult();
+  const resumable = server ? serverDaily.status === 'inProgress' : storedDailyRun();
+  const restartable = server ? false : legacyDailyRestart();
   $('viewDailyResult').classList.toggle('hidden', !saved);
   $('startBtn').disabled = chosenMode === 'daily' && !resumable && !restartable && (Boolean(played) || claimed);
   $('startBtn').innerHTML = chosenMode === 'daily' && resumable ? 'Resume daily'
     : chosenMode === 'daily' && restartable ? 'Restart daily' : 'Start <kbd>Enter</kbd>';
+  if (chosenMode === 'daily' && !STATIC && serverDailyLoading) {
+    // Wait for Java's answer rather than guessing from browser storage.
+    $('startBtn').disabled = true;
+    $('startBtn').textContent = "Checking today's daily…";
+    $('viewDailyResult').classList.add('hidden');
+    $('modeNote').textContent = '';
+    return;
+  }
   $('modeNote').textContent = chosenMode === 'daily'
     ? (resumable ? "Continue today's daily from where you left off."
       : restartable ? "Your earlier run couldn't be restored. You can restart today's puzzle once."
@@ -1724,6 +1739,29 @@ function renderChoices() {
 }
 for (const b of document.querySelectorAll('#modeChoice button')) {
   b.addEventListener('click', () => { chosenMode = b.dataset.mode; store.set('mode', chosenMode); renderChoices(); });
+}
+
+/** Java app only: ask Java about today's daily (not started, in progress, finished with result, or used). */
+let serverDaily = null, serverDailyLoading = false;
+async function refreshServerDaily() {
+  if (STATIC || !pack?.daily) return;
+  serverDailyLoading = true;
+  if (game.phase === 'title') renderChoices();
+  const r = await api('dailyStatus', { campus: pack.id }).catch(() => null);
+  serverDaily = r && r.status === 200 ? r.body : null;
+  serverDailyLoading = false;
+  if (game.phase === 'title') renderChoices();
+}
+
+/** Java's resumed round, in the shape restoreDailyRun() draws from. */
+function runFromServer(body) {
+  const local = storedDailyRun(), same = local && local.roundId === body.roundId;
+  const heading = same ? local.heading : openestHeading(body.point);
+  return { version: 1, campus: body.campusId, date: body.date, roundId: body.roundId, phase: body.stage,
+    point: body.point, heading, camBearing: same ? local.camBearing : heading, walked: body.metresWalked,
+    elapsed: body.elapsedSeconds * 1000, zoneElapsed: body.zoneElapsedSeconds == null ? null : body.zoneElapsedSeconds * 1000,
+    checksLeft: body.checksRemaining, checkCount: body.checks.length, checks: body.checks, trail: body.trail,
+    zone: body.zone || null, hint: body.hint || null, guessed: body.guesses, zoneBuildings: body.zoneBuildings, rules: null };
 }
 
 async function loadCampusPack() {
@@ -1750,6 +1788,9 @@ function restoreDailyRun(run) {
   game.guessed = new Set(run.guessed || []); game.zoneBuildings = new Set(run.zoneBuildings || []);
   pack.guessLimit = 3;
   hide('title');
+  // Start from a clean slate so restoring can never draw a check twice.
+  $('checks').innerHTML = '';
+  markerFeatures.length = 0; ringFeatures.length = 0; checkDots.length = 0; checkList.length = 0;
   for (const c of game.checkHistory) {
     if (c.finalSearch && !c.zoneFound) continue;
     addCheckMarker(c.point, c.zoneFound ? 'zone' : c.heat, c.number,
@@ -1791,6 +1832,15 @@ function restoreDailyRun(run) {
 
 async function startRound() {
   if (game.phase !== 'title' || $('startBtn').disabled) return;
+  if (chosenMode === 'daily' && !STATIC && serverDaily?.status === 'inProgress') {
+    game.phase = 'starting';   // Enter on the focused button also clicks it: only one resume may run
+    const r = await api('resumeDaily', { campus: pack.id });
+    game.phase = 'title';
+    if (r.status === 200 && r.body.type === 'resumed' && restoreDailyRun(runFromServer(r.body))) return;
+    await refreshServerDaily();
+    $('loading').textContent = r.body.error || 'Could not resume today\'s daily.';
+    return;
+  }
   if (chosenMode === 'daily') {
     const saved = storedDailyRun();
     if (saved) {
@@ -1978,7 +2028,7 @@ $('toGuess').addEventListener('click', startGuessing);
 $('replayBtn').addEventListener('click', replay);
 $('againBtn').addEventListener('click', resetRound);
 $('viewDailyResult').addEventListener('click', () => {
-  const result = storedDailyResult();
+  const result = (!STATIC && serverDaily?.result) || storedDailyResult();
   if (!result || game.phase !== 'title') return;
   game.mode = 'daily'; game.date = campusDate();
   hide('title');
@@ -2010,6 +2060,7 @@ for (const card of document.querySelectorAll('.hintcard')) {
   pack = loaded;
   $('campusName').textContent = (campusIndex.find(c => c.id === pack.id) || {}).short || pack.campus;
   renderChoices();
+  refreshServerDaily();
   M_LON = M_LAT * Math.cos((pack.bounds.north + pack.bounds.south) / 2 * Math.PI / 180);
   const categories = new Map(pack.landmarks.map(l => [l.building, l.category]));
   for (const b of pack.buildings) {

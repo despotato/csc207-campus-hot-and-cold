@@ -93,6 +93,12 @@ class WikipediaFactsGatewayTest {
         assertTrue(first.stream().noneMatch(f -> f.startsWith("History")));
     }
 
+    @Test void blankingTheNameNeverLeavesTheThisBuilding() {
+        assertEquals("Victoria is also home to this building, opened in March 2001.",
+                WikipediaFactsGateway.redact("Victoria is also home to the Isabel Bader Theatre, opened in March 2001.",
+                        "Isabel Bader Theatre"));
+    }
+
     @Test void failuresGiveNoFacts() {
         assertEquals(List.of(), gateway.facts(null, "Broken Hall"));
         assertEquals(List.of(), gateway.facts(null, "Nothing Hall"));

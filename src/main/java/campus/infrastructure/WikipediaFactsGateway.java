@@ -145,7 +145,8 @@ public final class WikipediaFactsGateway implements LandmarkFactsGateway {
                 || sentence.contains("may refer to") || sentence.startsWith("See also")) {
             return null;
         }
-        String result = sentence.replaceAll("(?i)" + Pattern.quote(landmarkName), "this building");
+        String result = sentence.replaceAll("(?i)" + Pattern.quote(landmarkName), "this building")
+                .replaceAll("(?i)\\b(the|a|an) this building", "this building");
         for (String word : LandmarkNames.distinctiveWords(landmarkName)) {
             result = result.replaceAll("(?i)\\b" + Pattern.quote(word) + "('s)?\\b", "____");
         }
