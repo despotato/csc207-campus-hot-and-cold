@@ -18,9 +18,13 @@ Sources (--source):
   mapillary: open CC BY-SA photos (faces and plates blurred), downloaded, cropped around the building and stored
     next to the packs (clues/<campus>/<building>.jpg).
 
+Keys come from the environment or from ~/.config/campus-hot-and-cold/keys.env (outside the repo), one per line:
+    GOOGLE_METADATA_KEY=AIza...
+    MAPILLARY_TOKEN=MLY|...
+
 Usage:
-    GOOGLE_METADATA_KEY=... python3 tools/fetch_clue_photos.py src/main/resources/campus/packs/st-george.json
-    pip install pillow; MAPILLARY_TOKEN=MLY|... python3 tools/fetch_clue_photos.py --source mapillary <pack>
+    python3 tools/fetch_clue_photos.py src/main/resources/campus/packs/st-george.json
+    pip install pillow; python3 tools/fetch_clue_photos.py --source mapillary <pack>
 Options: --region 60 (metres), --refresh (redo regions that already have a view; by default they're kept, so views
 players have seen don't change).
 """
@@ -80,25 +84,61 @@ def mapillary(token, west, south, east, north):
             time.sleep(2 ** attempt)
 
 
-def google_view(key, building):
-    """Aim at the building from the nearest outdoor Street View panorama (metadata only: free, no quota)."""
-    query = urllib.parse.urlencode({"location": f"{building['lat']},{building['lon']}", "radius": 50,
-                                    "source": "outdoor", "key": key})
+def read_keys():
+    """Environment first, then ~/.config/campus-hot-and-cold/keys.env (NAME=value lines; values may contain |)."""
+    keys = {}
+    path = pathlib.Path.home() / ".config" / "campus-hot-and-cold" / "keys.env"
+    if path.exists():
+        for line in path.read_text(encoding="utf-8").splitlines():
+            name, eq, value = line.partition("=")
+            if eq and not name.strip().startswith("#"):
+                keys[name.strip()] = value.strip().strip('"').strip("'")
+    keys.update({k: v for k, v in os.environ.items() if k in ("GOOGLE_METADATA_KEY", "MAPILLARY_TOKEN") and v})
+    return keys
+
+
+def street_metadata(key, lon, lat):
+    query = urllib.parse.urlencode({"location": f"{lat},{lon}", "radius": 50, "source": "outdoor", "key": key})
     try:
         with urllib.request.urlopen(f"{SV_METADATA}?{query}", timeout=30) as response:
             meta = json.load(response)
     except Exception as error:
         print(f"  ! metadata request failed: {error}", file=sys.stderr)
         return None
-    if meta.get("status") != "OK":
-        if meta.get("status") in ("REQUEST_DENIED", "OVER_QUERY_LIMIT"):
-            sys.exit(f"Street View metadata: {meta.get('status')} {meta.get('error_message', '')}")
-        return None
-    at = (meta["location"]["lng"], meta["location"]["lat"])
+    if meta.get("status") in ("REQUEST_DENIED", "OVER_QUERY_LIMIT", "INVALID_REQUEST"):
+        sys.exit(f"Street View metadata: {meta.get('status')} {meta.get('error_message', '')}")
+    return meta if meta.get("status") == "OK" else None
+
+
+def google_view(key, building):
+    """
+    Aim at the building from a nearby outdoor Street View panorama (metadata only: free, no quota). Google's own
+    captures are preferred over photospheres uploaded by the public: they look consistent and are taken from streets.
+    Looks from the building and from 30 m out on each side, then takes the best: Google's, about 25 m away.
+    """
     centre = (building["lon"], building["lat"])
-    distance = metres(at, centre)
-    if not 8 <= distance <= 60:
+    dlat = 30 / M_PER_DEG
+    dlon = dlat / math.cos(math.radians(building["lat"]))
+    best, seen = None, set()
+    for lon, lat in [centre, (centre[0], centre[1] + dlat), (centre[0] + dlon, centre[1]),
+                     (centre[0], centre[1] - dlat), (centre[0] - dlon, centre[1])]:
+        meta = street_metadata(key, lon, lat)
+        if not meta or meta["pano_id"] in seen:
+            continue
+        seen.add(meta["pano_id"])
+        at = (meta["location"]["lng"], meta["location"]["lat"])
+        distance = metres(at, centre)
+        if not 8 <= distance <= 60:
+            continue
+        by_google = "google" in (meta.get("copyright") or "").lower()
+        score = abs(distance - 25) + (0 if by_google else 1000)
+        if best is None or score < best[0]:
+            best = (score, meta, at, distance)
+        if by_google and abs(distance - 25) < 10:
+            break   # good enough: save calls
+    if best is None:
         return None
+    _, meta, at, distance = best
     pitch = math.degrees(math.atan((building["height"] * 0.45 - 2.5) / distance))
     return {"building": building["id"], "pano": meta["pano_id"], "location": [round(at[0], 7), round(at[1], 7)],
             "heading": round(bearing(at, centre)), "pitch": round(min(30, max(0, pitch))),
@@ -160,7 +200,7 @@ def main():
     parser.add_argument("--source", choices=["google", "mapillary"], default="google")
     args = parser.parse_args()
     google = args.source == "google"
-    token = os.environ.get("GOOGLE_METADATA_KEY" if google else "MAPILLARY_TOKEN")
+    token = read_keys().get("GOOGLE_METADATA_KEY" if google else "MAPILLARY_TOKEN")
     if not token:
         sys.exit("Set GOOGLE_METADATA_KEY (see docs/CLUE_PHOTOS.md)." if google
                  else "Set MAPILLARY_TOKEN (a Mapillary client token: mapillary.com/dashboard/developers).")
