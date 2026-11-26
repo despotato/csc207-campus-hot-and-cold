@@ -178,6 +178,7 @@ public final class ExplorePresenter implements ExploreOutputBoundary {
         score.put("guess", result.guessPoints());
         score.put("hintBonus", result.hintBonus());
         score.put("checkBonus", result.checkBonus());
+        score.put("nearMiss", result.nearMissPoints());
         score.put("multiplier", result.multiplier());
         score.put("total", result.score());
         score.put("max", Expedition.MAX_SCORE);
@@ -185,6 +186,7 @@ public final class ExplorePresenter implements ExploreOutputBoundary {
         body.put("metresWalked", round(result.metresWalked()));
         body.put("shortestMetres", round(result.shortestMetres()));
         body.put("secondsToZone", result.secondsToZone());
+        body.put("metresShort", result.metresShort() == null ? null : round(result.metresShort()));
         body.put("zone", Map.of("centre", point(result.zone().centre()), "radius", result.zone().radiusMetres()));
         body.put("checksUsed", result.checksUsed());
         body.put("guessesUsed", result.guessesUsed());

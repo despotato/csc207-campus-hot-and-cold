@@ -68,6 +68,11 @@ public final class RoundFinisher {
         }
     }
 
+    private static Double shortBy(Expedition expedition) {
+        var shortBy = expedition.metresShortOfZone();
+        return shortBy.isPresent() ? shortBy.getAsDouble() : null;
+    }
+
     private ExploreResponse.Result result(Expedition expedition, CampusLandmark target) {
         Expedition.Score score = expedition.score();
         ExploreResponse.LandmarkSummary summary = target.wikipediaTitle() == null ? null
@@ -77,7 +82,7 @@ public final class RoundFinisher {
         return new ExploreResponse.Result(expedition.isWon(), target.name(), target.category(),
                 target.buildingId(), expedition.map().buildingOf(target).centre(), score.routePoints(),
                 score.efficiency(), score.guessPoints(), score.hintBonus(), score.checkBonus(),
-                score.multiplier(), score.total(),
+                score.nearMissPoints(), shortBy(expedition), score.multiplier(), score.total(),
                 expedition.metresWalked(), expedition.shortestToZone(), secondsToZone, expedition.checksUsed(),
                 expedition.guesses().size(), expedition.hintLevel().orElse(null),
                 new ExploreResponse.ZoneView(zone.centre(), zone.radiusMetres()), expedition.track(),

@@ -356,6 +356,28 @@ class ExpeditionTest {
         assertEquals(60, worse.checkBonus(), "3 of 5 saveable checks saved");
     }
 
+    @Test void missingTheZoneNarrowlyEarnsNearMissPoints() {
+        Expedition close = round();
+        Instant time = walk(close, List.of(at(490, 126), at(510, 126), at(845, 75)), T0); // 50 m beyond a check's reach of the zone edge
+        while (close.checksRemaining() > 0) {
+            close.check(time);
+        }
+        assertFalse(close.finalSearch(time));
+        assertEquals(50, close.metresShortOfZone().orElseThrow(), 1);
+        Expedition.Score score = close.score();
+        assertEquals(67, score.nearMissPoints(), "two thirds of the way inside the 150 m near-miss band");
+        assertEquals(67, score.total(), "nothing else is earned without the zone");
+
+        Expedition far = round();
+        far.check(T0);
+        assertEquals(0, far.score().nearMissPoints(), "checking 1 km away is no near miss");
+
+        Expedition found = round();
+        reachZone(found);
+        assertTrue(found.metresShortOfZone().isEmpty());
+        assertEquals(0, found.score().nearMissPoints());
+    }
+
     @Test void spendingTheOnlyCheckToFindTheZoneEarnsNoCheckBonus() {
         CampusMap map = campus();
         Expedition round = new Expedition(new Difficulty("perfect", 1, 90, 450, 900), map,

@@ -82,10 +82,13 @@ public sealed interface ExploreResponse {
     /** The end of a round: the reveal, plus {@code saveError} when saving it failed. */
     record Finished(Result result, String saveError) { }
 
-    /** {@code hintLevel} and {@code secondsToZone} are null when the zone was never found. */
+    /**
+     * {@code hintLevel} and {@code secondsToZone} are null when the zone was never found; {@code metresShort}
+     * (how close the nearest check came) is null when it was.
+     */
     record Result(boolean won, String targetName, String category, int targetBuildingId, GeoPoint targetCentre,
                   int routePoints, double efficiency, int guessPoints, int hintBonus, int checkBonus,
-                  double multiplier, int score,
+                  int nearMissPoints, Double metresShort, double multiplier, int score,
                   double metresWalked, double shortestMetres, Long secondsToZone, int checksUsed,
                   int guessesUsed, Expedition.HintLevel hintLevel, ZoneView zone, List<GeoPoint> route,
                   List<GeoPoint> shortestRoute, List<Expedition.Check> checks, LandmarkSummary summary) { }
