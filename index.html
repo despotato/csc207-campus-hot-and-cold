@@ -686,6 +686,81 @@ function tintBuilding(id, hex) {
   apply(scene3d.roofs, range.roofStart, range.roofEnd, 0.9);
 }
 
+// ---------- walking students: other players' recorded paths ----------
+const STUDENT_SHIRTS = ['#e94f37', '#3f7fd1', '#ffd23f', '#7fd6c2', '#b06ab3', '#f28f3b', '#4caf50', '#fff8e7'];
+const STUDENT_SPEED = 2.2;   // m/s: a brisk walk, a little quicker than life so the campus feels busy
+
+/** One blocky student, split into the part tinted per student (hoodie, backpack) and the rest (legs, head). */
+function studentGeometry() {
+  const S = 1.5;   // a bit larger than life so they read from the default camera height
+  const part = (w, d, h, x, y, z, color) => {
+    const g = new THREE.BoxGeometry(w * S, d * S, h * S).toNonIndexed();
+    g.translate(x * S, y * S, (z + h / 2) * S);
+    const n = g.attributes.normal.array, c = new THREE.Color(color), colors = [];
+    for (let i = 0; i < n.length; i += 3) {
+      const light = n[i + 2] > 0.5 ? 1.1 : n[i] > 0.5 || n[i + 1] < -0.5 ? 0.72 : 0.9;
+      colors.push(c.r * light, c.g * light, c.b * light);
+    }
+    g.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+    g.deleteAttribute('normal'); g.deleteAttribute('uv');
+    return g;
+  };
+  const shirt = mergeGeometries([part(0.5, 0.3, 0.62, 0, 0, 0.8, '#ffffff'), part(0.36, 0.16, 0.42, 0, -0.23, 0.95, '#d9d9d9'),
+    part(0.14, 0.18, 0.55, -0.33, 0, 0.85, '#ffffff'), part(0.14, 0.18, 0.55, 0.33, 0, 0.85, '#ffffff')]);
+  const rest = mergeGeometries([part(0.2, 0.22, 0.8, -0.13, 0, 0, '#3a3d52'), part(0.2, 0.22, 0.8, 0.13, 0, 0, '#3a3d52'),
+    part(0.32, 0.3, 0.32, 0, 0, 1.42, '#e0b38a'), part(0.34, 0.32, 0.12, 0, 0, 1.7, '#2b1a0e')]);
+  return { shirt, rest };
+}
+
+/** Replaces the walking students with one per trail (lists of [lon, lat]). */
+function setStudents(trails) {
+  const layer = scene3d.layer;
+  if (!layer) return;
+  if (layer.students) {
+    for (const mesh of layer.students.meshes) { layer.scene.remove(mesh); mesh.geometry.dispose(); }
+    layer.students = null;
+  }
+  const walks = (trails || []).map(trail => {
+    const pts = trail.map(toLocal), cum = [0];
+    for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+    return { pts, cum, len: cum[cum.length - 1], phase: Math.random() * 600 };
+  }).filter(w => w.pts.length >= 2 && w.len > 20);
+  if (!walks.length) return;
+  const { shirt, rest } = studentGeometry();
+  const shirts = new THREE.InstancedMesh(shirt, new THREE.MeshBasicMaterial({ vertexColors: true }), walks.length);
+  const bodies = new THREE.InstancedMesh(rest, new THREE.MeshBasicMaterial({ vertexColors: true }), walks.length);
+  const tint = new THREE.Color();
+  walks.forEach((w, i) => shirts.setColorAt(i, tint.set(STUDENT_SHIRTS[i % STUDENT_SHIRTS.length])));
+  for (const mesh of [shirts, bodies]) { mesh.castShadow = true; mesh.frustumCulled = false; layer.scene.add(mesh); }
+  layer.students = { walks, meshes: [shirts, bodies] };
+}
+
+/** Moves every student along its trail, back and forth, facing the way it walks. */
+function updateStudents(seconds) {
+  const students = scene3d.layer?.students;
+  if (!students) return;
+  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), up = new THREE.Vector3(0, 0, 1), one = new THREE.Vector3(1, 1, 1);
+  students.walks.forEach((w, i) => {
+    const run = (seconds * STUDENT_SPEED + w.phase) % (2 * w.len), back = run > w.len, s = back ? 2 * w.len - run : run;
+    let k = 1;
+    while (k < w.cum.length - 1 && w.cum[k] < s) k++;
+    const a = w.pts[k - 1], b = w.pts[k], t = (s - w.cum[k - 1]) / Math.max(1e-6, w.cum[k] - w.cum[k - 1]);
+    const dx = (b[0] - a[0]) * (back ? -1 : 1), dy = (b[1] - a[1]) * (back ? -1 : 1);
+    q.setFromAxisAngle(up, Math.atan2(-dx, dy));
+    const bob = Math.abs(Math.sin(run * 2.6)) * 0.06;
+    m.compose(new THREE.Vector3(a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, bob), q, one);
+    for (const mesh of students.meshes) mesh.setMatrixAt(i, m);
+  });
+  for (const mesh of students.meshes) mesh.instanceMatrix.needsUpdate = true;
+}
+
+/** Java app only for now: the paths other rounds took on this campus (docs/SHARED_PATHS.md plans a shared store). */
+async function loadTraffic() {
+  if (STATIC) return;
+  const r = await api('traffic', { campus: pack.id }).catch(() => null);
+  if (r?.status === 200) setStudents(r.body.trails);
+}
+
 function buildingLayer() {
   const origin = maplibregl.MercatorCoordinate.fromLngLat(ORIGIN, 0);
   const s = origin.meterInMercatorCoordinateUnits();
@@ -734,6 +809,7 @@ function buildingLayer() {
         this.renderer.setSize(canvas.width, canvas.height, false);
       }
       this.aimSun();
+      updateStudents(performance.now() / 1000);
       // Camera position in local metres: the eye is where the projection sends w to 0 (clip-space direction 0,0,1,0).
       const eye = new THREE.Vector4(0, 0, 1, 0).applyMatrix4(this.camera.projectionMatrix.clone().invert());
       PARALLAX_EYE.value.set(eye.x / eye.w, eye.y / eye.w, eye.z / eye.w);
@@ -1578,6 +1654,7 @@ async function onBuildingClick(e) {
 // ---------- reveal, results, replay ----------
 async function finish(result, saveError) {
   game.phase = 'done'; game.result = result;
+  setTimeout(loadTraffic, 1500);   // your own walk joins the crowd
   if (game.mode === 'daily') {
     const date = game.date || campusDate();
     store.set(dailyKey(date), String(result.score.total));
@@ -2476,6 +2553,7 @@ function frame(now) {
     }
   }
   if (map) $('needle').style.transform = `rotate(${-map.getBearing()}deg)`;
+  if (scene3d.layer?.students) map.triggerRepaint();   // students keep walking
   requestAnimationFrame(frame);
 }
 
@@ -2627,6 +2705,7 @@ for (const card of document.querySelectorAll('.hintcard')) {
   game.phase = 'title';
   game.orbiting = true;
   $('pickerBack').addEventListener('click', closeCanada);
+  loadTraffic();
   // First visit (no campus chosen yet): open on the map of Canada.
   if (!params.get('campus') && !homeCampus() && campusIndex.length > 6) showCanada('home', true);
   $('loading').textContent = '';
