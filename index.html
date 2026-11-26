@@ -147,12 +147,12 @@
 </div>
 <div id="log" class="panel hidden"><h3>Checks</h3><ol id="checks"></ol><p id="nochecks">None yet. Press <kbd>Space</kbd>.</p></div>
 <div id="compass" class="hidden" title="North"><span id="needle">▲N</span></div>
-<button id="mapBtn" class="hidden" title="Open the campus map and travel">🗺 Map <kbd>M</kbd><small>Click anywhere to travel</small></button>
+<button id="mapBtn" class="hidden" title="Open the campus map and travel">🗺 Travel <kbd>M</kbd><small>Open the map, click where to go</small></button>
 <button id="checkBtn" class="hidden" type="button" aria-label="Check the temperature">Check</button>
 <div id="travelCursor" class="hidden"></div>
 <div id="checkLabels"></div>
 <div id="help" class="panel hidden">
-  <kbd>W</kbd><kbd>S</kbd> walk · <kbd>A</kbd><kbd>D</kbd> sidestep · <kbd>←</kbd><kbd>→</kbd> or drag to turn · <kbd>Space</kbd> check · <kbd>M</kbd> map · pinch/scroll zoom
+  Drag or <kbd>←</kbd><kbd>→</kbd> to look around · pinch/scroll zoom · <kbd>Space</kbd> check · <kbd>M</kbd> map: click to travel
 </div>
 <div id="mapTitle" class="panel hidden">Campus map<small>Click anywhere to travel there · pinch or scroll to zoom · <kbd>M</kbd>/<kbd>Esc</kbd> to return</small></div>
 <div id="travelling" class="hidden"><div>Travelling…<div class="bar"><i></i></div></div></div>
@@ -175,12 +175,12 @@
     </div>
     <p id="modeNote" class="note"></p>
     <ol class="rules">
-      <li>Walk around campus to find the hidden <b>zone</b>. You get a few hot/cold checks; a check made inside the zone finds it.</li>
+      <li>Travel around campus with the map to find the hidden <b>zone</b>. You get a few hot/cold checks; a check made inside the zone finds it.</li>
       <li>Inside the zone, pick a hint <b>blind</b>: easy, normal or hard. Harder hints score more.</li>
       <li>Click the building you think it is. Fewer guesses and shorter walks score more.</li>
     </ol>
     <div class="controls">
-      <span><kbd>W</kbd><kbd>S</kbd> walk</span><span><kbd>A</kbd><kbd>D</kbd> sidestep</span><span><kbd>←</kbd><kbd>→</kbd> turn</span>
+      <span>Drag to look around</span>
       <span><kbd>Space</kbd> check</span><span><kbd>M</kbd> map &amp; travel</span><span>Pinch/scroll to zoom</span>
     </div>
     <!-- Difficulty selector: the start request already sends { difficulty }. See the team task "Difficulty levels". -->
@@ -781,6 +781,8 @@ function avatarFeatures(p, heading) {
   if (mascot?.species === 'beaver') return beaverFeatures(p, heading, mascot.colors);
   if (mascot?.species === 'lion') return lionFeatures(p, heading, mascot.colors);
   if (mascot?.species === 'marauder') return marauderFeatures(p, heading, mascot.colors);
+  if (mascot?.species === 'gryphon') return gryphonFeatures(p, heading, mascot.colors);
+  if (mascot?.species === 'hawk') return hawkFeatures(p, heading, mascot.colors);
   return studentFeatures(p, heading);
 }
 
@@ -847,6 +849,58 @@ function lionFeatures(p, heading, c) {
     box(p, heading, x0 * S, x1 * S, y0 * S, y1 * S, z0 * S, z1 * S, col))];
 }
 
+/** An original blocky gryphon: a lion's body and tufted tail with an eagle's head, beak and wings. */
+function gryphonFeatures(p, heading, c) {
+  const S = 2.4, swing = Math.sin(game.walkPhase) * 0.18, flap = Math.sin(game.walkPhase * 0.7) * 0.12;
+  const parts = [
+    [-0.45, -0.15, -0.35 + swing, -0.05 + swing, 0, 0.55, c.fur],         // hind legs
+    [0.15, 0.45, -0.35 - swing, -0.05 - swing, 0, 0.55, c.fur],
+    [-0.42, -0.14, 0.2 - swing, 0.48 - swing, 0, 0.55, c.dark],           // front talons
+    [0.14, 0.42, 0.2 + swing, 0.48 + swing, 0, 0.55, c.dark],
+    [-0.5, 0.5, -0.5, 0.5, 0.5, 1.35, c.fur],                            // body
+    [-0.38, 0.38, 0.5, 0.56, 0.6, 1.25, c.belly],                        // chest
+    [-1.1, -0.5, -0.35, 0.3, 1.1 + flap, 1.3 + flap, c.primary],         // wings (school colour tips)
+    [0.5, 1.1, -0.35, 0.3, 1.1 + flap, 1.3 + flap, c.primary],
+    [-0.85, -0.5, -0.3, 0.25, 1.3 + flap, 1.45 + flap, c.secondary],
+    [0.5, 0.85, -0.3, 0.25, 1.3 + flap, 1.45 + flap, c.secondary],
+    [-0.36, 0.36, 0.2, 0.75, 1.35, 2.05, c.belly],                       // eagle head
+    [-0.12, 0.12, 0.75, 1.0, 1.55, 1.75, c.secondary],                   // beak
+    [-0.08, 0.08, 0.95, 1.05, 1.45, 1.58, c.secondary],
+    [-0.28, -0.14, 0.74, 0.78, 1.78, 1.9, c.dark],                       // eyes
+    [0.14, 0.28, 0.74, 0.78, 1.78, 1.9, c.dark],
+    [-0.1, 0.1, -1.05, -0.5, 0.95, 1.08, c.fur],                         // tail
+    [-0.16, 0.16, -1.25, -1.0, 0.9, 1.2, c.dark],                        // tail tuft
+  ];
+  const shadow = box(p, heading, -1.0 * S, 1.0 * S, -1.2 * S, 1.0 * S, 0, 0.05, '#00000055');
+  return [shadow, ...parts.map(([x0, x1, y0, y1, z0, z1, col]) =>
+    box(p, heading, x0 * S, x1 * S, y0 * S, y1 * S, z0 * S, z1 * S, col))];
+}
+
+/** An original blocky hawk in school colours: golden feathers, hooked beak, talons, and a team scarf. */
+function hawkFeatures(p, heading, c) {
+  const S = 2.4, swing = Math.sin(game.walkPhase) * 0.15, flap = Math.sin(game.walkPhase * 0.7) * 0.15;
+  const parts = [
+    [-0.3, -0.1, -0.05 + swing, 0.2 + swing, 0, 0.45, c.dark],           // legs and talons
+    [0.1, 0.3, -0.05 - swing, 0.2 - swing, 0, 0.45, c.dark],
+    [-0.45, 0.45, -0.4, 0.35, 0.45, 1.6, c.fur],                         // body
+    [-0.32, 0.32, 0.35, 0.42, 0.55, 1.45, c.belly],                      // chest
+    [-0.62, -0.45, -0.45, 0.25, 0.7 + flap, 1.5, c.fur],                 // folded wings
+    [0.45, 0.62, -0.45, 0.25, 0.7 + flap, 1.5, c.fur],
+    [-0.5, 0.5, -0.42, 0.37, 1.5, 1.66, c.primary],                      // scarf
+    [0.3, 0.46, 0.3, 0.4, 1.1, 1.5, c.secondary],                        // scarf tail
+    [-0.34, 0.34, -0.3, 0.38, 1.66, 2.25, c.fur],                        // head
+    [-0.1, 0.1, 0.38, 0.62, 1.85, 2.02, c.secondary],                    // hooked beak
+    [-0.08, 0.08, 0.55, 0.66, 1.76, 1.88, c.dark],
+    [-0.26, -0.12, 0.37, 0.41, 2.02, 2.14, c.dark],                      // eyes
+    [0.12, 0.26, 0.37, 0.41, 2.02, 2.14, c.dark],
+    [-0.3, 0.3, -0.9, -0.4, 0.55, 0.7, c.dark],                          // tail feathers
+    [-0.2, 0.2, -1.05, -0.9, 0.55, 0.68, c.fur],
+  ];
+  const shadow = box(p, heading, -0.9 * S, 0.9 * S, -1.1 * S, 0.9 * S, 0, 0.05, '#00000055');
+  return [shadow, ...parts.map(([x0, x1, y0, y1, z0, z1, col]) =>
+    box(p, heading, x0 * S, x1 * S, y0 * S, y1 * S, z0 * S, z1 * S, col))];
+}
+
 /** An original blocky marauder in school colours: horned helmet, tunic with a belt, cape and a round shield. */
 function marauderFeatures(p, heading, c) {
   const S = 2.4, swing = Math.sin(game.walkPhase) * 0.22;
@@ -878,49 +932,6 @@ function marauderFeatures(p, heading, c) {
 }
 
 // ---------- free movement ----------
-function step(dt) {
-  const k = game.keys;
-  if (game.autopilot) return autopilotStep(dt);
-  if (k.left) game.heading = (game.heading - TURN_RATE * dt + 360) % 360;
-  if (k.right) game.heading = (game.heading + TURN_RATE * dt) % 360;
-  const forward = k.fwd ? 1 : k.back ? -BACK_SPEED / WALK_SPEED : 0;
-  const side = (k.strafeRight ? 1 : 0) - (k.strafeLeft ? 1 : 0);
-  if (!forward && !side) { game.walkPhase *= 0.8; return; }
-  const length = Math.hypot(forward, side), d = WALK_SPEED * dt / Math.max(1, length);
-  const r = game.heading * Math.PI / 180;
-  // Forward along the heading, sideways at right angles to it.
-  const east = (Math.sin(r) * forward + Math.cos(r) * side) * d;
-  const north = (Math.cos(r) * forward - Math.sin(r) * side) * d, p = game.pos;
-  // Full step, else slide along the wall on whichever axis is free.
-  const options = [[east, north], [east, 0], [0, north]];
-  for (const [e, n] of options) {
-    if (Math.abs(e) + Math.abs(n) < 1e-4) continue;
-    const q = moveBy(p, e, n);
-    if (segmentClear(p, q)) { game.pos = q; break; }
-  }
-  if (game.pos !== p) {
-    game.walkPhase += dt * 16;
-    recordStep();
-  }
-}
-
-/** Debug only: follows the server's shortest route at running pace. */
-function autopilotStep(dt) {
-  const ap = game.autopilot;
-  let remaining = AUTOPILOT_SPEED * dt;
-  while (remaining > 1e-6 && ap.i < ap.route.length) {
-    const target = ap.route[ap.i], d = distOf(game.pos, target);
-    if (d <= remaining) { game.pos = target; ap.i++; remaining -= d; }
-    else { const t = remaining / d; game.pos = [game.pos[0] + (target[0] - game.pos[0]) * t, game.pos[1] + (target[1] - game.pos[1]) * t]; remaining = 0; }
-    if (ap.i < ap.route.length) game.heading = approach(game.heading, bearingOf(game.pos, ap.route[ap.i]), 400 * dt);
-  }
-  if (ap.i >= ap.route.length) game.autopilot = null;
-  game.walkPhase += dt * 15;
-  recordStep();
-}
-
-/** The server's own test: the straight line between two sent points must stay outside buildings. */
-/** Exact grid traversal, identical to Java's OpenSpace.clearPath, so the page and server always agree. */
 function chordClear(a, b) {
   const gx = p => (p[0] - grid.west) * M_LON / CELL, gy = p => (p[1] - grid.south) * M_LAT / CELL;
   const open = (c, r) => c >= 0 && r >= 0 && c < grid.cols && r < grid.rows && !grid.blocked[r * grid.cols + c];
@@ -943,11 +954,13 @@ function chordClear(a, b) {
   }
   return true;
 }
+
 function push(point) {
   game.pending.push(point);
   game.trail.push(point);
   game.lastPushed = point;
 }
+
 function recordStep() {
   // Around a corner, the line from the last sent point could clip the building: send the bend first.
   if (game.lastPushed && game.prevPos && !chordClear(game.lastPushed, game.pos)) push(game.prevPos);
@@ -1063,9 +1076,15 @@ function toggleMapView(force) {
   } else {
     map.getCanvas().style.cursor = '';
     map.getSource('routes').setData(fc([]));
-    map.flyTo({ center: offsetPt(game.pos, game.camBearing, 6), zoom: game.followZoom, pitch: pitchFor(game.followZoom),
-      bearing: game.camBearing, duration: 700 });
+    drawAvatar();
+    map.flyTo({ center: game.pos, zoom: LOOK_ZOOM, pitch: 55, bearing: game.camBearing, duration: 700 });
+    lookAroundMode();
   }
+}
+/** Where you stand: the camera orbits this spot; you move only by travelling with the map. */
+const LOOK_ZOOM = 18;
+function drawAvatar() {
+  map.getSource('avatar').setData(fc(avatarFeatures(game.pos, game.heading)));
 }
 const pitchFor = zoom => 50 + (zoom - ZOOM_MIN) * 4;
 
@@ -1309,8 +1328,8 @@ async function replay() {
 
 // ---------- tutorial ----------
 const TUTORIAL = [
-  ['Walk the real campus', '<kbd>W</kbd><kbd>S</kbd> walk &nbsp; <kbd>A</kbd><kbd>D</kbd> sidestep &nbsp; <kbd>←</kbd><kbd>→</kbd> turn<br>Drag to turn · pinch or scroll to zoom',
-    "You're somewhere on your selected campus. Somewhere 450 to 900 m away is a hidden zone around one building. Walk anywhere; buildings are solid."],
+  ['Look around, travel by map', 'Drag or <kbd>←</kbd><kbd>→</kbd> to look around · pinch or scroll to zoom<br><kbd>M</kbd> or the 🗺 Map button · click a spot to travel there',
+    "You're somewhere on campus. Somewhere 450 to 900 m away is a hidden zone around one building. Look around where you stand, then open the map and click where to go next. Each trip counts as the shortest walk there."],
   ['Check the temperature', '<kbd>Space</kbd> → <span style="color:#ff4d2e">40°C hot</span> … <span style="color:#6f8cff">-10°C cold</span><br>▲ +4° warmer · ▼ -3° colder than your last check',
     'You have 6 checks. Each gives a temperature: 40°C at the zone centre, a degree cooler for every 20 m away. Checks are numbered on the right and on the map. Your avatar has a 3 m reach: touching the zone edge counts. Press Space there to find it. Out of checks? Your next Space is a final search.'],
   ['Travel by map', '<kbd>M</kbd> or the 🗺 Map button · click anywhere to go there',
@@ -1445,7 +1464,10 @@ const LocalRules = (() => {
     if (body.mode === 'daily') return startDaily();
     const open = cells();
     for (let attempt = 0; attempt < 200; attempt++) {
-      const target = pack.landmarks[Math.floor(Math.random() * pack.landmarks.length)];
+      // Only buildings with a real fact or recorded history, so the hard hint is always history (mirrors CampusMap.targets).
+      const good = pack.landmarks.filter(l => (l.facts || []).length || hasHistory(buildings.get(l.building)));
+      const pool = good.length ? good : pack.landmarks;
+      const target = pool[Math.floor(Math.random() * pool.length)];
       const building = buildings.get(target.building);
       const zone = { centre: offsetPt(building.center, Math.random() * 360, Math.random() * 50), radius: RADIUS };
       const choices = zoneBuildings(zone).filter(b => b.height >= 4);
@@ -1575,13 +1597,15 @@ const LocalRules = (() => {
     const floors = Math.max(1, Math.round(b.height / 3.66));
     return `It's ${rank} of the ${list.length} buildings in the zone: a ${floors}-storey ${b.material} building${b.courtyard ? ' with a courtyard' : ''}.`;
   }
+  const hasHistory = b => !!(b && (b.formerName || b.built || b.architect));
   function history() {
-    const b = round.building;
-    if (b.formerName && !givesAway(b.formerName, round.target.name)) return `It used to be known as the ${b.formerName}.`;
+    const b = round.building, name = round.target.name;
+    if (b.formerName && !givesAway(b.formerName, name)) return `It used to be known as the ${b.formerName}.`;
     if (b.built) return `It was built in ${b.built}.`;
     if (b.architect) return `It was designed by ${b.architect}.`;
-    const floors = Math.max(1, Math.round(b.height / 3.66));
-    return floors === 1 ? "It's a single storey tall." : `It stands about ${floors} storeys tall.`;
+    // No recorded history (rare: random rounds skip these buildings). Never a size clue: that's what easy is for.
+    const words = name.split(/\s+/).length;
+    return `Little is recorded about its history. Its name is ${words === 1 ? 'one word' : words + ' words'} long and starts with "${name[0].toUpperCase()}".`;
   }
   function positionClue() {
     const named = zoneBuildings(round.zone).filter(b => b.name).sort((a, b) =>
@@ -1600,10 +1624,12 @@ const LocalRules = (() => {
     let text;
     if (level === 'easy') text = appearance() + ' ' + positionClue();
     else {
-      const list = (await facts(t.wikipedia, t.name)).filter(f => !givesAway(f, t.name));
-      const fact = list.length ? (level === 'normal' || list.length === 1 ? list[0] : list[1]) : null;
+      // Reviewed facts stored in the pack come first; the live encyclopedia lookup is the fallback.
+      const list = ((t.facts || []).length ? t.facts : await facts(t.wikipedia, t.name)).filter(f => !givesAway(f, t.name));
+      // Keep levels distinct: normal uses the best-known fact only when another is left for hard.
+      const fact = level === 'hard' ? (list.length === 1 ? list[0] : list[1] || null) : list.length >= 2 ? list[0] : null;
       text = level === 'normal' ? `It's ${article}${category} building. `
-        + (fact || `Its name starts with "${t.name[0].toUpperCase()}".`) + ' ' + positionClue()
+        + (fact || `Its name starts with "${t.name[0].toUpperCase()}".`)
         : (fact || history());
     }
     round.hint = level;
@@ -1854,8 +1880,9 @@ function restoreDailyRun(run) {
   renderHud();
   if (run.phase === 'walk') {
     for (const id of ['hud', 'log', 'compass', 'help', 'mapBtn', 'checkBtn']) show(id);
-    map.jumpTo({ center: offsetPt(game.pos, game.camBearing, 6), zoom: game.followZoom,
-      pitch: pitchFor(game.followZoom), bearing: game.camBearing });
+    drawAvatar();
+    map.jumpTo({ center: game.pos, zoom: LOOK_ZOOM, pitch: 55, bearing: game.camBearing });
+    lookAroundMode();
   } else {
     map.getSource('zone').setData(fc([{ type: 'Feature', properties: {},
       geometry: { type: 'Polygon', coordinates: [circle(game.zone.centre, game.zone.radius, 64)] } }]));
@@ -1927,10 +1954,11 @@ async function startRound() {
   renderHud();
   for (const id of ['hud', 'log', 'compass', 'help', 'mapBtn', 'checkBtn']) show(id);
   $('mapBtn').classList.add('pulse');
-  await flyTo({ center: offsetPt(game.pos, game.heading, 6), zoom: game.followZoom, pitch: pitchFor(game.followZoom), bearing: game.heading, duration: 3200 });
-  toast('FIND THE ZONE', 'warm', 'Tip: press M (or the Map button) and click anywhere to travel fast.');
-  // Nudge towards the map if someone keeps walking without it.
-  setTimeout(() => { if (game.phase === 'walk' && !game.usedMap) toast('LONG WAY?', 'warm', 'Press M and click a spot to travel there.'); }, 40000);
+  drawAvatar();
+  await flyTo({ center: game.pos, zoom: LOOK_ZOOM, pitch: 55, bearing: game.heading, duration: 3200 });
+  lookAroundMode();
+  toast('FIND THE ZONE', 'warm', 'Open the map (M) and click where to go. Space checks the temperature.');
+  setTimeout(() => { if (game.phase === 'walk' && !game.usedMap) toast('HOW TO MOVE', 'warm', 'Press M or the Map button, then click a spot to travel there.'); }, 20000);
   setTimeout(() => $('mapBtn').classList.remove('pulse'), 20000);
 }
 
@@ -1952,24 +1980,10 @@ let last = performance.now();
 function frame(now) {
   const dt = Math.min(0.1, (now - last) / 1000);
   last = now;
-  if (game.phase === 'walk' && !game.mapView) {
-    step(dt);
-    game.camBearing = approach(game.camBearing, game.heading, Math.max(40, angDiff(game.camBearing, game.heading) * 4) * dt);
-    const centre = offsetPt(game.pos, game.camBearing, 6);
-    // Camera collision: tilt towards top-down until no building hides the avatar, then ease back.
-    let wanted = pitchFor(game.followZoom);
-    while (wanted > 30 && occluded(game.pos, centre, game.camBearing, wanted, game.followZoom)) wanted = Math.max(30, wanted - 6);
-    game.camPitch = game.camPitch == null ? wanted : game.camPitch + (wanted - game.camPitch) * Math.min(1, dt * (wanted < game.camPitch ? 8 : 2));
-    map.jumpTo({ center: centre, bearing: game.camBearing, pitch: game.camPitch, zoom: game.followZoom });
-    const hidden = occluded(game.pos, centre, game.camBearing, game.camPitch, game.followZoom);
-    const marker = $('youMarker'), at = map.project(game.pos);
-    marker.classList.toggle('hidden', !hidden);
-    if (hidden) marker.style.transform = `translate(${Math.round(at.x)}px, ${Math.round(at.y - 34)}px)`;
-    map.getSource('avatar').setData(fc(avatarFeatures(game.pos, game.heading)));
-    renderHud();
-  } else if (game.phase === 'title' && game.orbiting) {
+  if (game.phase === 'title' && game.orbiting) {
     map.jumpTo({ bearing: map.getBearing() + dt * 4 });
-  } else if (LOOK_PHASES.has(game.phase)) {
+  } else if (LOOK_PHASES.has(game.phase) && !game.mapView) {
+    if (game.phase === 'walk') renderHud();
     const k = game.keys;
     const turn = (k.right || k.strafeRight ? 1 : 0) - (k.left || k.strafeLeft ? 1 : 0), tilt = (k.fwd ? 1 : 0) - (k.back ? 1 : 0);
     if (turn || tilt) {
@@ -2015,7 +2029,8 @@ function flashVignette(color) {
 }
 const show = id => $(id).classList.remove('hidden');
 const hide = id => $(id).classList.add('hidden');
-const LOOK_PHASES = new Set(['zone', 'hint', 'guess', 'done']);
+// You don't walk: you look around where you are and travel with the map. Every in-round phase is a look-around phase.
+const LOOK_PHASES = new Set(['walk', 'zone', 'hint', 'guess', 'done']);
 /** Around the zone: drag orbits (no panning away), pinch/scroll zooms. */
 function lookAroundMode() {
   setInteractive(false);
@@ -2035,41 +2050,33 @@ const KEYMAP = { KeyW: 'fwd', ArrowUp: 'fwd', KeyS: 'back', ArrowDown: 'back', K
 addEventListener('keydown', e => {
   if (e.code === 'Escape' && !$('tutorial').classList.contains('hidden')) { closeTutorial(); return; }
   if (e.code === 'Enter' && game.phase === 'title' && $('tutorial').classList.contains('hidden')) { startRound(); return; }
-  if (LOOK_PHASES.has(game.phase) && KEYMAP[e.code]) { game.keys[KEYMAP[e.code]] = true; e.preventDefault(); return; }
-  if (game.phase !== 'walk') return;
-  if (e.code === 'KeyM' && !e.repeat) { toggleMapView(); e.preventDefault(); return; }
-  if (e.code === 'Escape') { toggleMapView(false); return; }
-  if (game.mapView) return;
-  if (KEYMAP[e.code]) { game.keys[KEYMAP[e.code]] = true; e.preventDefault(); }
-  if (e.code === 'Space' && !e.repeat) { doCheck(); e.preventDefault(); }
+  if (game.phase === 'walk') {
+    if (e.code === 'KeyM' && !e.repeat) { toggleMapView(); e.preventDefault(); return; }
+    if (e.code === 'Escape') { toggleMapView(false); return; }
+    if (game.mapView) return;
+    if (e.code === 'Space' && !e.repeat) { doCheck(); e.preventDefault(); return; }
+  }
+  if (LOOK_PHASES.has(game.phase) && !game.mapView && KEYMAP[e.code]) { game.keys[KEYMAP[e.code]] = true; e.preventDefault(); }
 });
 addEventListener('keyup', e => { if (KEYMAP[e.code]) game.keys[KEYMAP[e.code]] = false; });
 addEventListener('blur', () => (game.keys = {}));
 // Scroll to zoom the follow camera; drag to turn.
 // Trackpad pinch arrives as a ctrl+wheel event; stop the browser zooming the page and zoom the camera instead.
 addEventListener('wheel', e => {
-  if (e.ctrlKey) e.preventDefault();
-  if (game.phase !== 'walk' || game.mapView) return;
-  e.preventDefault();
-  const delta = e.deltaY * (e.deltaMode === 1 ? 33 : e.deltaMode === 2 ? 400 : 1);
-  game.followZoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, game.followZoom - delta * (e.ctrlKey ? 0.012 : 0.003)));
+  if (e.ctrlKey) e.preventDefault();   // MapLibre handles the zoom itself
 }, { passive: false });
 for (const type of ['gesturestart', 'gesturechange']) addEventListener(type, e => e.preventDefault());
 addEventListener('pointerdown', e => {
   if (e.target.tagName !== 'CANVAS' || game.mapView) return;
-  if (game.phase === 'walk' || LOOK_PHASES.has(game.phase)) { game.dragX = e.clientX; game.dragY = e.clientY; game.dragged = 0; }
+  if (LOOK_PHASES.has(game.phase)) { game.dragX = e.clientX; game.dragY = e.clientY; game.dragged = 0; }
 });
 addEventListener('pointermove', e => {
   if (game.dragX == null) return;
   const dx = e.clientX - game.dragX, dy = e.clientY - game.dragY;
   game.dragged += Math.abs(dx) + Math.abs(dy);
-  if (game.phase === 'walk') {
-    game.heading = (game.heading + dx * 0.3 + 360) % 360;
-  } else {
-    // Orbit around the zone: left/right turns, up/down tilts.
-    game.orbiting = false;
-    map.jumpTo({ bearing: map.getBearing() - dx * 0.35, pitch: Math.max(5, Math.min(75, map.getPitch() - dy * 0.25)) });
-  }
+  // Orbit around where you are (or the zone): left/right turns, up/down tilts.
+  game.orbiting = false;
+  map.jumpTo({ bearing: map.getBearing() - dx * 0.35, pitch: Math.max(5, Math.min(75, map.getPitch() - dy * 0.25)) });
   game.dragX = e.clientX; game.dragY = e.clientY;
 });
 addEventListener('pointerup', () => { game.dragX = null; game.justDragged = game.dragged > 6; });
@@ -2133,11 +2140,13 @@ for (const card of document.querySelectorAll('.hintcard')) {
   requestAnimationFrame(frame);
 
   if (DEBUG) {
-    // Automated visual tests only: walk the server's shortest route to the zone. Never enabled in normal play.
+    // Automated visual tests only: travel (via the map) to the end of the shortest route, inside the zone.
     game.debugWalkToZone = async () => {
       while (game.sending || game.pending.length) await new Promise(r => setTimeout(r, 50));
       const info = STATIC ? { route: LocalRules.debugRoute() } : await (await fetch('/api/debug')).json();
-      game.autopilot = { route: info.route.slice(1), i: 0 };
+      const to = info.route[info.route.length - 1];
+      toggleMapView(true);
+      await travelTo({ lng: to[0], lat: to[1] });
       return info.route.length;
     };
   }

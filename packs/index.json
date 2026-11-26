@@ -20,6 +20,20 @@
       "short": "McMaster",
       "file": "mcmaster.json",
       "timezone": "America/Toronto"
+    },
+    {
+      "id": "guelph",
+      "name": "University of Guelph — Main campus",
+      "short": "Guelph",
+      "file": "guelph.json",
+      "timezone": "America/Toronto"
+    },
+    {
+      "id": "laurier",
+      "name": "Wilfrid Laurier University — Waterloo campus",
+      "short": "Laurier",
+      "file": "laurier.json",
+      "timezone": "America/Toronto"
     }
   ]
 }
