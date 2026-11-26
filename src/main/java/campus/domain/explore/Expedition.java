@@ -25,8 +25,8 @@ public final class Expedition {
     static final double MAX_ZONE_OFFSET = 50;
     /** A start counts as on campus within this many metres of a landmark building's centre. */
     static final double CAMPUS_REACH = 120;
-    /** Players have a 3 m footprint, so touching the edge counts as reaching the zone. */
-    static final double PLAYER_RADIUS = 3;
+    /** A check reaches 15 m around the player, so standing just outside the edge still finds the zone. */
+    static final double PLAYER_RADIUS = 15;
     /** A fast sprint with slack for network jitter; anything quicker is treated as teleporting. */
     static final double MAX_SPEED = 60;
     static final double SPEED_SLACK_SECONDS = 0.75;

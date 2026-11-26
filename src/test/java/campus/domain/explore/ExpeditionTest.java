@@ -95,17 +95,17 @@ class ExpeditionTest {
 
     @Test void shortestRouteGoesAroundBuildings() {
         Expedition round = round();
-        // Straight to the zone edge is 910 m; going around the wall's end adds a little.
-        assertTrue(round.shortestToZone() > 909 && round.shortestToZone() < 935, () -> "" + round.shortestToZone());
+        // Straight to within reach of the zone edge is 898 m; going around the wall's end adds a little.
+        assertTrue(round.shortestToZone() > 897 && round.shortestToZone() < 923, () -> "" + round.shortestToZone());
         assertTrue(round.revealedShortestRoute().isEmpty(), "Route stays hidden during play");
     }
 
-    @Test void aPlayerWhoseFootprintTouchesTheZoneCanCheckInside() {
+    @Test void aCheckWithinReachOfTheZoneEdgeFindsIt() {
         Zone zone = new Zone(at(1000, 75), 90);
-        GeoPoint edge = at(907.5, 75);
+        GeoPoint edge = at(896, 75);   // 14 m outside the edge, inside the 15 m reach
         assertFalse(zone.contains(edge), "the player's centre is still outside");
-        assertTrue(zone.overlaps(edge, 3), "the player's footprint reaches the zone");
-        assertFalse(zone.overlaps(at(906, 75), 3), "a gap should still be outside");
+        assertTrue(zone.overlaps(edge, Expedition.PLAYER_RADIUS), "the check reaches the zone");
+        assertFalse(zone.overlaps(at(893, 75), Expedition.PLAYER_RADIUS), "beyond the reach is still outside");
 
         Expedition round = round();
         Instant time = walk(round, List.of(at(490, 126), at(510, 126), edge), T0);
