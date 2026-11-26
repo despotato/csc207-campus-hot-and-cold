@@ -48,10 +48,21 @@
   #pips i.used { background: transparent; }
   #log { position: fixed; top: 12px; right: 12px; width: 230px; max-height: 45vh; overflow: auto; }
   #log h3, .title-sm { margin: 0 0 6px; font-size: 13px; color: var(--gold); }
-  #log ol { margin: 0; padding-left: 22px; }
+  #log ol { margin: 0; padding-left: 4px; list-style: none; }
+  #log li { margin: 2px 0; }
   #compass { position: fixed; right: 18px; bottom: 70px; width: 64px; height: 64px; border-radius: 50%;
     border: 3px solid var(--paper); background: #1b1f3acc; display: grid; place-items: center; }
   #needle { font-size: 18px; color: var(--hot); transition: transform 60ms linear; }
+  #mapBtn { position: fixed; right: 12px; bottom: 150px; font-size: 16px; padding: 10px 14px; text-align: left; }
+  #mapBtn small { display: block; font-size: 10px; margin-top: 2px; }
+  #mapBtn.pulse { animation: pulse 900ms steps(2) infinite; }
+  @keyframes pulse { 50% { box-shadow: 0 0 0 6px #ffd23f99, 0 4px 0 var(--ink); } }
+  #travelCursor { position: fixed; left: 0; top: 0; pointer-events: none; padding: 4px 8px; font-size: 11px;
+    transform: translate(14px, -30px); background: #1b1f3aee; border: 2px solid var(--gold); color: var(--gold); white-space: nowrap; }
+  #travelCursor.blocked { border-color: var(--hot); color: var(--hot); }
+  #checkLabels { position: fixed; inset: 0; pointer-events: none; overflow: hidden; }
+  #checkLabels div { position: absolute; left: 0; top: 0; font-size: 11px; padding: 2px 5px; white-space: nowrap; color: #1b1f3a;
+    border: 2px solid #1b1f3a; font-weight: bold; }
   #help { position: fixed; left: 50%; bottom: 12px; transform: translateX(-50%); white-space: nowrap; font-size: 12px; }
   #toast { position: fixed; left: 50%; top: 22%; transform: translateX(-50%); text-align: center; pointer-events: none;
     font-size: 40px; text-shadow: 4px 4px 0 #000a; transition: opacity 300ms; }
@@ -130,6 +141,9 @@
 </div>
 <div id="log" class="panel hidden"><h3>Checks</h3><ol id="checks"></ol><p id="nochecks">None yet. Press <kbd>Space</kbd>.</p></div>
 <div id="compass" class="hidden" title="North"><span id="needle">▲N</span></div>
+<button id="mapBtn" class="hidden" title="Open the campus map and travel">🗺 Map <kbd>M</kbd><small>Click anywhere to travel</small></button>
+<div id="travelCursor" class="hidden"></div>
+<div id="checkLabels"></div>
 <div id="help" class="panel hidden">
   <kbd>W</kbd><kbd>S</kbd> walk · <kbd>A</kbd><kbd>D</kbd> sidestep · <kbd>←</kbd><kbd>→</kbd> or drag to turn · <kbd>Space</kbd> check · <kbd>M</kbd> map · pinch/scroll zoom
 </div>
@@ -221,7 +235,8 @@ const STATIC = params.get('static') === '1' || !['127.0.0.1', 'localhost'].inclu
 const $ = id => document.getElementById(id);
 const HEAT_COLORS = { hot: '#ff4d2e', warm: '#ff9f1c', cool: '#4cc9f0', cold: '#6f8cff' };
 const TREND_TEXT = { first: '', warmer: '▲ Warmer', same: '■ Same', colder: '▼ Colder' };
-const WALK_SPEED = 18, BACK_SPEED = 8, TURN_RATE = 170, AUTOPILOT_SPEED = 18;
+// About 30 seconds from one edge of campus to the other. Java's Expedition.TRAVEL_SPEED matches WALK_SPEED.
+const WALK_SPEED = 47, BACK_SPEED = 16, TURN_RATE = 190, AUTOPILOT_SPEED = 47;
 const ZOOM_MIN = 17, ZOOM_MAX = 20.6;
 // Must match CampusPackLoader.CELL_METRES and GeoPoint's metres per degree in Java.
 const CELL = 1.5, BODY = 0.6, M_LAT = Math.PI * 6371000 / 180;
@@ -664,6 +679,15 @@ function addGameLayers() {
   map.on('click', 'buildings', onBuildingClick);
   map.on('render', placeLabels);
   map.on('click', e => { if (game.mapView) travelTo(e.lngLat); });
+  map.on('mousemove', e => {
+    if (!game.mapView || game.travelling) return;
+    const to = [e.lngLat.lng, e.lngLat.lat], cursor = $('travelCursor'), open = isOpen(to);
+    cursor.textContent = open ? `Travel here · ${Math.round(distOf(game.pos, to))} m away` : "Can't travel into a building";
+    cursor.classList.toggle('blocked', !open);
+    cursor.style.left = e.point.x + 'px'; cursor.style.top = e.point.y + 'px';
+    cursor.classList.remove('hidden');
+  });
+  map.on('mouseout', () => $('travelCursor').classList.add('hidden'));
 }
 
 // ---------- highlights ----------
@@ -683,7 +707,25 @@ function refreshHighlights() {
 
 // ---------- name labels ----------
 const labelPool = [];
+/** Numbered labels on each check: above the flag in 3D, beside the dot on the map. */
+function placeCheckLabels() {
+  const layer = $('checkLabels');
+  const show = game.phase !== 'title' && game.phase !== 'loading' && checkList.length;
+  while (layer.childElementCount < checkList.length) layer.append(document.createElement('div'));
+  const zoom = map.getZoom(), pitch = map.getPitch() * Math.PI / 180, c = map.getCenter();
+  const ppm = 512 * Math.pow(2, zoom) / (40075016.686 * Math.cos(c.lat * Math.PI / 180));
+  checkList.forEach((check, i) => {
+    const el = layer.children[i];
+    if (!show) { el.style.display = 'none'; return; }
+    const p = map.project(check.point);
+    const lift = game.mapView ? 14 : 8.5 * ppm * Math.sin(pitch) + 10;
+    el.textContent = check.label; el.style.background = check.color; el.style.display = '';
+    el.style.transform = `translate(${Math.round(p.x + (game.mapView ? 12 : -14))}px, ${Math.round(p.y - lift)}px)`;
+  });
+}
+
 function placeLabels() {
+  placeCheckLabels();
   const layer = $('labels');
   const zoom = map.getZoom();
   const active = game.phase !== 'title' && game.phase !== 'loading';
@@ -725,10 +767,12 @@ function placeLabels() {
 }
 
 // ---------- avatar ----------
-/** The player's avatar: the campus pack's mascot (see tools/build_pack.py MASCOT), or a student by default. */
+/** The player's avatar: the campus pack's mascot, or a student by default. */
 function avatarFeatures(p, heading) {
   const mascot = pack?.mascot;
-  return mascot?.species === 'beaver' ? beaverFeatures(p, heading, mascot.colors) : studentFeatures(p, heading);
+  if (mascot?.species === 'beaver') return beaverFeatures(p, heading, mascot.colors);
+  if (mascot?.species === 'lion') return lionFeatures(p, heading, mascot.colors);
+  return studentFeatures(p, heading);
 }
 
 function studentFeatures(p, heading) {
@@ -767,6 +811,31 @@ function beaverFeatures(p, heading, c) {
   ];
   const shadow = box(p, heading, -0.9 * S, 0.9 * S, -1.2 * S, 0.9 * S, 0, 0.05, '#00000055');
   return [shadow, ...parts.map(([x0, x1, y0, y1, z0, z1, col]) => box(p, heading, x0 * S, x1 * S, y0 * S, y1 * S, z0 * S, z1 * S, col))];
+}
+
+/** An original blocky gold lion with a dark mane and a swaying tail. */
+function lionFeatures(p, heading, c) {
+  const S = 2.4, swing = Math.sin(game.walkPhase) * 0.18;
+  const parts = [
+    [-0.48, -0.16, -0.1 + swing, 0.22 + swing, 0, 0.32, c.dark],
+    [0.16, 0.48, -0.1 - swing, 0.22 - swing, 0, 0.32, c.dark],
+    [-0.5, 0.5, -0.35, 0.38, 0.3, 1.4, c.fur],
+    [-0.38, 0.38, 0.38, 0.44, 0.45, 1.25, c.belly],
+    [-0.6, 0.6, -0.4, 0.45, 1.3, 2.35, c.dark],
+    [-0.43, 0.43, 0.45, 0.55, 1.48, 2.18, c.fur],
+    [-0.24, 0.24, 0.55, 0.75, 1.5, 1.8, c.belly],
+    [-0.1, 0.1, 0.75, 0.82, 1.72, 1.83, c.dark],
+    [-0.31, -0.17, 0.56, 0.6, 1.93, 2.05, c.secondary],
+    [0.17, 0.31, 0.56, 0.6, 1.93, 2.05, c.secondary],
+    [-0.59, -0.34, 0.02, 0.36, 2.26, 2.48, c.fur],
+    [0.34, 0.59, 0.02, 0.36, 2.26, 2.48, c.fur],
+    [-0.45, 0.45, -0.44, 0.45, 1.16, 1.3, c.primary],
+    [0.42, 0.53, -0.95, -0.4, 0.78 + swing, 0.9 + swing, c.fur],
+    [0.4, 0.55, -1.08, -0.87, 0.68 + swing, 0.98 + swing, c.dark],
+  ];
+  const shadow = box(p, heading, -0.9 * S, 0.9 * S, -1.2 * S, 0.9 * S, 0, 0.05, '#00000055');
+  return [shadow, ...parts.map(([x0, x1, y0, y1, z0, z1, col]) =>
+    box(p, heading, x0 * S, x1 * S, y0 * S, y1 * S, z0 * S, z1 * S, col))];
 }
 
 // ---------- free movement ----------
@@ -871,29 +940,31 @@ async function doCheck() {
     if (!b.finalSearch) { game.checksLeft = b.checksRemaining; game.checkCount++; }
     const li = document.createElement('li');
     if (b.zoneFound) {
-      addCheckMarker(b.point, 'zone');
-      li.style.color = '#ffd23f'; li.textContent = 'IN THE ZONE!';
+      addCheckMarker(b.point, 'zone', b.number, 'ZONE');
+      li.style.color = '#ffd23f'; li.textContent = `#${b.number} IN THE ZONE!`;
       flashVignette('#ffd23f');
       enterZone(b.zone);
     } else if (b.finalSearch) {
-      li.style.color = '#6f8cff'; li.textContent = 'FINAL SEARCH: NOT HERE';
+      li.style.color = '#6f8cff'; li.textContent = `#${b.number} FINAL SEARCH: NOT HERE`;
       toast('NOT HERE', 'cold', 'The zone was elsewhere.');
       if (b.result) finish(b.result, b.saveError);
     } else {
-      addCheckMarker(b.point, b.heat);
-      toast(b.heat.toUpperCase(), b.heat, (TREND_TEXT[b.trend] || '') + (b.checksRemaining === 0 ? ' · No checks left' : ''));
+      const delta = b.change == null ? '' : ` ${b.change > 0 ? '▲ +' : b.change < 0 ? '▼ ' : '■ '}${b.change}°`;
+      addCheckMarker(b.point, b.heat, b.number, `${b.temperature}°`);
+      toast(`${b.temperature}°C`, b.heat, `#${b.number} · ${b.heat.toUpperCase()}${delta}` + (b.checksRemaining === 0 ? ' · No checks left' : ''));
       flashVignette(HEAT_COLORS[b.heat]);
       li.style.color = HEAT_COLORS[b.heat];
-      li.textContent = b.heat.toUpperCase() + (TREND_TEXT[b.trend] ? ' ' + TREND_TEXT[b.trend] : '');
+      li.textContent = `#${b.number}  ${b.temperature}°C ${b.heat.toUpperCase()}${delta}`;
     }
     $('checks').append(li); $('nochecks').classList.add('hidden');
     renderHud();
   } finally { game.checking = false; }
 }
 
-const markerFeatures = [], ringFeatures = [], checkDots = [];
-function addCheckMarker(point, heat) {
+const markerFeatures = [], ringFeatures = [], checkDots = [], checkList = [];
+function addCheckMarker(point, heat, number, text) {
   const color = HEAT_COLORS[heat] || '#ffd23f';
+  checkList.push({ point, color, label: `#${number} ${text}` });
   // A thin flagpole with a heat-coloured flag, so it never hides the avatar standing at the spot.
   markerFeatures.push(box(point, 0, -0.3, 0.3, -0.3, 0.3, 0, 8, '#fff8e7'), box(point, 0, 0.3, 3.2, -0.25, 0.25, 5.6, 7.8, color));
   ringFeatures.push({ type: 'Feature', properties: { color }, geometry: { type: 'LineString', coordinates: circle(point, 9, 24) } });
@@ -913,7 +984,12 @@ function toggleMapView(force) {
   map.setLayoutProperty('dots', 'visibility', open ? 'visible' : 'none');
   setInteractive(open);
   map.dragRotate.disable();
+  $('mapBtn').classList.toggle('hidden', open);
+  $('travelCursor').classList.add('hidden');
   if (open) {
+    game.usedMap = true;
+    $('mapBtn').classList.remove('pulse');
+    map.getCanvas().style.cursor = 'crosshair';
     map.getSource('dots').setData(fc([...checkDots,
       { type: 'Feature', properties: { color: '#e94f37', r: 13, stroke: '#ffd23f' }, geometry: { type: 'Point', coordinates: game.pos } }]));
     map.getSource('routes').setData(fc(game.trail.length > 1 ? [{ type: 'Feature', properties: { color: '#ff5fa2', scale: 0.6 },
@@ -921,6 +997,7 @@ function toggleMapView(force) {
     const b = pack.bounds;
     map.fitBounds([[b.west, b.south], [b.east, b.north]], { padding: 40, pitch: 0, bearing: 0, duration: 900 });
   } else {
+    map.getCanvas().style.cursor = '';
     map.getSource('routes').setData(fc([]));
     map.flyTo({ center: offsetPt(game.pos, game.camBearing, 6), zoom: game.followZoom, pitch: pitchFor(game.followZoom),
       bearing: game.camBearing, duration: 700 });
@@ -960,6 +1037,7 @@ async function travelTo(lngLat) {
 function enterZone(zone) {
   if (game.phase !== 'walk') return;
   toggleMapView(false);
+  hide('mapBtn');
   game.phase = 'zone'; game.zone = zone; game.zoneAt = performance.now(); game.keys = {}; game.autopilot = null;
   hide('help');
   map.getSource('zone').setData(fc([{ type: 'Feature', properties: {},
@@ -1155,11 +1233,11 @@ async function replay() {
 // ---------- tutorial ----------
 const TUTORIAL = [
   ['Walk the real campus', '<kbd>W</kbd><kbd>S</kbd> walk &nbsp; <kbd>A</kbd><kbd>D</kbd> sidestep &nbsp; <kbd>←</kbd><kbd>→</kbd> turn<br>Drag to turn · pinch or scroll to zoom',
-    "You're somewhere on U of T's St. George campus. Somewhere 450 to 900 m away is a hidden zone around one building. Walk anywhere; buildings are solid."],
-  ['Check the temperature', '<kbd>Space</kbd> → <span style="color:#ff4d2e">HOT</span> · <span style="color:#ff9f1c">WARM</span> · <span style="color:#4cc9f0">COOL</span> · <span style="color:#6f8cff">COLD</span><br>▲ warmer · ▼ colder than last time',
-    'You have 6 checks. Each tells you how close the zone is and whether you got closer. Walking into the zone is silent: check inside it to find it. Out of checks? Your next Space is a final search.'],
-  ['Use the map', '<kbd>M</kbd> campus map · click anywhere to travel',
-    'The map shows your checks and trail. Click a spot to travel there; the trip counts as the shortest walk, so travel wisely.'],
+    "You're somewhere on your selected campus. Somewhere 450 to 900 m away is a hidden zone around one building. Walk anywhere; buildings are solid."],
+  ['Check the temperature', '<kbd>Space</kbd> → <span style="color:#ff4d2e">40°C hot</span> … <span style="color:#6f8cff">-10°C cold</span><br>▲ +4° warmer · ▼ -3° colder than your last check',
+    'You have 6 checks. Each gives a temperature: 40°C at the zone centre, a degree cooler for every 20 m away. Checks are numbered on the right and on the map. Walking into the zone is silent: check inside it to find it. Out of checks? Your next Space is a final search.'],
+  ['Travel by map', '<kbd>M</kbd> or the 🗺 Map button · click anywhere to go there',
+    'Campus is big. Open the map to see every check and your trail, then click a spot to travel there in a moment. The trip counts as the shortest walk.'],
   ['Pick a hint blind', 'EASY ×1 what you can see<br>NORMAL ×1.5 what students know<br>HARD ×2 campus history',
     "In the zone, choose a face-down hint card. Harder hints are worth more. Then click the building you think it is. You get 3 guesses."],
   ['Score out of 1000', 'Route up to 400 (full at 80% efficiency) · guess 250/200/150<br>hint bonus up to +250 · checks saved up to 100',
@@ -1339,25 +1417,30 @@ const LocalRules = (() => {
     return ok({ type: 'travelled', point: round.pos, path: round.track.slice(before), metresWalked: Math.round(round.walked) });
   }
 
+  /** Same as Java's Expedition.Check.temperature(): 40°C at the zone, a degree cooler per 20 m, floor -10°C. */
+  const temperatureFor = d => Math.max(-10, Math.min(40, Math.round(40 - d / 20)));
+
   function check() {
     if (round.stage !== 'find') return fail('Checks are only used while finding the zone.');
     const here = round.pos, d = distOf(here, round.zone.centre);
     const zoneView = { centre: round.zone.centre, radius: round.zone.radius };
     if (round.checks.length >= CHECKS) {
-      if (inZone(round.zone, here)) { round.stage = 'identify'; round.zoneAt = Date.now(); return ok({ type: 'checked', point: here, checksRemaining: 0, finalSearch: true, zoneFound: true, zone: zoneView }); }
+      if (inZone(round.zone, here)) { round.stage = 'identify'; round.zoneAt = Date.now(); return ok({ type: 'checked', point: here, number: round.checks.length + 1, checksRemaining: 0, finalSearch: true, zoneFound: true, zone: zoneView }); }
       round.stage = 'finished';
-      return ok({ type: 'checked', point: here, checksRemaining: 0, finalSearch: true, zoneFound: false, ...finished() });
+      return ok({ type: 'checked', point: here, number: round.checks.length + 1, checksRemaining: 0, finalSearch: true, zoneFound: false, ...finished() });
     }
     if (inZone(round.zone, here)) {
-      round.checks.push({ point: here, heat: 'zone', trend: 'first', metres: Math.round(d) });
+      round.checks.push({ point: here, heat: 'zone', trend: 'first', metres: Math.round(d), temperature: temperatureFor(d) });
       round.stage = 'identify'; round.zoneAt = Date.now();
-      return ok({ type: 'checked', point: here, checksRemaining: CHECKS - round.checks.length, finalSearch: false, zoneFound: true, zone: zoneView });
+      return ok({ type: 'checked', point: here, number: round.checks.length, checksRemaining: CHECKS - round.checks.length, finalSearch: false, zoneFound: true, zone: zoneView });
     }
     const heat = d < 150 ? 'hot' : d < 300 ? 'warm' : d < 500 ? 'cool' : 'cold';
     const last = round.checks[round.checks.length - 1];
     const trend = !last ? 'first' : Math.abs(d - last.metres) < 5 ? 'same' : d < last.metres ? 'warmer' : 'colder';
-    round.checks.push({ point: here, heat, trend, metres: d });
-    return ok({ type: 'checked', point: here, heat, trend, checksRemaining: CHECKS - round.checks.length, finalSearch: false, zoneFound: false });
+    const temperature = temperatureFor(d);
+    round.checks.push({ point: here, heat, trend, metres: d, temperature });
+    return ok({ type: 'checked', point: here, heat, trend, number: round.checks.length, temperature,
+      change: last ? temperature - last.temperature : null, checksRemaining: CHECKS - round.checks.length, finalSearch: false, zoneFound: false });
   }
 
   // --- hints: easy = what you can see, normal = what students know, hard = campus history ---
@@ -1571,10 +1654,14 @@ async function startRound() {
   game.camBearing = game.heading;
   game.startedAt = performance.now();
   renderHud();
-  for (const id of ['hud', 'log', 'compass', 'help']) show(id);
+  for (const id of ['hud', 'log', 'compass', 'help', 'mapBtn']) show(id);
+  $('mapBtn').classList.add('pulse');
   await flyTo({ center: offsetPt(game.pos, game.heading, 6), zoom: game.followZoom, pitch: pitchFor(game.followZoom), bearing: game.heading, duration: 3200 });
   game.phase = 'walk';
-  toast('FIND THE ZONE', 'warm', r.body.message);
+  toast('FIND THE ZONE', 'warm', 'Tip: press M (or the Map button) and click anywhere to travel fast.');
+  // Nudge towards the map if someone keeps walking without it.
+  setTimeout(() => { if (game.phase === 'walk' && !game.usedMap) toast('LONG WAY?', 'warm', 'Press M and click a spot to travel there.'); }, 40000);
+  setTimeout(() => $('mapBtn').classList.remove('pulse'), 20000);
 }
 
 /** Face the direction with the most open ground ahead, so the first step isn't into a wall. */
@@ -1719,6 +1806,7 @@ $('startBtn').addEventListener('click', startRound);
 $('toGuess').addEventListener('click', startGuessing);
 $('replayBtn').addEventListener('click', replay);
 $('againBtn').addEventListener('click', resetRound);
+$('mapBtn').addEventListener('click', () => toggleMapView(true));
 // A spoiler-free summary to compare with friends (no building name, no route).
 $('shareBtn').addEventListener('click', async () => {
   const r = game.result;
