@@ -38,10 +38,19 @@ class ExploreFlowTest {
     }
 
     private ExpeditionSession session;
+    private ExplorePresenter presenter;
+    /** In-memory foot trails, newest last. */
+    private final List<campus.domain.explore.FootTrail> trails = new java.util.ArrayList<>();
+    private final FootTrailRepository trailStore = new FootTrailRepository() {
+        @Override public void record(campus.domain.explore.FootTrail trail) { trails.add(trail); }
+        @Override public List<campus.domain.explore.FootTrail> recent(String campusId, int limit) {
+            return trails.reversed().stream().filter(t -> t.campusId().equals(campusId)).limit(limit).toList();
+        }
+    };
 
     @BeforeEach void wire() {
         session = new ExpeditionSession();
-        var presenter = new ExplorePresenter();
+        presenter = new ExplorePresenter();
         LandmarkInfoGateway info = title -> {
             summaries.add(title);
             return Optional.of(new ExploreResponse.LandmarkSummary(title, "A test building.", null, null));
@@ -69,7 +78,7 @@ class ExploreFlowTest {
                 }
                 saved.add(campus + "|" + difficulty + "|" + result.targetName() + "|" + result.score());
             }
-        }, clock);
+        }, clock, trailStore);
     }
 
     private String roundId;
@@ -161,6 +170,24 @@ class ExploreFlowTest {
         assertTrue(saved.getFirst().startsWith("Test campus|normal|Target Hall|"));
         assertNull(right.body().get("saveError"));
         assertEquals("A test building.", map(result.get("summary")).get("extract"));
+    }
+
+    @Test void aFinishedRoundLeavesAnAnonymousTrailOthersSeeAsAWalkingStudent() {
+        controller.withTraffic(new CampusTrafficInteractor(trailStore, presenter));
+        assertEquals(List.of(), call("traffic", Map.of("campus", map.id())).body().get("trails"), "quiet at first");
+        call("start", Map.of("difficulty", "normal"));
+        walkToZone();
+        call("hint", Map.of("level", "easy"));
+        call("guess", Map.of("buildingId", 1));
+        assertEquals(1, trails.size(), "recorded once, when the round finished");
+        ExploreViewModel traffic = call("traffic", Map.of("campus", map.id()));
+        assertEquals(200, traffic.status());
+        assertEquals("traffic", traffic.body().get("type"));
+        List<?> walks = (List<?>) traffic.body().get("trails");
+        assertEquals(1, walks.size());
+        assertTrue(((List<?>) walks.getFirst()).size() >= 2, "a path of points");
+        assertFalse(Json.write(traffic.body()).contains("Target Hall"), "only the path: no target, score or player");
+        assertEquals(400, call("traffic", Map.of("campus", "../etc")).status(), "campus IDs are checked");
     }
 
     @Test void failedSaveIsReportedWithoutLosingTheResult() {

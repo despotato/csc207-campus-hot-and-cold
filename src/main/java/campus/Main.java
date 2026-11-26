@@ -12,6 +12,7 @@ import campus.application.GameSession;
 import campus.application.SavedResultsInteractor;
 import campus.application.StartRoundInteractor;
 import campus.application.SubmitGuessInteractor;
+import campus.application.explore.CampusTrafficInteractor;
 import campus.application.explore.CheckTemperatureInteractor;
 import campus.application.explore.ChooseHintInteractor;
 import campus.application.explore.DailyRunInteractor;
@@ -27,6 +28,7 @@ import campus.domain.explore.GeoPoint;
 import campus.infrastructure.BrowserLandmarkMapGateway;
 import campus.infrastructure.FileDailyAttempts;
 import campus.infrastructure.FileDailyRunStore;
+import campus.infrastructure.FileFootTrailRepository;
 import campus.infrastructure.PackCatalog;
 import campus.infrastructure.ExploreWebServer;
 import campus.infrastructure.FileRoundRepository;
@@ -95,8 +97,11 @@ public final class Main {
         var session = new ExpeditionSession(dailyRuns, clock);
         var presenter = new ExplorePresenter();
         // Team task: replace DISABLED with a file-backed result repository.
+        // Anonymous foot trails for the walking students (shared online later: docs/SHARED_PATHS.md).
+        var trails = new FileFootTrailRepository(Path.of(System.getProperty("user.home"), ".campus-hot-and-cold",
+                "trails"));
         var finisher = new RoundFinisher(new WikipediaSummaryGateway(client),
-                ExpeditionResultRepository.DISABLED, clock);
+                ExpeditionResultRepository.DISABLED, clock, trails);
         var controller = new ExploreController(
                 new StartExpeditionInteractor(campuses, dailyAttempts, RandomGenerator.getDefault(), clock, session,
                         presenter),
@@ -108,6 +113,7 @@ public final class Main {
                 presenter);
         var dailyRun = new DailyRunInteractor(campuses, dailyAttempts, dailyRuns, session, finisher, clock, presenter);
         controller.withDailyRuns(dailyRun, dailyRun);
+        controller.withTraffic(new CampusTrafficInteractor(trails, presenter));
         Integer chosenPort = Integer.getInteger("campus.explore.port");
         // Debug only: the hidden zone and a shortest route to it, so automated visual tests can walk there.
         Supplier<Map<String, Object>> debug = Boolean.getBoolean("campus.explore.debug") ? () ->

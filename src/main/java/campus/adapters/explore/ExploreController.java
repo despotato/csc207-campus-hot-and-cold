@@ -1,5 +1,6 @@
 package campus.adapters.explore;
 
+import campus.application.explore.CampusTrafficInputBoundary;
 import campus.application.explore.CheckTemperatureInputBoundary;
 import campus.application.explore.DailyStatusInputBoundary;
 import campus.application.explore.ResumeDailyInputBoundary;
@@ -35,6 +36,7 @@ public final class ExploreController {
     private final GuessBuildingInputBoundary guess;
     private final ExplorePresenter presenter;
     private DailyStatusInputBoundary dailyStatus;
+    private CampusTrafficInputBoundary traffic;
     private ResumeDailyInputBoundary resumeDaily;
 
     public ExploreController(StartExpeditionInputBoundary start, MoveInputBoundary move, TravelInputBoundary travel,
@@ -59,6 +61,12 @@ public final class ExploreController {
                 case "hint" -> hint.execute(round(fields), level(fields.get("level")));
                 case "guess" -> guess.execute(round(fields), integer(fields, "buildingId"));
                 case "dailyStatus" -> requireDaily().status(campus(fields));
+                case "traffic" -> {
+                    if (traffic == null) {
+                        throw new IllegalArgumentException("Campus traffic isn't available here.");
+                    }
+                    traffic.traffic(campus(fields));
+                }
                 case "resumeDaily" -> {
                     requireDaily();
                     resumeDaily.resume(campus(fields));
@@ -77,6 +85,12 @@ public final class ExploreController {
     public ExploreController withDailyRuns(DailyStatusInputBoundary status, ResumeDailyInputBoundary resume) {
         this.dailyStatus = Objects.requireNonNull(status);
         this.resumeDaily = Objects.requireNonNull(resume);
+        return this;
+    }
+
+    /** Adds the campus traffic action: other players' paths, drawn as walking students (optional). */
+    public ExploreController withTraffic(CampusTrafficInputBoundary campusTraffic) {
+        this.traffic = Objects.requireNonNull(campusTraffic);
         return this;
     }
 

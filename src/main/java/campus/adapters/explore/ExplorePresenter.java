@@ -84,6 +84,12 @@ public final class ExplorePresenter implements ExploreOutputBoundary {
                 }
             }
             case ExploreResponse.Resumed resumed -> resumed(resumed, body);
+            case ExploreResponse.Traffic traffic -> {
+                body.put("type", "traffic");
+                body.put("campusId", traffic.campusId());
+                body.put("trails", traffic.trails().stream().map(trail -> trail.stream().map(ExplorePresenter::point)
+                        .toList()).toList());
+            }
             case ExploreResponse.Failed failed -> {
                 status = 400;
                 body.put("type", "error");

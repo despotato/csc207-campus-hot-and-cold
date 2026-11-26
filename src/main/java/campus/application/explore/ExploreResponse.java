@@ -52,6 +52,13 @@ public sealed interface ExploreResponse {
      */
     record DailyStatus(String campusId, String date, String status, Result result) implements ExploreResponse { }
 
+    /** Paths other players walked on a campus; each is drawn as a student walking it. */
+    record Traffic(String campusId, List<List<GeoPoint>> trails) implements ExploreResponse {
+        public Traffic {
+            trails = trails.stream().map(List::copyOf).toList();
+        }
+    }
+
     /** A daily round picked up where it was left, with everything the page needs to redraw it. */
     record Resumed(UUID roundId, String campusId, String campus, String date, String stage, GeoPoint position,
                    double metresWalked, long elapsedSeconds, Long zoneElapsedSeconds, int checksRemaining,
