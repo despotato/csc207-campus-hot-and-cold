@@ -125,7 +125,22 @@
   #badges:empty { display: none; }
   .badge { position: relative; display: flex; align-items: center; gap: 8px; padding: 5px 10px 5px 8px; border: 3px solid var(--gold);
     background: #0005; animation: badgeIn 520ms cubic-bezier(.3, 1.6, .5, 1) both; }
-  .badge .ico { font-size: 22px; line-height: 1; }
+  .badge { cursor: pointer; }
+  .ico { display: inline-block; flex-shrink: 0; width: 22px; height: 22px; }
+  .ico svg { display: block; width: 100%; height: 100%; }
+  #achievements { z-index: 20; background: #0b0d1ed9; }
+  #achievements .card { max-width: 460px; width: 100%; max-height: calc(100dvh - 32px); overflow-y: auto; }
+  #achList { list-style: none; margin: 10px 0; padding: 0; display: grid; gap: 8px; }
+  #achList li { display: flex; gap: 12px; align-items: flex-start; padding: 8px 10px; border: 3px solid var(--gold); background: #0004; }
+  #achList li .ico { width: 44px; height: 44px; }
+  #achList b { display: block; color: var(--gold); font-weight: normal; }
+  #achList small { display: block; font-size: 10px; opacity: .8; margin-top: 2px; }
+  #achList p { margin: 6px 0 2px; font-size: 13px; }
+  #achList i { font-style: normal; font-size: 10px; opacity: .7; }
+  #achList li.locked { border-color: #fff8e733; }
+  #achList li.locked .ico, #achList li.locked b { filter: grayscale(1); opacity: .45; }
+  #achList li.locked b { color: var(--paper); }
+  #achList li.locked small, #achList li.locked p { opacity: .5; }
   .badge b { display: block; color: var(--gold); font-size: 12px; font-weight: normal; }
   .badge small { display: block; font-size: 10px; opacity: .8; }
   .badge em { position: absolute; top: -9px; right: -6px; font-style: normal; font-size: 9px; padding: 1px 4px;
@@ -165,7 +180,7 @@
     #targetCat, #modeLabel, #outcome { font-size: 10px; }
     #bigScore { font-size: 34px; margin: 0; text-shadow: 3px 3px 0 var(--hot); white-space: nowrap; }
     #bigScore small { font-size: 12px; }
-    #badges { margin: 2px 0 4px; } .badge { padding: 3px 8px 3px 6px; gap: 6px; } .badge .ico { font-size: 16px; }
+    #badges { margin: 2px 0 4px; } .badge { padding: 3px 8px 3px 6px; gap: 6px; } .badge .ico { width: 16px; height: 16px; }
     .badge b { font-size: 10px; } .badge small { font-size: 9px; }
     #tally { margin: 4px 0; }
     #tally td { padding: 2px 0; font-size: 11px; }
@@ -290,7 +305,7 @@
     </div>
     <!-- Difficulty selector: the start request already sends { difficulty }. See the team task "Difficulty levels". -->
     <div id="difficulty" data-value="normal" class="controls">Difficulty: Normal</div>
-    <div class="buttons"><button id="startBtn" autofocus>Start <kbd>Enter</kbd></button><button id="viewDailyResult" class="secondary hidden">View today's result</button><button id="tutorialBtn" class="secondary">How to play</button></div>
+    <div class="buttons"><button id="startBtn" autofocus>Start <kbd>Enter</kbd></button><button id="viewDailyResult" class="secondary hidden">View today's result</button><button id="tutorialBtn" class="secondary">How to play</button><button id="achievementsBtn" class="secondary">Achievements</button></div>
     <p id="loading">Loading campus…</p>
   </div>
 </section>
@@ -302,6 +317,15 @@
     <div id="tutArt" aria-hidden="true"></div>
     <p id="tutText" class="lead"></p>
     <div class="buttons"><button id="tutBack" class="secondary">Back</button><button id="tutNext">Next</button><button id="tutClose" class="secondary">Close</button></div>
+  </div>
+</section>
+
+<section id="achievements" class="screen hidden" role="dialog" aria-modal="true" aria-labelledby="achTitle">
+  <div class="card panel">
+    <h2 id="achTitle">Achievements</h2>
+    <div class="title-sm" id="achCount"></div>
+    <ul id="achList"></ul>
+    <div class="buttons"><button id="achClose" class="secondary">Close</button></div>
   </div>
 </section>
 
@@ -2111,7 +2135,7 @@ function fillResults(r, saveError) {
   $('modeLabel').textContent = game.mode === 'daily' ? `Daily · ${game.date} · ${$('campusName').textContent}` : 'Unlimited';
   const fmt = m => m >= 1000 ? (m / 1000).toFixed(2) + ' km' : m + ' m';
   $('outcome').textContent = r.won ? `Identified in ${r.guessesUsed} ${r.guessesUsed === 1 ? 'guess' : 'guesses'}`
-    : r.secondsToZone == null ? (r.score.nearMiss ? 'Ahh, almost almost!' : 'Zone not found') : 'Out of guesses';
+    : r.secondsToZone == null ? (r.score.nearMiss ? 'Ahh almost almost' : 'Zone not found') : 'Out of guesses';
   $('targetName').textContent = r.target.name;
   $('targetCat').textContent = r.target.category;
   const sc = r.score, ordinal = ['1st', '2nd', '3rd'][r.guessesUsed - 1];
@@ -2156,20 +2180,57 @@ function fillResults(r, saveError) {
   }
 }
 
-const BADGE_ICONS = { almost_almost: '🤏', absolute_zero: '🧊', supernova: '💥' };
-/** This round's achievements; ones never earned before on this device are marked NEW. */
+// ---------- achievements ----------
+/** Same catalogue and order as the Java Achievement enum; icons are 11×11 pixel art (palette letters below). */
+const BETA_ENDS = Date.parse('2027-01-01T05:00:00Z');   // midnight in Toronto
+const ACHIEVEMENTS = [
+  { id: 'beta_player', title: 'Beta Player', subtitle: 'Here before launch', share: '🧪',
+    description: 'Finish a round while the game is in beta (before 2027).',
+    pixels: ['...........', '...bbbb....', '..bb..bb...', '..bb..bb...', '..bbbbb....', '..bb..bb...',
+      '..bb...bb..', '..bb...bb..', '..bbbbbb...', '..bb.......', '..bb.......'] },
+  { id: 'almost_almost', title: 'Ahh almost almost', subtitle: '', share: '🤏',
+    description: 'Miss the zone, but get a check within 150 m of finding it.',
+    pixels: ['....ppp....', '....pgp....', '....prp....', '....prp....', '....prp....', '....prp....',
+      '....prp....', '...prrrp...', '..prrrrrp..', '..prrrrrp..', '...ppppp...'] },
+  { id: 'absolute_zero', title: 'Absolute Zero', subtitle: 'Too cold', share: '🧊',
+    description: 'Find the zone with your very first check.',
+    pixels: ['.....c.....', '.c...c...c.', '..c..c..c..', '...c.c.c...', '....ccc....', 'cccccwccccc',
+      '....ccc....', '...c.c.c...', '..c..c..c..', '.c...c...c.', '.....c.....'] },
+  { id: 'supernova', title: 'Supernova', subtitle: 'Too hot to handle', share: '💥',
+    description: 'Score a perfect 1000.',
+    pixels: ['.....r.....', '.r...o...r.', '..o..y..o..', '...oyyyo...', '...yywyy...', 'royywwwyyor',
+      '...yywyy...', '...oyyyo...', '..o..y..o..', '.r...o...r.', '.....r.....'] },
+];
+const PIXEL_COLOURS = { b: '#4cf0d4', p: '#fff8e7', g: '#5a5f7a', r: '#ff4d2e', c: '#9fe8ff', w: '#ffffff', y: '#ffd23f', o: '#ff8a2e' };
+function pixelIcon(id) {
+  const rows = ACHIEVEMENTS.find(a => a.id === id)?.pixels || [];
+  let rects = '';
+  rows.forEach((row, y) => [...row].forEach((ch, x) => {
+    if (PIXEL_COLOURS[ch]) rects += `<rect x="${x}" y="${y}" width="1" height="1" fill="${PIXEL_COLOURS[ch]}"/>`;
+  }));
+  return `<svg viewBox="0 0 11 11" shape-rendering="crispEdges" aria-hidden="true">${rects}</svg>`;
+}
+function unlockedAchievements() {
+  try { return JSON.parse(store.get('achievements') || '{}') || {}; } catch (e) { return {}; }
+}
+function badgeElement(a) {
+  const el = document.createElement('div');
+  el.className = 'badge';
+  el.innerHTML = `<span class="ico">${pixelIcon(a.id)}</span><span><b></b>${a.subtitle ? '<small></small>' : ''}</span>`;
+  el.querySelector('b').textContent = a.title;
+  if (a.subtitle) el.querySelector('small').textContent = a.subtitle;
+  return el;
+}
+/** This round's achievements; ones never earned before on this device are marked NEW. Click one for the full list. */
 function showBadges(earned) {
-  let seen = {};
-  try { seen = JSON.parse(store.get('achievements') || '{}') || {}; } catch (e) { seen = {}; }
+  const seen = unlockedAchievements();
   const box = $('badges');
   box.innerHTML = '';
   earned.forEach((a, i) => {
-    const el = document.createElement('div');
-    el.className = 'badge'; el.style.animationDelay = (600 + i * 250) + 'ms';
-    el.innerHTML = '<span class="ico"></span><span><b></b><small></small></span>';
-    el.querySelector('.ico').textContent = BADGE_ICONS[a.id] || '🏅';
-    el.querySelector('b').textContent = a.title;
-    el.querySelector('small').textContent = a.subtitle;
+    const el = badgeElement(a);
+    el.style.animationDelay = (600 + i * 250) + 'ms';
+    el.title = 'See all achievements';
+    el.addEventListener('click', showAchievements);
     if (!seen[a.id]) {
       const tag = document.createElement('em'); tag.textContent = 'NEW'; el.append(tag);
       seen[a.id] = game.date || new Date().toISOString().slice(0, 10);
@@ -2178,6 +2239,28 @@ function showBadges(earned) {
   });
   store.set('achievements', JSON.stringify(seen));
 }
+/** Every achievement, how to earn it, and when it was unlocked; locked ones are greyed out. */
+function showAchievements() {
+  const seen = unlockedAchievements(), list = $('achList');
+  list.innerHTML = '';
+  for (const a of ACHIEVEMENTS) {
+    const li = document.createElement('li');
+    li.className = seen[a.id] ? 'unlocked' : 'locked';
+    li.innerHTML = `<span class="ico">${pixelIcon(a.id)}</span><div><b></b>${a.subtitle ? '<small></small>' : ''}<p></p><i></i></div>`;
+    li.querySelector('b').textContent = a.title;
+    if (a.subtitle) li.querySelector('small').textContent = a.subtitle;
+    li.querySelector('p').textContent = a.description;
+    li.querySelector('i').textContent = seen[a.id] ? `Unlocked ${seen[a.id]}` : 'Locked';
+    list.append(li);
+  }
+  $('achCount').textContent = `${ACHIEVEMENTS.filter(a => seen[a.id]).length} of ${ACHIEVEMENTS.length} unlocked`;
+  show('achievements');
+  $('achClose').focus();
+}
+const closeAchievements = () => hide('achievements');
+$('achClose').addEventListener('click', closeAchievements);
+$('achievements').addEventListener('click', e => { if (e.target.id === 'achievements') closeAchievements(); });
+$('achievementsBtn').addEventListener('click', showAchievements);
 
 function countUp(el, target) {
   const t0 = performance.now(), duration = 1400;
@@ -2585,13 +2668,15 @@ const LocalRules = (() => {
     if (round.stage === 'finished') spots.push(distOf(round.pos, round.zone.centre));
     return spots.length ? Math.max(0, Math.min(...spots) - round.zone.radius - PLAYER_RADIUS) : null;
   }
-  /** Mirrors Expedition.achievements and the Achievement enum. */
+  /** Mirrors Expedition.achievements. */
   function achievements(sc) {
-    return [
-      sc.nearMiss > 0 && ['almost_almost', 'Ahh, almost almost', 'So close you could feel the heat'],
-      round.zoneAt != null && round.checks.length === 1 && ['absolute_zero', 'Absolute Zero', 'Too cold'],
-      sc.total === 1000 && ['supernova', 'Supernova', 'Too hot to handle'],
-    ].filter(Boolean).map(([id, title, subtitle]) => ({ id, title, subtitle }));
+    const earned = {
+      beta_player: round.startedAt < BETA_ENDS,
+      almost_almost: sc.nearMiss > 0,
+      absolute_zero: round.zoneAt != null && round.checks.length === 1,
+      supernova: sc.total === 1000,
+    };
+    return ACHIEVEMENTS.filter(a => earned[a.id]).map(({ id, title, subtitle, description }) => ({ id, title, subtitle, description }));
   }
   function finished(summary = null) {
     const t = round.target, sc = score(), short = metresShort();
@@ -3141,6 +3226,7 @@ const KEYMAP = { KeyW: 'fwd', KeyS: 'back', KeyA: 'strafeLeft', KeyD: 'strafeRig
   ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'tiltUp', ArrowDown: 'tiltDown' };
 addEventListener('keydown', e => {
   if (e.code === 'Escape' && !$('tutorial').classList.contains('hidden')) { closeTutorial(); return; }
+  if (!$('achievements').classList.contains('hidden')) { if (e.code === 'Escape') closeAchievements(); return; }
   if (e.code === 'Escape' && game.picking) { closeCanada(); return; }
   if (e.code === 'Enter' && game.phase === 'title' && $('tutorial').classList.contains('hidden')) { startRound(); return; }
   if (game.phase === 'walk') {
@@ -3194,7 +3280,7 @@ $('shareBtn').addEventListener('click', async () => {
   const checks = r.checks.map(c => heat[c.heat] || '⬜').join('');
   const guesses = '❌'.repeat(Math.max(0, r.guessesUsed - (r.won ? 1 : 0))) + (r.won ? '✅' : '');
   const title = game.mode === 'daily' ? `Campus Hot & Cold · ${$('campusName').textContent} daily ${game.date}` : 'Campus Hot & Cold';
-  const badges = (r.achievements || []).map(a => `${BADGE_ICONS[a.id] || '🏅'} ${a.title}`).join(' · ');
+  const badges = (r.achievements || []).map(a => `${ACHIEVEMENTS.find(x => x.id === a.id)?.share || '🏅'} ${a.title}`).join(' · ');
   const text = `${title}\n${r.score.total}/1000 · ${r.hintLevel || 'no'} hint\nChecks ${checks}\nGuesses ${guesses}\n${badges ? badges + '\n' : ''}${location.origin + location.pathname}`;
   try { await navigator.clipboard.writeText(text); toast('COPIED', 'warm', 'Paste it to your friends.'); }
   catch (e) { prompt('Copy your result:', text); }
