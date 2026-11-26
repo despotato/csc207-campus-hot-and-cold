@@ -142,7 +142,8 @@ public final class WikipediaFactsGateway implements LandmarkFactsGateway {
     /** A hint-sized factual sentence with the landmark's name blanked, or null if it isn't usable. */
     static String redact(String sentence, String landmarkName) {
         if (sentence.length() < 45 || sentence.length() > 260 || !FACTUAL.matcher(sentence).find()
-                || sentence.contains("may refer to") || sentence.startsWith("See also")) {
+                || sentence.contains("may refer to") || sentence.startsWith("See also")
+                || sentence.matches("^(He|She|His|Her|They|Their|These|Those|This)\\b.*")) {
             return null;
         }
         String result = sentence.replaceAll("(?i)" + Pattern.quote(landmarkName), "this building")
@@ -150,13 +151,34 @@ public final class WikipediaFactsGateway implements LandmarkFactsGateway {
         for (String word : LandmarkNames.distinctiveWords(landmarkName)) {
             result = result.replaceAll("(?i)\\b" + Pattern.quote(word) + "('s)?\\b", "____");
         }
-        result = result.replaceAll("(____\\s*)+", "____ ");
+        result = result.replaceAll("(____\\s*)+", "____ ").replaceAll("____ ([,.;:)])", "____$1")
+                .replaceAll("^this building", "This building").replaceAll("([.!?] )this building", "$1This building");
         return LandmarkNames.givesAway(result, landmarkName) ? null : result.trim();
     }
 
-    /** Other articles only count when they use the building's full name (e.g. not just "graduate"). */
-    private static boolean mentions(String sentence, String landmarkName) {
-        return sentence.toLowerCase(Locale.ROOT).contains(landmarkName.toLowerCase(Locale.ROOT));
+    /** Words that can start a sentence or phrase before a name without being part of a longer name. */
+    private static final java.util.Set<String> LEAD_WORDS = java.util.Set.of("The", "A", "An", "In", "At", "On",
+            "Of", "From", "To", "By", "With", "For", "And", "Its", "This", "When", "While", "After", "Before", "Near",
+            "Behind", "Beside", "Inside", "Outside", "Including", "Both", "Old", "New");
+
+    /**
+     * Other articles only count when they use the building's full name on its own, not inside a longer proper
+     * name: "Wilson Hall" must not match "Sir Daniel Wilson Hall", nor "Whitney Hall" the person John Whitney Hall.
+     */
+    static boolean mentions(String sentence, String landmarkName) {
+        String lower = sentence.toLowerCase(Locale.ROOT);
+        String name = landmarkName.toLowerCase(Locale.ROOT);
+        for (int at = lower.indexOf(name); at >= 0; at = lower.indexOf(name, at + 1)) {
+            String before = sentence.substring(0, at).stripTrailing();
+            int space = before.lastIndexOf(' ');
+            String previous = before.substring(space + 1).replaceAll("[^\\p{L}.]", "");
+            boolean partOfLongerName = !previous.isEmpty() && Character.isUpperCase(previous.charAt(0))
+                    && !LEAD_WORDS.contains(previous) && before.length() == sentence.substring(0, at).length() - 1;
+            if (!partOfLongerName) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static final Pattern HISTORY = Pattern.compile("\\b(built|designed|architect\\w*|named (for|after)|founded"

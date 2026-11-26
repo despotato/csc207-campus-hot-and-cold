@@ -210,7 +210,8 @@ public final class Expedition {
     public static Expedition begin(Difficulty difficulty, CampusMap map, RandomGenerator random, Instant now) {
         List<GeoPoint> open = map.openSpace().openCells(3);
         for (int attempt = 0; attempt < 200; attempt++) {
-            CampusLandmark target = map.landmarks().get(random.nextInt(map.landmarks().size()));
+            List<CampusLandmark> targets = map.targets();
+            CampusLandmark target = targets.get(random.nextInt(targets.size()));
             GeoPoint targetCentre = map.buildingOf(target).centre();
             Zone zone = new Zone(targetCentre.offset(random.nextDouble(360),
                     random.nextDouble(Math.min(MAX_ZONE_OFFSET, difficulty.zoneRadius() * 0.6))),
@@ -384,7 +385,13 @@ public final class Expedition {
                     .filter(fact -> fact != null && !fact.isBlank() && !LandmarkNames.givesAway(fact, target.name()))
                     .toList();
             if (!safe.isEmpty()) {
-                outsideClue = level == HintLevel.NORMAL || safe.size() == 1 ? safe.getFirst() : safe.get(1);
+                // Keep the levels distinct: normal uses the best-known fact only when another is left for hard;
+                // with a single fact, hard gets it and normal falls back to the first letter.
+                if (level == HintLevel.HARD) {
+                    outsideClue = safe.size() == 1 ? safe.getFirst() : safe.get(1);
+                } else if (safe.size() >= 2) {
+                    outsideClue = safe.getFirst();
+                }
             }
         }
         hintLevel = level;
@@ -484,8 +491,10 @@ public final class Expedition {
         if (building.architect() != null) {
             return "It was designed by " + building.architect() + ".";
         }
-        long floors = Math.max(1, Math.round(building.height() / 3.66));
-        return floors == 1 ? "It's a single storey tall." : "It stands about " + floors + " storeys tall.";
+        // No recorded history (rare: random rounds skip these buildings). Never a size clue: that's what easy is for.
+        int words = target.name().split("\\s+").length;
+        return "Little is recorded about its history. Its name is " + (words == 1 ? "one word" : words + " words")
+                + " long and starts with \"" + Character.toUpperCase(target.name().charAt(0)) + "\".";
     }
 
     private void requireIdentifying() {

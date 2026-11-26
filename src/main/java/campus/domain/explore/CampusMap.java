@@ -36,12 +36,36 @@ public final class CampusMap {
         }
     }
 
-    public record CampusLandmark(int id, int buildingId, String name, String category, String wikipediaTitle) {
+    /**
+     * A building that can be the hidden target. {@code facts} are reviewed facts about it (name blanked), best known
+     * first then historical, stored in the campus pack so every player sees the same hints.
+     */
+    public record CampusLandmark(int id, int buildingId, String name, String category, String wikipediaTitle,
+                                 List<String> facts) {
         public CampusLandmark {
             if (id <= 0 || name == null || name.isBlank() || category == null || category.isBlank()) {
                 throw new IllegalArgumentException("A landmark needs an ID, name, and category.");
             }
+            facts = facts == null ? List.of() : List.copyOf(facts);
         }
+
+        public CampusLandmark(int id, int buildingId, String name, String category, String wikipediaTitle) {
+            this(id, buildingId, name, category, wikipediaTitle, List.of());
+        }
+    }
+
+    /**
+     * Landmarks that make good targets: ones with a real fact or recorded history for the hard hint. If a campus
+     * has none (e.g. in tests), every landmark qualifies.
+     */
+    public List<CampusLandmark> targets() {
+        List<CampusLandmark> good = landmarks.stream().filter(landmark -> !landmark.facts().isEmpty()
+                || hasHistory(buildingOf(landmark))).toList();
+        return good.isEmpty() ? landmarks : good;
+    }
+
+    private static boolean hasHistory(Building building) {
+        return building.formerName() != null || building.built() != null || building.architect() != null;
     }
 
     /** Today's shared puzzle: everyone playing the daily on this date gets the same target, zone and start. */

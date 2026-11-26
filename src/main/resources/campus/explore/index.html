@@ -1435,7 +1435,10 @@ const LocalRules = (() => {
     if (body.mode === 'daily') return startDaily();
     const open = cells();
     for (let attempt = 0; attempt < 200; attempt++) {
-      const target = pack.landmarks[Math.floor(Math.random() * pack.landmarks.length)];
+      // Only buildings with a real fact or recorded history, so the hard hint is always history (mirrors CampusMap.targets).
+      const good = pack.landmarks.filter(l => (l.facts || []).length || hasHistory(buildings.get(l.building)));
+      const pool = good.length ? good : pack.landmarks;
+      const target = pool[Math.floor(Math.random() * pool.length)];
       const building = buildings.get(target.building);
       const zone = { centre: offsetPt(building.center, Math.random() * 360, Math.random() * 50), radius: RADIUS };
       const choices = zoneBuildings(zone).filter(b => b.height >= 4);
@@ -1565,13 +1568,15 @@ const LocalRules = (() => {
     const floors = Math.max(1, Math.round(b.height / 3.66));
     return `It's ${rank} of the ${list.length} buildings in the zone: a ${floors}-storey ${b.material} building${b.courtyard ? ' with a courtyard' : ''}.`;
   }
+  const hasHistory = b => !!(b && (b.formerName || b.built || b.architect));
   function history() {
-    const b = round.building;
-    if (b.formerName && !givesAway(b.formerName, round.target.name)) return `It used to be known as the ${b.formerName}.`;
+    const b = round.building, name = round.target.name;
+    if (b.formerName && !givesAway(b.formerName, name)) return `It used to be known as the ${b.formerName}.`;
     if (b.built) return `It was built in ${b.built}.`;
     if (b.architect) return `It was designed by ${b.architect}.`;
-    const floors = Math.max(1, Math.round(b.height / 3.66));
-    return floors === 1 ? "It's a single storey tall." : `It stands about ${floors} storeys tall.`;
+    // No recorded history (rare: random rounds skip these buildings). Never a size clue: that's what easy is for.
+    const words = name.split(/\s+/).length;
+    return `Little is recorded about its history. Its name is ${words === 1 ? 'one word' : words + ' words'} long and starts with "${name[0].toUpperCase()}".`;
   }
   function positionClue() {
     const named = zoneBuildings(round.zone).filter(b => b.name).sort((a, b) =>
@@ -1590,8 +1595,10 @@ const LocalRules = (() => {
     let text;
     if (level === 'easy') text = appearance() + ' ' + positionClue();
     else {
-      const list = (await facts(t.wikipedia, t.name)).filter(f => !givesAway(f, t.name));
-      const fact = list.length ? (level === 'normal' || list.length === 1 ? list[0] : list[1]) : null;
+      // Reviewed facts stored in the pack come first; the live encyclopedia lookup is the fallback.
+      const list = ((t.facts || []).length ? t.facts : await facts(t.wikipedia, t.name)).filter(f => !givesAway(f, t.name));
+      // Keep levels distinct: normal uses the best-known fact only when another is left for hard.
+      const fact = level === 'hard' ? (list.length === 1 ? list[0] : list[1] || null) : list.length >= 2 ? list[0] : null;
       text = level === 'normal' ? `It's ${article}${category} building. `
         + (fact || `Its name starts with "${t.name[0].toUpperCase()}".`)
         : (fact || history());

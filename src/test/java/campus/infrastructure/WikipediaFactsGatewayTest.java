@@ -76,7 +76,7 @@ class WikipediaFactsGatewayTest {
 
     @Test void buildingsWithoutTheirOwnArticleUseMentionsElsewhere() {
         List<String> facts = gateway.facts(null, "Wetmore Hall");
-        assertEquals(List.of("this building, built in 1969, was designed by the architects Fairfield and DuBois."), facts);
+        assertEquals(List.of("This building, built in 1969, was designed by the architects Fairfield and DuBois."), facts);
     }
 
     @Test void sentenceSplittingKeepsInitialsAndSaintTogether() {

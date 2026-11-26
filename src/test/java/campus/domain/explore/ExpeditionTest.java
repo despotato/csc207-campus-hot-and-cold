@@ -244,7 +244,13 @@ class ExpeditionTest {
                 "hard: an obscure fact only");
         Expedition none = round();
         reachZone(none);
-        assertEquals("It stands about 6 storeys tall.", none.chooseHint(HintLevel.HARD, target -> List.of()));
+        assertEquals("Little is recorded about its history. Its name is 2 words long and starts with \"T\".", none.chooseHint(HintLevel.HARD, target -> List.of()),
+                "hard never falls back to a size clue");
+        Expedition single = round();
+        reachZone(single);
+        assertEquals("It's a library building. Its name starts with \"T\".",
+                single.chooseHint(HintLevel.NORMAL, target -> List.of("A film crew used its roof in 2009.")),
+                "a single fact is kept for hard, so normal and hard never repeat each other");
         Expedition student = round();
         reachZone(student);
         assertEquals("It's a library building. Its name starts with \"T\".",
@@ -280,13 +286,25 @@ class ExpeditionTest {
         CampusMap map = new CampusMap("Test campus", buildings, base.landmarks(), base.openSpace());
         Expedition round = new Expedition(map, map.landmarks().getFirst(), new Zone(at(1000, 75), 90), START, T0);
         reachZone(round);
-        assertEquals("It's a single storey tall.", round.chooseHint(HintLevel.HARD, target -> List.of()));
+        assertTrue(round.chooseHint(HintLevel.EASY).contains("a 1-storey"), "easy describes what you can see");
+    }
+
+    @Test void randomRoundsOnlyTargetLandmarksWithAFactOrRecordedHistory() {
+        CampusMap base = campus();
+        var landmarks = List.of(new CampusMap.CampusLandmark(1, 1, "Target Hall", "Library", null,
+                        List.of("It opened in 1931.")),
+                new CampusMap.CampusLandmark(2, 5, "Far Hall", "Residence", null));
+        List<CampusMap.Building> buildings = java.util.stream.IntStream.rangeClosed(1, 6)
+                .mapToObj(id -> base.building(id).orElseThrow()).toList();
+        CampusMap map = new CampusMap("Test campus", buildings, landmarks, base.openSpace());
+        assertEquals(List.of(landmarks.getFirst()), map.targets());
+        assertEquals(base.landmarks(), base.targets(), "with no facts anywhere, every landmark can be a target");
     }
 
     @Test void factsThatGiveAwayTheNameAreIgnored() {
         Expedition leaky = round();
         reachZone(leaky);
-        assertEquals("It stands about 6 storeys tall.", leaky.chooseHint(HintLevel.HARD,
+        assertEquals("Little is recorded about its history. Its name is 2 words long and starts with \"T\".", leaky.chooseHint(HintLevel.HARD,
                 target -> List.of("Target Hall opened in 1900.", "The target building of 1900.")),
                 "the full name, or its distinctive word 'target', gives it away");
         Expedition easy = round();
