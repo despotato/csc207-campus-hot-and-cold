@@ -78,6 +78,11 @@
   #tip { position: fixed; pointer-events: none; padding: 4px 8px; font-size: 12px; transform: translate(12px, 12px); }
   #mapTitle { position: fixed; top: 12px; left: 50%; transform: translateX(-50%); text-align: center; }
   #mapTitle small { display: block; font-size: 11px; opacity: .8; }
+  #mapTitle { display: flex; align-items: center; gap: 12px; }
+  #mapTitle.hidden { display: none; }
+  #mapTitle .taps { display: none; }
+  @media (pointer: coarse) { #tip { transform: translate(-50%, calc(-100% - 18px)); width: max-content; max-width: 70vw; text-align: center; } }
+  @media (pointer: coarse) { #mapTitle .keys { display: none; } #mapTitle .taps { display: block; } }
   #travelling { position: fixed; inset: 0; display: grid; place-items: center; background: #1b1f3aaa; font-size: 28px; }
   #travelling .bar { width: 220px; height: 14px; border: 3px solid var(--paper); margin: 14px auto 0; }
   #travelling .bar i { display: block; height: 100%; width: 0; background: var(--gold); animation: fill 1s steps(10) forwards; }
@@ -110,7 +115,12 @@
   .hintcard .who { font-size: 10px; margin-top: 8px; opacity: .75; }
   .hintcard.drawing { animation: shake 400ms steps(4) infinite; }
   @keyframes shake { 50% { transform: rotate(2deg); } }
-  #results { position: fixed; top: 12px; right: 12px; width: min(380px, 94vw); max-height: calc(100vh - 24px); overflow: auto; }
+  /* The body scrolls when space runs short; the buttons below it always stay in view. */
+  #results { position: fixed; top: 12px; right: 12px; width: min(380px, 94vw); max-height: calc(100dvh - 24px);
+    display: flex; flex-direction: column; overflow: hidden; }
+  #results.hidden { display: none; }
+  #results > * { flex-shrink: 0; }
+  #resultsBody { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
   #results .big { font-size: 34px; color: var(--gold); margin: 4px 0; }
   #tally td { padding: 4px 0; border-bottom: 2px dashed #fff8e733; }
   #tally td small { display: block; font-size: 10px; opacity: .7; }
@@ -128,11 +138,76 @@
   #tutArt kbd { margin: 2px; }
   #legend { position: fixed; left: 12px; bottom: 44px; font-size: 12px; }
   #legend span { display: inline-block; width: 18px; height: 6px; margin-right: 6px; vertical-align: middle; }
+  #wiki:has(#wikiImg.hidden) { grid-template-columns: 1fr; }   /* no photo: the text takes the full width */
+  #resultsHead { display: contents; }
   @media (max-width: 640px) {
     #log { display: none; } #help { display: none; } #cards { grid-template-columns: 1fr; } .hintcard { aspect-ratio: auto; min-height: 90px; }
     #checkBtn { display: block; }
+    /* Phones: the title card keeps Start in view; the rules and key list live in "How to play". */
+    #title .rules, #title .controls:not(#difficulty) { display: none; }
+    #title .lead { margin-bottom: 10px; }
+    /* Phones: results are a compact bottom sheet, so the building stays visible and the buttons need no scrolling. */
+    #results { top: auto; right: 8px; left: 8px; bottom: max(8px, env(safe-area-inset-bottom)); width: auto;
+      max-height: 62dvh; padding: 10px 12px; }
+    #resultsHead { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    #results .big { font-size: 20px; margin: 2px 0 0; }
+    #targetCat, #modeLabel, #outcome { font-size: 10px; }
+    #bigScore { font-size: 34px; margin: 0; text-shadow: 3px 3px 0 var(--hot); white-space: nowrap; }
+    #bigScore small { font-size: 12px; }
+    #tally { margin: 4px 0; }
+    #tally td { padding: 2px 0; font-size: 11px; }
+    #tally td small { display: none; }
+    #stats { display: flex; flex-wrap: wrap; gap: 2px 12px; font-size: 10px; opacity: .85; margin: 4px 0; }
+    #stats tbody, #stats tr { display: contents; }
+    #stats td { padding: 0; } #stats td:first-child::after { content: ':'; } #stats td:last-child { text-align: left; }
+    #wiki { grid-template-columns: 1fr; margin-top: 6px; font-size: 12px; }
+    #wiki img, #wikiText, #wikiTitle { display: none; }
+    #results .buttons { margin-top: 8px; flex-wrap: nowrap; }
+    #results .buttons button { flex: 1; padding: 8px 6px; font-size: 11px; }
   }
   @media (pointer: coarse) { #checkBtn { display: block; } }
+  /* Landscape phones: short screens keep Start in view and squeeze the score sheet. */
+  @media (max-height: 500px) {
+    #title .rules, #title .controls:not(#difficulty) { display: none; }
+    #results { padding: 8px 12px; width: min(340px, 50vw); }
+    #results .big { font-size: 20px; } #bigScore { font-size: 32px; margin: 2px 0; }
+    #tally td small, #wikiText { display: none; }
+    #hud { padding: 6px 8px; font-size: 11px; }
+    #title h1 { font-size: 24px; }
+    #title .choice { margin-bottom: 6px; } #title .note { margin-bottom: 6px; }
+  }
+  /* No keyboard on touch screens: key labels on buttons are just noise. */
+  @media (pointer: coarse) { button kbd { display: none; } }
+  @media (max-width: 640px), (pointer: coarse) {
+    #log { display: none; } #help { display: none; }
+    /* Phones: thumb-reach controls along the bottom, Check left and Travel right, compass above Travel. */
+    #hud { min-width: 0; padding: 6px 8px; font-size: 11px; gap: 2px; }
+    #pips i { width: 10px; height: 10px; }
+    #mapBtn { bottom: max(16px, env(safe-area-inset-bottom)); min-height: 52px; font-size: 14px; }
+    #mapBtn kbd, #mapBtn small { display: none; }
+    #compass { bottom: calc(max(16px, env(safe-area-inset-bottom)) + 64px); right: 14px; width: 48px; height: 48px; }
+    #needle { font-size: 14px; }
+    #banner { top: auto; bottom: calc(max(16px, env(safe-area-inset-bottom)) + 64px); max-width: min(560px, calc(100vw - 90px));
+      left: 8px; transform: none; font-size: 11px; padding: 6px 8px; text-align: left; }
+    #mapTitle { top: auto; bottom: max(16px, env(safe-area-inset-bottom)); left: 8px; right: 8px; transform: none;
+      justify-content: space-between; text-align: left; font-size: 13px; padding: 8px 10px; }
+    #mapBack { min-height: 44px; }
+    body:has(#mapTitle:not(.hidden)) #compass { bottom: calc(max(16px, env(safe-area-inset-bottom)) + 84px); }
+    /* Hint cards: short rows; once one is drawn the other two step aside so its text and the button fit. */
+    .hintcard { min-height: 64px; padding: 8px; }
+    .hintcard .back { font-size: 26px; }
+    .hintcard.faded { display: none; }
+    #hintScreen .lead { font-size: 12px; margin-bottom: 8px; }
+    #toGuess { width: 100%; min-height: 48px; }
+    body:has(#checkBtn.hidden) #banner { bottom: max(16px, env(safe-area-inset-bottom)); right: 8px; max-width: none; }
+    body #pickerBar { gap: 6px 10px; padding: 8px 10px; flex-wrap: nowrap; left: 8px; right: 8px; transform: none; max-width: none; }
+    #pickerBar .note { display: block; margin: 2px 0 0; font-size: 10px; }
+    #pickerBar #pickerTitle { font-size: 13px; }
+    #pickerBar kbd { display: none; }
+    body:has(#pickerBar:not(.hidden)) .maplibregl-ctrl-bottom-right { top: 84px; }
+    /* The map credit moves to the top so the bottom buttons and sheets never hide it. */
+    .maplibregl-ctrl-bottom-right { top: env(safe-area-inset-top, 0px); bottom: auto; }
+  }
 /* On short screens the map picker needs the room: the rules and key list live in "How to play" anyway. */
 .campusPin { font: 11px/1.2 var(--font); text-transform: uppercase; letter-spacing: 0.05em; color: var(--paper);
   background: #1b1f3aee; border: 2px solid var(--paper); box-shadow: 0 3px 0 #0008; padding: 3px 6px; cursor: pointer; white-space: nowrap; }
@@ -167,7 +242,7 @@
 <div id="help" class="panel hidden">
   Drag to move · right-drag to turn · <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> <kbd>Q</kbd><kbd>E</kbd> fly · <kbd>C</kbd> back to you · <kbd>Space</kbd> check · <kbd>M</kbd> map: click to travel
 </div>
-<div id="mapTitle" class="panel hidden">Campus map<small>Click anywhere to travel there · pinch or scroll to zoom · <kbd>M</kbd>/<kbd>Esc</kbd> to return</small></div>
+<div id="mapTitle" class="panel hidden"><span>Campus map<small class="keys">Click anywhere to travel there · pinch or scroll to zoom · <kbd>M</kbd>/<kbd>Esc</kbd> to return</small><small class="taps">Tap anywhere to travel there · pinch to zoom</small></span><button id="mapBack" class="secondary" type="button">Back</button></div>
 <div id="travelling" class="hidden"><div>Travelling…<div class="bar"><i></i></div></div></div>
 <div id="toast"></div>
 <div id="banner" class="panel hidden"><div id="bannerText"></div><div class="hint" id="bannerHint"></div></div>
@@ -178,7 +253,7 @@
 </div>
 
 <div id="pickerBar" class="panel hidden">
-  <b id="pickerTitle">Choose a university</b> <span class="note" id="pickerNote">Drag and scroll the map · click a campus to fly there</span>
+  <span><b id="pickerTitle">Choose a university</b> <span class="note" id="pickerNote">Drag and scroll the map · click a campus to fly there</span></span>
   <button class="secondary" id="pickerBack">Back <kbd>Esc</kbd></button>
 </div>
 <section id="title" class="screen">
@@ -233,11 +308,13 @@
 <aside id="results" class="panel hidden">
   <div id="modeLabel"></div>
   <div id="outcome" class="title-sm"></div>
-  <div class="big" id="targetName"></div>
-  <div id="targetCat"></div>
+  <div id="resultsHead">
+    <div><div class="big" id="targetName"></div><div id="targetCat"></div></div>
+    <div id="bigScore"><span id="total">0</span><small> / 1000</small></div>
+  </div>
+  <div id="resultsBody">
   <table id="tally"></table>
-  <div id="bigScore"><span id="total">0</span><small> / 1000</small></div>
-  <table>
+  <table id="stats">
     <tr><td>Walked</td><td id="walked"></td></tr>
     <tr><td>Shortest route</td><td id="shortest"></td></tr>
     <tr><td>Time to zone</td><td id="zoneTime"></td></tr>
@@ -246,6 +323,7 @@
   </table>
   <p id="saveError" class="hidden"></p>
   <div id="wiki" class="hidden"><img id="wikiImg" alt=""><div><b id="wikiTitle"></b><p id="wikiText"></p><a id="wikiLink" target="_blank" rel="noopener noreferrer">Read on Wikipedia ↗</a></div></div>
+  </div>
   <div class="buttons"><button id="replayBtn" class="secondary">Replay route</button><button id="shareBtn" class="secondary">Share</button><button id="againBtn">Play again</button></div>
 </aside>
 
@@ -1176,6 +1254,10 @@ function initMap() {
     pitch: 60, bearing: -20, attributionControl: { compact: true }, fadeDuration: 0,
     canvasContextAttributes: { antialias: false, preserveDrawingBuffer: DEBUG },
   });
+  // On phones the credit starts folded to its ⓘ button (tap to read it), so it doesn't cover the HUD.
+  if (matchMedia('(max-width: 640px), (pointer: coarse)').matches) {
+    map.once('load', () => document.querySelector('.maplibregl-ctrl-attrib')?.classList.remove('maplibregl-compact-show'));
+  }
   // MapLibre sets its far clipping plane from the screen, so zooming in shrank the view distance (in metres) and
   // cut off distant buildings. It reads transform.farZ right after setting it, so a getter can keep ~3 km visible.
   const transform = map.transform;
@@ -1911,7 +1993,8 @@ async function chooseHint(level, card) {
 function startGuessing() {
   game.phase = 'guess';
   hide('hintScreen');
-  $('bannerText').textContent = `Click the building · ${pack.guessLimit || 3} guesses · drag or A/D to look around`;
+  $('bannerText').textContent = TOUCH ? `Tap a building, then tap again to guess · ${pack.guessLimit || 3} guesses`
+    : `Click the building · ${pack.guessLimit || 3} guesses · drag or A/D to look around`;
   $('bannerHint').textContent = game.hint.hint;
   show('banner');
   saveDailyRun();
@@ -1940,6 +2023,15 @@ async function onBuildingClick(e) {
   if (game.justDragged) { game.justDragged = false; return; }  // that was a look-around drag, not a guess
   const f = e.features[0];
   if (!f || !game.zoneBuildings.has(f.id) || game.guessed.has(f.id)) return;
+  // Touch screens have no hover: the first tap picks a building and shows its name, a second tap guesses it.
+  if (TOUCH && game.hover !== f.id) {
+    onHover(e);
+    const tip = $('tip');
+    tip.textContent += ' · tap again to guess';
+    const half = tip.offsetWidth / 2 + 8;   // keep the label on screen near the edges
+    tip.style.left = Math.min(innerWidth - half, Math.max(half, e.point.x)) + 'px';
+    return;
+  }
   game.busy = true;
   try {
     const r = await api('guess', { buildingId: f.id });
@@ -2093,10 +2185,21 @@ const TUTORIAL = [
   ['Score out of 1000', 'Route up to 400 (full at 80% efficiency) · guess 250/200/150<br>hint bonus up to +250 · checks saved up to 100',
     'Walk efficiently, save checks, take harder hints and guess right first time. At the end you see the building, its story, and your route against the shortest one.'],
 ];
+// Phones and tablets have no keyboard: the same steps, told with taps and pinches.
+const TOUCH = matchMedia('(pointer: coarse)').matches;
+const TUTORIAL_TOUCH = {
+  0: ['Drag to move the camera · two-finger twist to turn, drag up/down to tilt · pinch to zoom<br>🗺 Travel · tap a spot to go there',
+    "You're somewhere on campus. Somewhere 450 to 900 m away is a hidden zone around one building. Look around where you stand, then open the map and tap where to go next. Each trip counts as the shortest walk there."],
+  1: ['CHECK → <span style="color:#ff4d2e">40°C hot</span> … <span style="color:#6f8cff">-10°C cold</span><br>▲ +4° warmer · ▼ -3° colder than your last check',
+    'You have 6 checks. Each gives a temperature: 40°C at the zone centre, a degree cooler for every 20 m away. Checks are numbered on the map. Your avatar has a 3 m reach: touching the zone edge counts. Tap Check there to find it. Out of checks? Your next Check is a final search.'],
+  2: ['🗺 Travel · tap anywhere to go there',
+    'Campus is big. Open the map to see every check and your trail, then tap a spot to travel there in a moment. The trip counts as the shortest walk.'],
+};
 let tutorialStep = 0;
 function showTutorial(step) {
   tutorialStep = Math.max(0, Math.min(TUTORIAL.length - 1, step));
-  const [title, art, text] = TUTORIAL[tutorialStep];
+  const [title, keyArt, keyText] = TUTORIAL[tutorialStep];
+  const [art, text] = TOUCH && TUTORIAL_TOUCH[tutorialStep] || [keyArt, keyText];
   $('tutStep').textContent = `How to play · ${tutorialStep + 1} of ${TUTORIAL.length}`;
   $('tutTitle').textContent = title;
   $('tutArt').innerHTML = art;
@@ -2214,6 +2317,22 @@ const LocalRules = (() => {
       message: `Find the zone. Check inside it to know you're there. ${CHECKS} checks.` });
   }
 
+  // The pack's bounds take in the surrounding city, so starts must be near a landmark building (mirrors
+  // Expedition.onCampus): within CAMPUS_REACH, or, on a compact campus, the candidates closest to it.
+  const CAMPUS_REACH = 120, campusAway = new Map();
+  function fromCampus(p) {
+    const key = p[0] + ',' + p[1];
+    if (!campusAway.has(key)) {
+      campusAway.set(key, Math.min(...pack.landmarks.map(l => distOf(p, buildings.get(l.building).center))));
+    }
+    return campusAway.get(key);
+  }
+  function onCampus(ring) {
+    const nearest = Math.min(...ring.map(fromCampus));
+    const limit = Math.max(CAMPUS_REACH, nearest + CAMPUS_REACH / 2);
+    return ring.filter(p => fromCampus(p) <= limit);
+  }
+
   function start(body = {}) {
     if (body.mode === 'daily') return startDaily();
     const open = cells();
@@ -2228,8 +2347,9 @@ const LocalRules = (() => {
       const zone = { centre: offsetPt(building.center, Math.random() * 360, Math.random() * 50), radius: RADIUS };
       const choices = zoneBuildings(zone).filter(b => b.height >= 4);
       if (choices.length < 5 || choices.filter(b => b.name).length < 3) continue;
-      const starts = open.filter(p => { const d = distOf(p, zone.centre); return d >= MIN_START && d <= MAX_START; });
-      if (!starts.length) continue;
+      const ring = open.filter(p => { const d = distOf(p, zone.centre); return d >= MIN_START && d <= MAX_START; });
+      if (!ring.length) continue;
+      const starts = onCampus(ring);
       const startPoint = starts[Math.floor(Math.random() * starts.length)];
       const route = shortestRoute(startPoint, p => playerInZone(zone, p),
         p => Math.max(0, distOf(p, zone.centre) - zone.radius - PLAYER_RADIUS), 300000);
@@ -2567,6 +2687,7 @@ function showCanada(mode = 'visit', firstVisit = false) {
     : 'Visit another campus';
   $('pickerNote').textContent = mode === 'home'
     ? "It's where you'll start and your default daily. You can visit other campuses or change it any time."
+    : TOUCH ? 'Drag and pinch the map · tap a campus · your home stays the same'
     : 'Drag and scroll the map · click a campus to fly there · your home stays the same';
   $('pickerBack').classList.toggle('hidden', firstVisit);
   for (const pin of game.campusPins || []) pin.getElement().classList.toggle('home', pin.getElement().dataset.id === homeCampus());
@@ -2575,7 +2696,13 @@ function showCanada(mode = 'visit', firstVisit = false) {
   map.setLayoutProperty('campus-dots', 'visibility', 'visible');
   for (const pin of game.campusPins) pin.addTo(map);
   setInteractive(true); map.setMaxBounds(null);
-  map.flyTo({ center: [-92, 52], zoom: 3.4, pitch: 0, bearing: 0, duration: 2600, essential: true });
+  // Frame every campus, so a narrow phone screen shows Victoria to St. John's too.
+  const placed = campusIndex.filter(c => c.center);
+  const lons = placed.map(c => c.center[0]), lats = placed.map(c => c.center[1]);
+  const bar = $('pickerBar').getBoundingClientRect();
+  const view = lons.length && map.cameraForBounds([[Math.min(...lons), Math.min(...lats)], [Math.max(...lons), Math.max(...lats)]],
+    { padding: { top: bar.bottom + 30, bottom: 40, left: 40, right: 40 } });
+  map.flyTo({ center: view?.center || [-92, 52], zoom: Math.min(3.4, view?.zoom ?? 3.4), pitch: 0, bearing: 0, duration: 2600, essential: true });
 }
 function closeCanada() {
   if (!game.picking || game.firstPick) return;   // the first visit needs an answer
@@ -2965,6 +3092,7 @@ $('viewDailyResult').addEventListener('click', () => {
   finish(result, null);
 });
 $('mapBtn').addEventListener('click', () => toggleMapView(true));
+$('mapBack').addEventListener('click', () => toggleMapView(false));
 $('checkBtn').addEventListener('click', doCheck);
 // A spoiler-free summary to compare with friends (no building name, no route).
 $('shareBtn').addEventListener('click', async () => {
