@@ -50,7 +50,7 @@ class CampusPackLoaderTest {
 
     @Test void catalogListsCampusesAndLoadsTheirDailyPuzzles() throws Exception {
         var catalog = new PackCatalog();
-        assertEquals(List.of("st-george", "uwaterloo"), catalog.campusIds());
+        assertEquals(List.of("st-george", "uwaterloo", "mcmaster"), catalog.campusIds());
         CampusMap map = catalog.campus("st-george").orElseThrow();
         assertEquals("America/Toronto", map.timezone().getId());
         var date = java.time.LocalDate.of(2026, 11, 25);
@@ -58,6 +58,48 @@ class CampusPackLoaderTest {
         assertTrue(map.openSpace().isOpen(daily.start()));
         assertTrue(daily.shortestToZone() > 300);
         assertTrue(catalog.campus("nowhere").isEmpty());
+    }
+
+    @Test void everyDailyOnEveryCampusStartsOutdoorsInsideTheMap() throws Exception {
+        var catalog = new PackCatalog();
+        for (String id : catalog.campusIds()) {
+            CampusMap map = catalog.campus(id).orElseThrow();
+            int days = 0;
+            for (var date = java.time.LocalDate.of(2026, 11, 1); date.isBefore(java.time.LocalDate.of(2027, 12, 6));
+                 date = date.plusDays(1)) {
+                var puzzle = map.dailyPuzzle(date).orElseThrow(() -> new AssertionError(id + " has a gap"));
+                var start = map.openSpace().nearestOpen(puzzle.start(), 8);
+                var day = date;
+                assertTrue(start.isPresent(), () -> id + " " + day + ": the daily start isn't on open ground");
+                assertTrue(map.landmark(puzzle.landmarkId()).isPresent(), () -> id + " " + day + ": unknown target");
+                days++;
+            }
+            assertEquals(400, days, id);
+        }
+    }
+
+    @Test void mcmasterPackSupportsDailyAndRandomRounds() throws Exception {
+        CampusMap map = new PackCatalog().campus("mcmaster").orElseThrow();
+        assertEquals("McMaster University — Main campus", map.name());
+        assertEquals("America/Toronto", map.timezone().getId());
+        assertEquals(53, map.landmarks().size());
+        assertTrue(map.landmarks().stream().anyMatch(l -> l.name().equals("Mills Memorial Library")));
+        assertTrue(map.landmarks().stream().anyMatch(l -> l.category().equals("Residence")));
+        var date = java.time.LocalDate.of(2026, 11, 25);
+        var daily = Expedition.daily(map, date, Instant.EPOCH);
+        assertTrue(map.openSpace().isOpen(daily.start()), "daily start is outdoors");
+        assertTrue(daily.shortestToZone() > 300);
+        var puzzle = map.dailyPuzzle(date).orElseThrow();
+        var destination = map.openSpace().nearestOpen(puzzle.zoneCentre(), 90).orElseThrow();
+        daily.travelTo(destination, Instant.EPOCH.plusSeconds(1));
+        assertTrue(daily.check(Instant.EPOCH.plusSeconds(2)).inZone());
+        String target = map.landmark(puzzle.landmarkId()).orElseThrow().name();
+        assertFalse(daily.chooseHint(Expedition.HintLevel.EASY).contains(target));
+        for (int seed = 0; seed < 10; seed++) {
+            Expedition round = Expedition.begin(map, new Random(seed), Instant.EPOCH);
+            assertTrue(map.openSpace().isOpen(round.start()), "random start is outdoors");
+            assertTrue(round.shortestToZone() > 300);
+        }
     }
 
     @Test void waterlooPackSupportsDailyAndRandomRounds() throws Exception {
