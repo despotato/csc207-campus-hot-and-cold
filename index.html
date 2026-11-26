@@ -339,7 +339,7 @@ const HEAT_COLORS = { hot: '#ff4d2e', warm: '#ff9f1c', cool: '#4cc9f0', cold: '#
 const TREND_TEXT = { first: '', warmer: '▲ Warmer', same: '■ Same', colder: '▼ Colder' };
 // About 30 seconds from one edge of campus to the other. Java's Expedition.TRAVEL_SPEED matches WALK_SPEED.
 const WALK_SPEED = 47, BACK_SPEED = 16, TURN_RATE = 190, AUTOPILOT_SPEED = 47;
-const PLAYER_RADIUS = 3; // metres; the avatar can overlap the edge of the hidden zone
+const PLAYER_RADIUS = 15; // metres; a check reaches this far, so just outside the zone edge still finds it (mirrors Expedition)
 const ZOOM_MIN = 17, ZOOM_MAX = 20.6;
 // Must match CampusPackLoader.CELL_METRES and GeoPoint's metres per degree in Java.
 const CELL = 1.5, BODY = 0.6, M_LAT = Math.PI * 6371000 / 180;
@@ -2177,7 +2177,7 @@ const TUTORIAL = [
   ['Look around, travel by map', 'Drag to move the camera, right-drag to turn · <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> <kbd>Q</kbd><kbd>E</kbd> fly · <kbd>C</kbd> back to you<br><kbd>M</kbd> or the 🗺 Map button · click a spot to travel there',
     "You're somewhere on campus. Somewhere 450 to 900 m away is a hidden zone around one building. Look around where you stand, then open the map and click where to go next. Each trip counts as the shortest walk there."],
   ['Check the temperature', '<kbd>Space</kbd> → <span style="color:#ff4d2e">40°C hot</span> … <span style="color:#6f8cff">-10°C cold</span><br>▲ +4° warmer · ▼ -3° colder than your last check',
-    'You have 6 checks. Each gives a temperature: 40°C at the zone centre, a degree cooler for every 20 m away. Checks are numbered on the right and on the map. Your avatar has a 3 m reach: touching the zone edge counts. Press Space there to find it. Out of checks? Your next Space is a final search.'],
+    'You have 6 checks. Each gives a temperature: 40°C at the zone centre, a degree cooler for every 20 m away. Checks are numbered on the right and on the map. A check reaches 15 m around you: within 15 m of the zone edge counts. Press Space there to find it. Out of checks? Your next Space is a final search.'],
   ['Travel by map', '<kbd>M</kbd> or the 🗺 Map button · click anywhere to go there',
     'Campus is big. Open the map to see every check and your trail, then click a spot to travel there in a moment. The trip counts as the shortest walk.'],
   ['Pick a hint blind', 'EASY ×1 what you can see<br>NORMAL ×1.5 what students know<br>HARD ×2 campus history',
@@ -2191,7 +2191,7 @@ const TUTORIAL_TOUCH = {
   0: ['Drag to move the camera · two-finger twist to turn, drag up/down to tilt · pinch to zoom<br>🗺 Travel · tap a spot to go there',
     "You're somewhere on campus. Somewhere 450 to 900 m away is a hidden zone around one building. Look around where you stand, then open the map and tap where to go next. Each trip counts as the shortest walk there."],
   1: ['CHECK → <span style="color:#ff4d2e">40°C hot</span> … <span style="color:#6f8cff">-10°C cold</span><br>▲ +4° warmer · ▼ -3° colder than your last check',
-    'You have 6 checks. Each gives a temperature: 40°C at the zone centre, a degree cooler for every 20 m away. Checks are numbered on the map. Your avatar has a 3 m reach: touching the zone edge counts. Tap Check there to find it. Out of checks? Your next Check is a final search.'],
+    'You have 6 checks. Each gives a temperature: 40°C at the zone centre, a degree cooler for every 20 m away. Checks are numbered on the map. A check reaches 15 m around you: within 15 m of the zone edge counts. Tap Check there to find it. Out of checks? Your next Check is a final search.'],
   2: ['🗺 Travel · tap anywhere to go there',
     'Campus is big. Open the map to see every check and your trail, then tap a spot to travel there in a moment. The trip counts as the shortest walk.'],
 };
