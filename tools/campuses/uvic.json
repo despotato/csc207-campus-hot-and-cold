@@ -1,0 +1,399 @@
+{
+  "id": "uvic",
+  "name": "University of Victoria",
+  "timezone": "America/Vancouver",
+  "bounds": {
+    "south": 48.45395,
+    "west": -123.32263,
+    "north": 48.47215,
+    "east": -123.29827
+  },
+  "mascot": {
+    "name": "Vikes",
+    "species": "viking",
+    "colors": {
+      "fur": "#E0B38A",
+      "belly": "#F5AA1C",
+      "dark": "#3b2a1e",
+      "primary": "#005493",
+      "secondary": "#F5AA1C"
+    },
+    "school": "University of Victoria"
+  },
+  "flat": [],
+  "dailyFrom": "2026-11-01",
+  "landmarks": [
+    {
+      "osm": "w419367673",
+      "name": "Centre for Athletics, Recreation and Special Abilities",
+      "category": "Athletics",
+      "wikipedia": null
+    },
+    {
+      "osm": "r21192426",
+      "name": "Fraser Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "r3959631",
+      "name": "Clearihue Building",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It underwent a major $15 million redevelopment in 2013."
+      ]
+    },
+    {
+      "osm": "r15028474",
+      "name": "Jamie Cassels Centre",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It was called the University Centre until 2020, when it was renamed after a departing president.",
+        "The university's art gallery and museum was here until it moved to the main library in 2011."
+      ]
+    },
+    {
+      "osm": "w40544564",
+      "name": "McKinnon Building",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "Its gym was the former home of the Vikes; the basketball court was named after two legendary coaches in 2002."
+      ]
+    },
+    {
+      "osm": "w40547639",
+      "name": "Student Union Building",
+      "category": "Campus life",
+      "wikipedia": null,
+      "facts": [
+        "The student society runs it, with free phones, a darkroom and study space.",
+        "It was one of the first buildings built on campus."
+      ]
+    },
+    {
+      "osm": "r238664",
+      "name": "Cornett Building",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It is a sprawling complex of courts and staircases, home to Anthropology, Psychology and Sociology."
+      ]
+    },
+    {
+      "osm": "w40545428",
+      "name": "MacLaurin Building",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "This modernist complex houses the Faculty of Education, the School of Music and the David Lam Auditorium."
+      ]
+    },
+    {
+      "osm": "w40545566",
+      "name": "Engineering Laboratory Wing",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w30351532",
+      "name": "Petch Building",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It houses Biochemistry and Microbiology and the School of Earth and Ocean Sciences."
+      ]
+    },
+    {
+      "osm": "w40548183",
+      "name": "Visual Arts Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w40547630",
+      "name": "Bob Wright Centre",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It is home to Chemistry, Earth and Ocean Sciences and the Canadian Centre for Climate Modelling and Analysis."
+      ]
+    },
+    {
+      "osm": "w40547634",
+      "name": "Continuing Studies Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w40547633",
+      "name": "Michael Williams Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w30351475",
+      "name": "David Strong Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w40547628",
+      "name": "Business and Economics Building",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It houses the business school and the offices of senior university administrators."
+      ]
+    },
+    {
+      "osm": "w30351509",
+      "name": "Cunningham Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w40548184",
+      "name": "Fine Arts Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w40545570",
+      "name": "Medical Sciences Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w40547644",
+      "name": "Health and Wellness Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w40547629",
+      "name": "First Peoples House",
+      "category": "Campus life",
+      "wikipedia": null,
+      "facts": [
+        "It is a gathering place for Indigenous students, co-designed by Alfred Waugh and Kenneth Wong."
+      ]
+    },
+    {
+      "osm": "w40545423",
+      "name": "Hickman Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w114451766",
+      "name": "Wallace",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w114454298",
+      "name": "Wilson",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w114451788",
+      "name": "Poole",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w40547635",
+      "name": "Hut E",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w114434831",
+      "name": "Hut R",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w114368832",
+      "name": "Halpern Centre for Graduate Students",
+      "category": "Campus life",
+      "wikipedia": null,
+      "facts": [
+        "Students call it the Grad Centre; it houses the graduate student society and the Grad House restaurant."
+      ]
+    },
+    {
+      "osm": "w40547666",
+      "name": "Thompson",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w114451797",
+      "name": "Park Residence",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w114451789",
+      "name": "Cunliffe",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w40545439",
+      "name": "Mearns Centre for Learning",
+      "category": "Library",
+      "wikipedia": null,
+      "facts": [
+        "It is the main library, home to the Special Collections and University Archives."
+      ]
+    },
+    {
+      "osm": "w1123788803",
+      "name": "Cheko’nien House",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w40548177",
+      "name": "Phoenix Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w40545427",
+      "name": "Music Wing",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w1123788801",
+      "name": "Sngequ House",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w40545426",
+      "name": "Human and Social Development Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w40545441",
+      "name": "Elliott Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w40545568",
+      "name": "Engineering/Computer Science Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w40545421",
+      "name": "Sedgewick Building - C Wing",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w40548173",
+      "name": "University Club",
+      "category": "Campus life",
+      "wikipedia": null,
+      "facts": [
+        "It opened on March 16, 1982, as the faculty club."
+      ]
+    },
+    {
+      "osm": "w40545573",
+      "name": "David Turpin Building - A Wing",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w40545420",
+      "name": "Sedgewick Building - Vanderkerkhove B Wing",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w40545440",
+      "name": "Elliott Lecture Theatre",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w40545574",
+      "name": "David Turpin Building - B Wing",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w40547650",
+      "name": "Saunders Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w114451775",
+      "name": "Roderick Haig-Brown",
+      "category": "Residence",
+      "wikipedia": null,
+      "facts": [
+        "It is a large residence hall named after a writer and conservationist who worked to protect the Fraser River."
+      ]
+    },
+    {
+      "osm": "w40545425",
+      "name": "Sedgewick Building - A Wing",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w27375743",
+      "name": "Interfaith Chapel",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w114451787",
+      "name": "Carroll",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w1123791339",
+      "name": "South Tower",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w114451793",
+      "name": "Baker",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w114451781",
+      "name": "Stephen",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w40547660",
+      "name": "Arthur Currie",
+      "category": "Residence",
+      "wikipedia": null,
+      "facts": [
+        "It is an on-campus residence named after the general who commanded the Canadian Corps in the First World War."
+      ]
+    }
+  ],
+  "dailyStartInsideBounds": true
+}

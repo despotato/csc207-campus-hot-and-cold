@@ -1,0 +1,294 @@
+{
+  "id": "sfu",
+  "name": "Simon Fraser University — Burnaby campus",
+  "timezone": "America/Vancouver",
+  "bounds": {
+    "south": 49.26956,
+    "west": -122.93479,
+    "north": 49.28394,
+    "east": -122.90171
+  },
+  "mascot": {
+    "name": "McFogg the Dog",
+    "species": "dog",
+    "colors": {
+      "fur": "#2b2b2b",
+      "belly": "#555555",
+      "dark": "#111111",
+      "primary": "#A6192E",
+      "secondary": "#FFFFFF"
+    },
+    "school": "Simon Fraser University"
+  },
+  "flat": [],
+  "dailyFrom": "2026-11-01",
+  "landmarks": [
+    {
+      "osm": "r104324",
+      "name": "Academic Quadrangle",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "Its Brutalist courtyard has appeared as a location in many films and TV shows.",
+        "It was part of the original campus designed by Arthur Erickson and Geoffrey Massey, which opened in 1965."
+      ]
+    },
+    {
+      "osm": "w103095122",
+      "name": "Maggie Benson Centre",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w102359674",
+      "name": "West Mall Complex",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w87234465",
+      "name": "Education Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w102359672",
+      "name": "Lorne Davies Complex",
+      "category": "Athletics",
+      "wikipedia": null,
+      "facts": [
+        "It holds the main gym and pool, named after the university's first athletic director."
+      ]
+    },
+    {
+      "osm": "w87234462",
+      "name": "Robert C. Brown Hall",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w260067662",
+      "name": "Blusson Hall",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w32894624",
+      "name": "Shrum Science Centre - Biology",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "r1453412",
+      "name": "Applied Sciences Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w32604421",
+      "name": "Shrum Science Centre - K",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w102355705",
+      "name": "TASC 2",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w32894625",
+      "name": "Shrum Science Centre - Chemistry",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It is part of a science complex named after the university's first chancellor."
+      ]
+    },
+    {
+      "osm": "w40703732",
+      "name": "Discovery 1",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w102371244",
+      "name": "WAC Bennett Library",
+      "category": "Library",
+      "wikipedia": null,
+      "facts": [
+        "It is the main library, named after a former Premier of British Columbia.",
+        "Its Brutalist building has been used as a filming location for movies and television."
+      ]
+    },
+    {
+      "osm": "w32894623",
+      "name": "Shrum Science Centre - Physics",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w32528084",
+      "name": "South Science Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w102355683",
+      "name": "TASC 1",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w102388637",
+      "name": "Dining Commons",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w867520774",
+      "name": "Student Union Building",
+      "category": "Campus life",
+      "wikipedia": null,
+      "facts": [
+        "The student society finished building it, together with a new stadium, in August 2020."
+      ]
+    },
+    {
+      "osm": "w32526868",
+      "name": "Strand Hall",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w1035487348",
+      "name": "Courtyard Residence",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w102359673",
+      "name": "Rotunda",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w102388641",
+      "name": "McTaggart-Cowan Hall",
+      "category": "Residence",
+      "wikipedia": null,
+      "facts": [
+        "It is a residence named after the university's first president."
+      ]
+    },
+    {
+      "osm": "w40703730",
+      "name": "Discovery 2",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w102388631",
+      "name": "Hamilton Hall",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w980707206",
+      "name": "West Tower",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w980707207",
+      "name": "East Tower",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w1201398774",
+      "name": "Marianne and Edward Gibson Art Museum",
+      "category": "Campus life",
+      "wikipedia": null,
+      "facts": [
+        "It opened in September 2025 as a 12,000-square-foot arts and cultural facility."
+      ]
+    },
+    {
+      "osm": "w1084905106",
+      "name": "South East Classroom Block",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w32528064",
+      "name": "Diamond Alumni Centre",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w87234469",
+      "name": "Halpern Centre",
+      "category": "Campus life",
+      "wikipedia": null,
+      "facts": [
+        "Students call it the Grad Centre; it houses the graduate student society and a restaurant."
+      ]
+    },
+    {
+      "osm": "w102388880",
+      "name": "Qualicum Residence",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w102388877",
+      "name": "Kitimat Residence",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w102388884",
+      "name": "Penticton Residence",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w102388882",
+      "name": "Squamish Residence",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w32894614",
+      "name": "Kelowna Residence",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w102388878",
+      "name": "Kimberley Residence",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w102388881",
+      "name": "Cowichan Residence",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w102388885",
+      "name": "Chilcotin Residence",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w102388879",
+      "name": "Quesnel Residence",
+      "category": "Residence",
+      "wikipedia": null
+    }
+  ],
+  "dailyStartInsideBounds": true
+}

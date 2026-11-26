@@ -1,0 +1,487 @@
+{
+  "id": "ubc",
+  "name": "University of British Columbia — Vancouver campus",
+  "timezone": "America/Vancouver",
+  "bounds": {
+    "south": 49.24996,
+    "west": -123.26107,
+    "north": 49.27154,
+    "east": -123.23643
+  },
+  "mascot": {
+    "name": "Thunder",
+    "species": "thunderbird",
+    "colors": {
+      "fur": "#2452A0",
+      "belly": "#F5B700",
+      "dark": "#111111",
+      "primary": "#002145",
+      "secondary": "#F5B700"
+    },
+    "school": "University of British Columbia"
+  },
+  "flat": [],
+  "dailyFrom": "2026-11-01",
+  "landmarks": [
+    {
+      "osm": "w379160748",
+      "name": "Robert H. Lee Alumni Centre",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w99580254",
+      "name": "Cecil Green Park House",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w83433027",
+      "name": "Mathematics Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w36810746",
+      "name": "Music Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w83443400",
+      "name": "Hebb Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w27989131",
+      "name": "Buchanan Tower",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It was built in 1972 and is named after a former university president, like the nearby Buchanan Building."
+      ]
+    },
+    {
+      "osm": "w99435186",
+      "name": "Asian Centre",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "Its roof is shaped like a traditional pagoda, and it holds one of North America's largest research collections in Asian languages.",
+        "It was built with steel girders from Japan's pavilion at the 1970 Osaka Expo."
+      ]
+    },
+    {
+      "osm": "w36810751",
+      "name": "Old Administration Building",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w83433028",
+      "name": "Old Auditorium",
+      "category": "Campus life",
+      "wikipedia": null,
+      "facts": [
+        "It is a concert hall used by the School of Music and the opera program.",
+        "It opened in 1925, one of the first buildings on the Point Grey campus."
+      ]
+    },
+    {
+      "osm": "w33176178",
+      "name": "Museum of Anthropology",
+      "category": "Campus life",
+      "wikipedia": "Museum of Anthropology at UBC",
+      "facts": [
+        "It holds close to 50,000 ethnographic objects and about 535,000 archaeological objects.",
+        "Its building, designed by Arthur Erickson, opened in 1976; the museum began with the purchase of the Frank Burnett Collection in 1927."
+      ]
+    },
+    {
+      "osm": "w98969616",
+      "name": "Doug Mitchell Thunderbird Winter Sports Centre",
+      "category": "Athletics",
+      "wikipedia": "Thunderbird Sports Centre",
+      "facts": [
+        "It is home to the university's men's and women's ice hockey teams.",
+        "It was built around an older rink, the historic Father Bauer Arena, which opened in October 1963."
+      ]
+    },
+    {
+      "osm": "w27318163",
+      "name": "Irving K. Barber Learning Centre",
+      "category": "Library",
+      "wikipedia": "Irving K. Barber Learning Centre",
+      "facts": [
+        "Students call it IKB; it is a four-storey learning centre with library collections and study space.",
+        "It is built around the refurbished core of the university's 1925 Main Library."
+      ]
+    },
+    {
+      "osm": "w391516812",
+      "name": "AMS Nest (Student Union Building)",
+      "category": "Campus life",
+      "wikipedia": "AMS Student Nest"
+    },
+    {
+      "osm": "w341691691",
+      "name": "War Memorial Gym",
+      "category": "Athletics",
+      "wikipedia": "UBC War Memorial Gymnasium",
+      "facts": [
+        "It is home to the university's basketball and volleyball teams.",
+        "It was dedicated on October 26, 1951, to the families of service members who died in the two world wars."
+      ]
+    },
+    {
+      "osm": "w258742026",
+      "name": "Allard School of Law",
+      "category": "College",
+      "wikipedia": "Peter A. Allard School of Law",
+      "facts": [
+        "Its law school was renamed in 2015 after a $30 million gift from an alumnus.",
+        "The law school started in army huts after the Second World War; its first permanent building came in 1951 and was replaced in 2009."
+      ]
+    },
+    {
+      "osm": "w27318161",
+      "name": "Walter C. Koerner Library",
+      "category": "Library",
+      "wikipedia": "Walter C. Koerner Library",
+      "facts": [
+        "It holds the main humanities and social sciences collection.",
+        "It was designed by Arthur Erickson and opened in 1997."
+      ]
+    },
+    {
+      "osm": "w517623349",
+      "name": "Brock Commons - Tallwood House",
+      "category": "Residence",
+      "wikipedia": "Brock Commons Tallwood House",
+      "facts": [
+        "It is an 18-storey student residence built mostly of wood.",
+        "When it opened, it was the tallest mass timber structure in the world."
+      ]
+    },
+    {
+      "osm": "w36810745",
+      "name": "Morris and Helen Belkin Art Gallery",
+      "category": "Campus life",
+      "wikipedia": "Morris and Helen Belkin Art Gallery",
+      "facts": [
+        "It houses the university's collection of contemporary art.",
+        "Its building, designed by Peter Cardew, opened in 1995 and won a gold medal from the Royal Architectural Institute of Canada in 2012."
+      ]
+    },
+    {
+      "osm": "w36835375",
+      "name": "Beaty Biodiversity Museum",
+      "category": "Campus life",
+      "wikipedia": "Beaty Biodiversity Museum",
+      "facts": [
+        "Its natural history collections fill 20,000 square feet of exhibit space, including a huge blue whale skeleton.",
+        "It opened to the public on October 16, 2010, in a building designed by Patkau Architects."
+      ]
+    },
+    {
+      "osm": "w99136486",
+      "name": "Life Sciences Centre",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w83469499",
+      "name": "Biological Sciences Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w341691675",
+      "name": "Life Building",
+      "category": "Campus life",
+      "wikipedia": null,
+      "facts": [
+        "It was the student union building before the newer student union opened in 2015."
+      ]
+    },
+    {
+      "osm": "w98969617",
+      "name": "Thunderbird Arena",
+      "category": "Athletics",
+      "wikipedia": null
+    },
+    {
+      "osm": "w341691670",
+      "name": "UBC Aquatic Centre",
+      "category": "Athletics",
+      "wikipedia": null
+    },
+    {
+      "osm": "w99272774",
+      "name": "Civil And Mechanical Engineering Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w89185122",
+      "name": "Forest Sciences Centre",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w156138512",
+      "name": "Pharmaceutical Sciences Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w83542777",
+      "name": "Neville Scarfe Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "r1420040",
+      "name": "P. A. Woodward Instructional Resources Centre",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w679347065",
+      "name": "HR MacMillan Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w1500881889",
+      "name": "Recreation Centre North",
+      "category": "Athletics",
+      "wikipedia": null
+    },
+    {
+      "osm": "w1512763652",
+      "name": "MacIsaac Health Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w472883350",
+      "name": "Brimacombe Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w36827412",
+      "name": "Brock Hall",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "Its art collection was started in the 1950s to decorate the walls of the then-new building, under artist B.C. Binning."
+      ]
+    },
+    {
+      "osm": "w83443403",
+      "name": "Hennings Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w36835373",
+      "name": "David Strangway Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w451632468",
+      "name": "Djavad Mowafaghian Centre for Brain Health",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w83433307",
+      "name": "Henry Angus Building",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It is the home of the business school.",
+        "A major renovation in 2012 added 55,000 square feet to the original building."
+      ]
+    },
+    {
+      "osm": "w56701161",
+      "name": "Earth Sciences Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w1065942970",
+      "name": "Exchange Residence",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w99272776",
+      "name": "Fred Kaiser Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w1393086141",
+      "name": "Chemical and Biological Engineering Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w83443401",
+      "name": "Chemistry Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w1376573039",
+      "name": "Gordon B. Shrum Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w27989134",
+      "name": "Student Recreation Centre",
+      "category": "Athletics",
+      "wikipedia": null,
+      "facts": [
+        "It is home to intramural sports for students."
+      ]
+    },
+    {
+      "osm": "w384612870",
+      "name": "Tamarack House",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w99417834",
+      "name": "Leonard S. Klinck Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w98838332",
+      "name": "Douglas T. Kenny Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w83433026",
+      "name": "Geography Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w36835372",
+      "name": "Macdonald Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w83469502",
+      "name": "UBC Bookstore",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w36811093",
+      "name": "Michael Smith Laboratories",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w98837848",
+      "name": "Ritsumeikan House",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w83441658",
+      "name": "Wesbrook Building",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It is named after the university's first president, like a nearby mall and village."
+      ]
+    },
+    {
+      "osm": "w648995790",
+      "name": "UBC Archives & UBC Rare Books and Special Collections",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w547310213",
+      "name": "c̓əsnaʔəm House",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w99575352",
+      "name": "Leon & Thea Koerner University Centre",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "r1420041",
+      "name": "Woodward Library",
+      "category": "Library",
+      "wikipedia": null,
+      "facts": [
+        "It has the largest biomedical collection in Western Canada."
+      ]
+    },
+    {
+      "osm": "w33176124",
+      "name": "Food, Nutrition and Health Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w98963080",
+      "name": "Clements Green",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w436477648",
+      "name": "Oak House",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w99272769",
+      "name": "MacLeod Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w99436425",
+      "name": "First Nations Longhouse",
+      "category": "Campus life",
+      "wikipedia": null,
+      "facts": [
+        "It is a gathering place for Indigenous students, built in the style of a Coast Salish longhouse, with a library next door."
+      ]
+    },
+    {
+      "osm": "w99136765",
+      "name": "School of Population and Public Health",
+      "category": "College",
+      "wikipedia": null
+    },
+    {
+      "osm": "w83443396",
+      "name": "Chemistry Physics Building",
+      "category": "Teaching",
+      "wikipedia": null
+    }
+  ],
+  "dailyStartInsideBounds": true
+}

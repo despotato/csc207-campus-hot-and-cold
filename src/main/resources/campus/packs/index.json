@@ -34,6 +34,27 @@
       "short": "Laurier",
       "file": "laurier.json",
       "timezone": "America/Toronto"
+    },
+    {
+      "id": "ubc",
+      "name": "University of British Columbia — Vancouver campus",
+      "short": "UBC",
+      "file": "ubc.json",
+      "timezone": "America/Vancouver"
+    },
+    {
+      "id": "sfu",
+      "name": "Simon Fraser University — Burnaby campus",
+      "short": "SFU",
+      "file": "sfu.json",
+      "timezone": "America/Vancouver"
+    },
+    {
+      "id": "uvic",
+      "name": "University of Victoria",
+      "short": "UVic",
+      "file": "uvic.json",
+      "timezone": "America/Vancouver"
     }
   ]
 }
