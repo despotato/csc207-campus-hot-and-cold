@@ -51,7 +51,7 @@ class CampusPackLoaderTest {
 
     @Test void catalogListsCampusesAndLoadsTheirDailyPuzzles() throws Exception {
         var catalog = new PackCatalog();
-        assertEquals(List.of("st-george", "uwaterloo", "mcmaster", "guelph", "laurier", "ubc", "sfu", "uvic", "ualberta", "ucalgary", "usask", "western", "queens", "uottawa", "carleton", "york", "tmu", "mcgill", "concordia", "umontreal", "ulaval", "dal", "mun"), catalog.campusIds());
+        assertEquals(List.of("st-george", "uwaterloo", "mcmaster", "guelph", "laurier", "ubc", "sfu", "uvic", "ualberta", "ucalgary", "usask", "western", "queens", "uottawa", "carleton", "york", "tmu", "mcgill", "concordia", "umontreal", "ulaval", "dal", "mun", "umanitoba"), catalog.campusIds());
         CampusMap map = catalog.campus("st-george").orElseThrow();
         assertEquals("America/Toronto", map.timezone().getId());
         var date = java.time.LocalDate.of(2026, 11, 25);

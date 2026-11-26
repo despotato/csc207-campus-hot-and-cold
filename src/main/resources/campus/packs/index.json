@@ -275,6 +275,18 @@
         -52.7345,
         47.574
       ]
+    },
+    {
+      "id": "umanitoba",
+      "name": "University of Manitoba — Fort Garry campus",
+      "short": "UManitoba",
+      "file": "umanitoba.json",
+      "timezone": "America/Winnipeg",
+      "region": "Manitoba",
+      "center": [
+        -97.1325,
+        49.8095
+      ]
     }
   ]
 }

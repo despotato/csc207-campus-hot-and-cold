@@ -133,10 +133,12 @@
   }
   @media (pointer: coarse) { #checkBtn { display: block; } }
 /* On short screens the map picker needs the room: the rules and key list live in "How to play" anyway. */
-@media (max-height: 860px) { #title .rules, #title .controls:not(#difficulty) { display: none; } }
-#campusMap { flex: 1 0 100%; width: 100%; height: clamp(150px, 26vh, 260px); border: 3px solid var(--ink); box-shadow: 0 4px 0 var(--ink); margin-bottom: 4px; }
-#campusMap canvas { image-rendering: pixelated; }
-#campusCaption { flex: 1 0 100%; margin: 2px 0 0; }
+.campusPin { font: 11px/1.2 var(--font); text-transform: uppercase; letter-spacing: 0.05em; color: var(--paper);
+  background: #1b1f3aee; border: 2px solid var(--paper); box-shadow: 0 3px 0 #0008; padding: 3px 6px; cursor: pointer; white-space: nowrap; }
+.campusPin.current { color: var(--ink); background: var(--gold); border-color: var(--ink); }
+.campusPin:hover { background: var(--hot); color: #fff; }
+#pickerBar { position: fixed; top: calc(12px + env(safe-area-inset-top, 0px)); left: 50%; transform: translateX(-50%);
+  display: flex; gap: 12px; align-items: center; flex-wrap: wrap; justify-content: center; max-width: calc(100% - 32px); z-index: 5; }
 #campusSelect { font: inherit; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; width: 100%;
   max-width: 100%; padding: 8px 10px; background: #fff8e1; color: #1d2038; border: 2px solid #1d2038;
   box-shadow: 3px 3px 0 rgba(0,0,0,0.35); border-radius: 0; cursor: pointer; }
@@ -172,6 +174,10 @@
   <div><span style="background:#4cf0d4"></span>Shortest route</div>
 </div>
 
+<div id="pickerBar" class="panel hidden">
+  <b>Choose a university</b> <span class="note">Drag and scroll the map · click a campus to fly there</span>
+  <button class="secondary" id="pickerBack">Back <kbd>Esc</kbd></button>
+</div>
 <section id="title" class="screen">
   <div class="card panel">
     <h1>Campus<br>Hot <span class="amp">&amp;</span> Cold</h1>
@@ -755,20 +761,21 @@ function buildingLayer() {
 // ---------- map ----------
 function buildStyle() {
   return {
-    version: 8,
+    version: 8, glyphs: 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf',
     sources: { omt: { type: 'vector', url: 'https://tiles.openfreemap.org/planet',
       attribution: '<a href="https://openfreemap.org">OpenFreeMap</a> © <a href="https://www.openmaptiles.org/">OpenMapTiles</a> Data © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' } },
     sky: { 'sky-color': '#7ec8f0', 'horizon-color': '#d9e7ee', 'fog-color': '#b9c4c9', 'sky-horizon-blend': 0.5, 'horizon-fog-blend': 0.6, 'fog-ground-blend': 0.85 },
     layers: [
-      { id: 'bg', type: 'background', paint: { 'background-color': '#b4b1aa' } },
-      { id: 'paving', type: 'background', paint: { 'background-pattern': 'paving', 'background-opacity': 0.9 } },
+      { id: 'bg', type: 'background', paint: { 'background-color': ['interpolate', ['linear'], ['zoom'], 7, '#8fb46a', 12, '#b4b1aa'] } },
+      { id: 'paving', type: 'background', paint: { 'background-pattern': 'paving',
+        'background-opacity': ['interpolate', ['linear'], ['zoom'], 11, 0, 13, 0.9] } },
       { id: 'landcover', type: 'fill', source: 'omt', 'source-layer': 'landcover', paint: { 'fill-color': '#79a955' } },
       { id: 'landuse-grass', type: 'fill', source: 'omt', 'source-layer': 'landuse',
         filter: ['in', ['get', 'class'], ['literal', ['residential', 'grass', 'cemetery', 'pitch', 'playground']]],
         paint: { 'fill-color': ['match', ['get', 'class'], 'residential', '#a9aea0', '#79a955'] } },
       { id: 'park', type: 'fill', source: 'omt', 'source-layer': 'park', paint: { 'fill-color': '#6fae4f' } },
       { id: 'water', type: 'fill', source: 'omt', 'source-layer': 'water', paint: { 'fill-color': '#3f7fd1' } },
-      { id: 'road', type: 'line', source: 'omt', 'source-layer': 'transportation',
+      { id: 'road', type: 'line', source: 'omt', 'source-layer': 'transportation', minzoom: 10,
         filter: ['!', ['in', ['get', 'class'], ['literal', ['path', 'track']]]],
         paint: { 'line-color': '#55545a', 'line-width': ['interpolate', ['exponential', 2], ['zoom'], 14, 2, 19, 26] } },
     ],
@@ -2086,51 +2093,72 @@ function storedDailyResult() {
 }
 
 /**
- * Choose a university on a pannable, zoomable map of Canada: a dot and label per campus (labels that would
- * overlap hide until you zoom in). The current campus is gold. Built once; the start screen reuses it.
+ * Full-screen university picker on the game map itself: the camera pulls out to Canada, every campus is a labelled
+ * dot, you drag and scroll like any map, and clicking one flies the camera down into that campus before it loads.
  */
-function campusPicker(box, go) {
-  const el = document.createElement('div');
-  el.id = 'campusMap'; el.setAttribute('role', 'application'); el.setAttribute('aria-label', 'Map of Canadian campuses');
-  const caption = document.createElement('div');
-  caption.className = 'note'; caption.id = 'campusCaption';
-  const current = campusIndex.find(c => c.id === pack.id);
-  caption.textContent = `${current?.name || pack.campus} · click another campus to switch, drag and scroll to explore`;
-  box.append(el, caption);
-  const picker = new maplibregl.Map({
-    container: el, pixelRatio: Math.max(PIX, 0.55), attributionControl: false, dragRotate: false, pitchWithRotate: false,
-    center: current?.center || [-96, 55], zoom: 3.4, minZoom: 2, maxZoom: 14, maxBounds: [[-160, 30], [-35, 75]],
-    style: {
-      version: 8, glyphs: 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf',
-      sources: { omt: { type: 'vector', url: 'https://tiles.openfreemap.org/planet' } },
-      layers: [
-        { id: 'land', type: 'background', paint: { 'background-color': '#8fb46a' } },
-        { id: 'water', type: 'fill', source: 'omt', 'source-layer': 'water', paint: { 'fill-color': '#3f7fd1' } },
-        { id: 'provinces', type: 'line', source: 'omt', 'source-layer': 'boundary', filter: ['==', ['get', 'admin_level'], 4],
-          paint: { 'line-color': '#4d6b3a', 'line-width': 1, 'line-dasharray': [3, 2] } },
-        { id: 'countries', type: 'line', source: 'omt', 'source-layer': 'boundary', filter: ['==', ['get', 'admin_level'], 2],
-          paint: { 'line-color': '#1d2038', 'line-width': 2 } },
-      ],
-    },
+function addCampusLayers() {
+  map.addSource('campus-index', { type: 'geojson', data: fc(campusIndex.filter(c => c.center).map(c => ({ type: 'Feature',
+    properties: { id: c.id, label: c.short || c.name, current: c.id === pack.id ? 1 : 0 },
+    geometry: { type: 'Point', coordinates: c.center } }))) });
+  const isCurrent = ['==', ['get', 'current'], 1];
+  map.addLayer({ id: 'campus-dots', type: 'circle', source: 'campus-index', layout: { visibility: 'none' }, paint: {
+    'circle-radius': ['case', isCurrent, 10, 8], 'circle-color': ['case', isCurrent, '#ffd23f', '#e94f37'],
+    'circle-stroke-width': 3, 'circle-stroke-color': '#1d2038', 'circle-pitch-alignment': 'map' } });
+  map.on('click', 'campus-dots', e => { if (game.picking) pickCampus(e.features[0].properties.id); });
+  map.on('mouseenter', 'campus-dots', () => { if (game.picking) map.getCanvas().style.cursor = 'pointer'; });
+  map.on('mouseleave', 'campus-dots', () => (map.getCanvas().style.cursor = ''));
+  // Crisp pixel-font labels (GL text would render at the game's low resolution). Current campus first, so it wins.
+  game.campusPins = [...campusIndex].filter(c => c.center).sort((a, b) => (b.id === pack.id) - (a.id === pack.id)).map(c => {
+    const el = document.createElement('button');
+    el.className = 'campusPin' + (c.id === pack.id ? ' current' : ''); el.textContent = c.short || c.name; el.title = c.name;
+    el.addEventListener('click', e => { e.stopPropagation(); pickCampus(c.id); });
+    return new maplibregl.Marker({ element: el, anchor: 'top', offset: [0, 12] }).setLngLat(c.center);
   });
-  picker.touchZoomRotate.disableRotation();
-  picker.on('load', () => {
-    picker.addSource('campuses', { type: 'geojson', data: fc(campusIndex.filter(c => c.center).map(c => ({ type: 'Feature',
-      properties: { id: c.id, label: c.short || c.name, current: c.id === pack.id ? 1 : 0 },
-      geometry: { type: 'Point', coordinates: c.center } }))) });
-    const isCurrent = ['==', ['get', 'current'], 1];
-    picker.addLayer({ id: 'campus-dots', type: 'circle', source: 'campuses', paint: {
-      'circle-radius': ['case', isCurrent, 8, 6], 'circle-color': ['case', isCurrent, '#ffd23f', '#e94f37'],
-      'circle-stroke-width': 3, 'circle-stroke-color': '#1d2038' } });
-    picker.addLayer({ id: 'campus-labels', type: 'symbol', source: 'campuses', layout: {
-      'text-field': ['get', 'label'], 'text-font': ['Noto Sans Bold'], 'text-size': 12, 'text-transform': 'uppercase',
-      'text-anchor': 'top', 'text-offset': [0, 0.9], 'symbol-sort-key': ['-', 1, ['get', 'current']], 'text-padding': 3 },
-      paint: { 'text-color': ['case', isCurrent, '#ffd23f', '#fff8e1'], 'text-halo-color': '#1d2038', 'text-halo-width': 2 } });
-    for (const layer of ['campus-dots', 'campus-labels']) {
-      picker.on('click', layer, e => go(e.features[0].properties.id));
-      picker.on('mouseenter', layer, () => (picker.getCanvas().style.cursor = 'pointer'));
-      picker.on('mouseleave', layer, () => (picker.getCanvas().style.cursor = ''));
-    }
+  map.on('render', declutterPins);
+}
+/** Hide labels that would overlap one already shown (zoom in to separate a cluster). */
+function declutterPins() {
+  if (!game.picking || !game.campusPins) return;
+  const shown = [];
+  for (const pin of game.campusPins) {
+    const el = pin.getElement(), p = map.project(pin.getLngLat()), w = el.offsetWidth || 60, h = el.offsetHeight || 20;
+    const box = [p.x - w / 2 - 4, p.y + 12, p.x + w / 2 + 4, p.y + 12 + h];
+    const clash = shown.some(o => box[0] < o[2] && o[0] < box[2] && box[1] < o[3] && o[1] < box[3]);
+    el.style.visibility = clash ? 'hidden' : 'visible';
+    if (!clash) shown.push(box);
+  }
+}
+const CAMPUS_VIEW = { zoom: 15.6, pitch: 60 };
+function showCanada() {
+  if (game.phase !== 'title' || game.picking) return;
+  game.picking = true; game.orbiting = false;
+  $('title').classList.add('hidden'); $('pickerBar').classList.remove('hidden');
+  map.setLayoutProperty('campus-dots', 'visibility', 'visible');
+  for (const pin of game.campusPins) pin.addTo(map);
+  setInteractive(true); map.setMaxBounds(null);
+  map.flyTo({ center: [-92, 52], zoom: 3.4, pitch: 0, bearing: 0, duration: 2600, essential: true });
+}
+function closeCanada() {
+  if (!game.picking) return;
+  game.picking = false;
+  map.setLayoutProperty('campus-dots', 'visibility', 'none');
+  for (const pin of game.campusPins) pin.remove();
+  $('pickerBar').classList.add('hidden'); setInteractive(false);
+  map.flyTo({ center: ORIGIN, ...CAMPUS_VIEW, bearing: -20, duration: 2600, essential: true });
+  map.once('moveend', () => { $('title').classList.remove('hidden'); game.orbiting = true; });
+}
+function pickCampus(id) {
+  if (id === pack.id) { closeCanada(); return; }
+  const campus = campusIndex.find(c => c.id === id);
+  game.picking = false; setInteractive(false);
+  $('pickerBar').classList.add('hidden');
+  for (const pin of game.campusPins) pin.remove();
+  store.set('campus', id);
+  // Fly all the way down, then load that campus at the same view so the switch is seamless.
+  map.flyTo({ center: campus.center, ...CAMPUS_VIEW, bearing: -20, duration: 3200, essential: true });
+  map.once('moveend', () => {
+    const url = new URL(location.href); url.searchParams.set('campus', id); url.searchParams.delete('v');
+    location.href = url.toString();
   });
 }
 
@@ -2141,10 +2169,13 @@ function renderChoices() {
     store.set('campus', id);
     const url = new URL(location.href); url.searchParams.set('campus', id); location.href = url.toString();
   };
+  box.innerHTML = '';
   if (campusIndex.length > 6) {
-    if (!box.querySelector('#campusMap')) { box.innerHTML = ''; campusPicker(box, go); }
-  } else {
-    box.innerHTML = '';
+    const b = document.createElement('button');
+    b.className = 'secondary'; b.id = 'changeCampus';
+    b.innerHTML = `🗺 Choose university <small>${campusIndex.length} campuses</small>`;
+    b.addEventListener('click', showCanada);
+    box.append(b);
   }
   for (const c of campusIndex.length > 6 ? [] : campusIndex) {
     const b = document.createElement('button');
@@ -2434,6 +2465,7 @@ const KEYMAP = { KeyW: 'fwd', KeyS: 'back', KeyA: 'strafeLeft', KeyD: 'strafeRig
   ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'tiltUp', ArrowDown: 'tiltDown' };
 addEventListener('keydown', e => {
   if (e.code === 'Escape' && !$('tutorial').classList.contains('hidden')) { closeTutorial(); return; }
+  if (e.code === 'Escape' && game.picking) { closeCanada(); return; }
   if (e.code === 'Enter' && game.phase === 'title' && $('tutorial').classList.contains('hidden')) { startRound(); return; }
   if (game.phase === 'walk') {
     if (e.code === 'KeyM' && !e.repeat) { toggleMapView(); e.preventDefault(); return; }
@@ -2516,9 +2548,14 @@ for (const card of document.querySelectorAll('.hintcard')) {
   ORIGIN = [(pack.bounds.west + pack.bounds.east) / 2, (pack.bounds.south + pack.bounds.north) / 2];
   buildGrid(pack.bounds, pack.buildings);
   addGameLayers();
+  addCampusLayers();
   setInteractive(false);
+  map.jumpTo({ center: ORIGIN, ...CAMPUS_VIEW, bearing: -20 });
   game.phase = 'title';
   game.orbiting = true;
+  $('pickerBack').addEventListener('click', closeCanada);
+  // First visit (no campus chosen yet): open on the map of Canada.
+  if (!params.get('campus') && !store.get('campus') && campusIndex.length > 6) showCanada();
   $('loading').textContent = '';
   setInterval(syncPosition, 150);
   requestAnimationFrame(frame);

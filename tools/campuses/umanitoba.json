@@ -1,0 +1,340 @@
+{
+  "id": "umanitoba",
+  "name": "University of Manitoba — Fort Garry campus",
+  "timezone": "America/Winnipeg",
+  "bounds": {
+    "south": 49.80165,
+    "west": -97.14409,
+    "north": 49.81735,
+    "east": -97.12091
+  },
+  "mascot": {
+    "name": "Billy the Bison",
+    "species": "bison",
+    "colors": {
+      "fur": "#5A3A22",
+      "belly": "#3D2716",
+      "dark": "#1f140b",
+      "primary": "#6B3F1F",
+      "secondary": "#FDB813"
+    },
+    "school": "University of Manitoba"
+  },
+  "flat": [],
+  "dailyFrom": "2026-11-01",
+  "landmarks": [
+    {
+      "osm": "w105921924",
+      "name": "Max Bell Centre",
+      "category": "Athletics",
+      "wikipedia": null
+    },
+    {
+      "osm": "w54724752",
+      "name": "Elizabeth Dafoe Library",
+      "category": "Library",
+      "wikipedia": null,
+      "facts": [
+        "It is the main library, named after a long-serving head librarian.",
+        "It opened in 1953; the university archives' annex was added to it in 2008."
+      ]
+    },
+    {
+      "osm": "w54724745",
+      "name": "Investors Group Athletic Centre",
+      "category": "Athletics",
+      "wikipedia": null,
+      "facts": [
+        "It was built for the 1999 Pan American Games."
+      ]
+    },
+    {
+      "osm": "w54724739",
+      "name": "Wallace Building",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It displays a mineral collection arranged from the simplest to the most complex.",
+        "It was completed in 1986."
+      ]
+    },
+    {
+      "osm": "w60428225",
+      "name": "Robson Hall",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It is home to the law school and its Legal Research Institute.",
+        "It is named after one of the law school's two founders."
+      ]
+    },
+    {
+      "osm": "w54724743",
+      "name": "University Centre",
+      "category": "Campus life",
+      "wikipedia": null,
+      "facts": [
+        "It is the student centre, with the bookstore and food court."
+      ]
+    },
+    {
+      "osm": "w60355307",
+      "name": "Extended Education Complex",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w60355315",
+      "name": "Frank Kennedy Centre",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w60613858",
+      "name": "Education Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w203537811",
+      "name": "Taché Hall",
+      "category": "Residence",
+      "wikipedia": null,
+      "facts": [
+        "It is a historic residence that also houses music and theatre spaces."
+      ]
+    },
+    {
+      "osm": "w312714173",
+      "name": "Active Living Centre",
+      "category": "Athletics",
+      "wikipedia": null
+    },
+    {
+      "osm": "w97287463",
+      "name": "Engineering and Information Technology Complex-E1",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "r1508150",
+      "name": "Animal Science/Entomology Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w60460606",
+      "name": "Drake Centre",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w60460601",
+      "name": "Agriculture Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w986373948",
+      "name": "Ellis Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "r6684833",
+      "name": "University College Residence",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w54724751",
+      "name": "Duff Roblin Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w105957302",
+      "name": "Fletcher Argue Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w54724744",
+      "name": "Helen Glass Centre for Nursing",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It was named in 1999 after a Canadian leader in health-care education."
+      ]
+    },
+    {
+      "osm": "w60441048",
+      "name": "Pembina Hall",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "r1508247",
+      "name": "John A. Russell Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w60415090",
+      "name": "Machray Hall",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w54724746",
+      "name": "Parker Chemistry Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w60415089",
+      "name": "Armes Lecture Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w149778600",
+      "name": "ARTlab",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "The School of Art and its gallery moved into it in 2012."
+      ]
+    },
+    {
+      "osm": "w105925211",
+      "name": "Arthur V. Mauro Student Residence",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w105917820",
+      "name": "Isbister Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w134833908",
+      "name": "Joyce Fromson Pool",
+      "category": "Athletics",
+      "wikipedia": null
+    },
+    {
+      "osm": "w60415091",
+      "name": "Buller Biological Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w54724747",
+      "name": "Allen Physics Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w105956220",
+      "name": "Tier Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w60415095",
+      "name": "Human Ecology Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w54724750",
+      "name": "Administration Building",
+      "category": "Campus life",
+      "wikipedia": null,
+      "facts": [
+        "A Carnegie Corporation grant created a junior library here in 1935."
+      ]
+    },
+    {
+      "osm": "w105953871",
+      "name": "Stanley Pauley Engineering Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w60355308",
+      "name": "Architecture 2 Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w105761983",
+      "name": "Welcome Centre",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w60470993",
+      "name": "St. John’s College Residence",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w60441049",
+      "name": "Agricultural Engineering Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w60460587",
+      "name": "The Point",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w105921090",
+      "name": "Migizii Agamik",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w54724749",
+      "name": "Biological Sciences Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w203537077",
+      "name": "Art Barn",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w60460589",
+      "name": "Mary Speechly Hall",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w134833913",
+      "name": "Sinnott Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w1445334001",
+      "name": "Plant Science Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w60355317",
+      "name": "Centre for Architectural Structures and Technology (CAST)",
+      "category": "Teaching",
+      "wikipedia": null
+    }
+  ],
+  "dailyStartInsideBounds": true
+}
