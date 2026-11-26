@@ -13,6 +13,13 @@
       "short": "UWaterloo",
       "file": "uwaterloo.json",
       "timezone": "America/Toronto"
+    },
+    {
+      "id": "mcmaster",
+      "name": "McMaster University — Main campus",
+      "short": "McMaster",
+      "file": "mcmaster.json",
+      "timezone": "America/Toronto"
     }
   ]
 }
