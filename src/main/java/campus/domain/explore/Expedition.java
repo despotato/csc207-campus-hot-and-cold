@@ -12,9 +12,11 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalDouble;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.random.RandomGenerator;
+import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
 
 /**
@@ -84,6 +86,13 @@ public final class Expedition {
             return guessPoints + hintBonus;
         }
     }
+
+    /** Clue buildings are at least this tall, so the picture shows a real building, not a shed. */
+    static final double CLUE_MIN_HEIGHT = 6;
+    /** Clue buildings stand this far inside the zone edge, so every copy of the rules agrees on them. */
+    static final double CLUE_INSET = 10;
+    /** How many clue buildings to offer; the page shows a street photo of the first one that has any. */
+    static final int CLUE_CHOICES = 6;
 
     public static final int MAX_SCORE = 1000;
     static final int ROUTE_POINTS = 400;
@@ -489,6 +498,29 @@ public final class Expedition {
         int nearMiss = (int) Math.round(NEAR_MISS_POINTS * Math.max(0, 1 - shortBy / NEAR_MISS_METRES));
         return new Score(routePoints, efficiency, guessPoints, hintBonus, checkBonus, nearMiss, multiplier,
                 routePoints + guessPoints + hintBonus + checkBonus + nearMiss);
+    }
+
+    /**
+     * Ordinary buildings in the zone (not landmarks, so never the target) for the start-of-round photo, in the order
+     * to try them; empty if the zone has none. The order comes from the zone's centre, so a daily's clue is the same
+     * for everyone. The page mirrors this (LocalRules clueBuildings).
+     */
+    public List<Integer> clueBuildings() {
+        Set<Integer> landmarkBuildings = map.landmarks().stream().map(CampusLandmark::buildingId)
+                .collect(Collectors.toSet());
+        List<Building> candidates = map.buildingsIn(new Zone(zone.centre(), zone.radiusMetres() - CLUE_INSET))
+                .stream().filter(building -> !landmarkBuildings.contains(building.id()))
+                .filter(building -> building.height() >= CLUE_MIN_HEIGHT).toList();
+        if (candidates.isEmpty()) {
+            return List.of();
+        }
+        long seed = Math.round(zone.centre().latitude() * 1e6) + Math.round(zone.centre().longitude() * 1e6);
+        int first = (int) Math.floorMod(seed, (long) candidates.size());
+        List<Integer> order = new ArrayList<>();
+        for (int i = 0; i < Math.min(CLUE_CHOICES, candidates.size()); i++) {
+            order.add(candidates.get((first + i) % candidates.size()).id());
+        }
+        return List.copyOf(order);
     }
 
     /** The badges this round has earned so far, in {@link Achievement} order. */

@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -381,6 +382,19 @@ class ExpeditionTest {
         reachZone(found);
         assertTrue(found.metresShortOfZone().isEmpty());
         assertEquals(0, found.score().nearMissPoints());
+    }
+
+    @Test void clueBuildingsAreOrdinaryBuildingsInsideTheZone() {
+        // In the zone: Target Hall (the target, a landmark), North/East/West Hall (11 m) and an unnamed 5 m shed.
+        List<Integer> clues = round().clueBuildings();
+        assertEquals(Set.of(2, 3, 4), Set.copyOf(clues), "not the target, not the shed");
+        assertEquals(clues, round().clueBuildings(), "the same zone always gives the same order");
+    }
+
+    @Test void aZoneWithOnlyLandmarksHasNoClue() {
+        CampusMap map = campus();
+        Expedition round = new Expedition(map, map.landmarks().get(1), new Zone(at(100, 140), 30), START, T0);
+        assertTrue(round.clueBuildings().isEmpty(), "Far Hall is a landmark");
     }
 
     @Test void betaPlayerOnlyBeforeLaunch() {

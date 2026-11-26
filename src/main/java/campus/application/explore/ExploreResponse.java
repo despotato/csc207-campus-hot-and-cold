@@ -11,8 +11,14 @@ import java.util.UUID;
 /** Output data for the explore use cases. Nothing here leaks the target or zone before they're found. */
 public sealed interface ExploreResponse {
     /** {@code date} is set for the daily puzzle. */
+    /** {@code clueBuildings}: ordinary buildings in the zone to photograph for the start-of-round clue. */
     record Started(UUID roundId, String campusId, String campus, GeoPoint start, int checksRemaining, int guessLimit,
-                   String difficulty, String mode, String date) implements ExploreResponse { }
+                   String difficulty, String mode, String date, List<Integer> clueBuildings)
+            implements ExploreResponse {
+        public Started {
+            clueBuildings = List.copyOf(clueBuildings);
+        }
+    }
 
     record Moved(double metresWalked, long elapsedSeconds) implements ExploreResponse { }
 
@@ -64,12 +70,14 @@ public sealed interface ExploreResponse {
     record Resumed(UUID roundId, String campusId, String campus, String date, String stage, GeoPoint position,
                    double metresWalked, long elapsedSeconds, Long zoneElapsedSeconds, int checksRemaining,
                    List<CheckView> checks, List<GeoPoint> trail, ZoneView zone, HintView hint,
-                   List<Integer> zoneBuildings, List<Integer> guesses, int guessLimit) implements ExploreResponse {
+                   List<Integer> zoneBuildings, List<Integer> guesses, int guessLimit,
+                   List<Integer> clueBuildings) implements ExploreResponse {
         public Resumed {
             checks = List.copyOf(checks);
             trail = List.copyOf(trail);
             zoneBuildings = List.copyOf(zoneBuildings);
             guesses = List.copyOf(guesses);
+            clueBuildings = List.copyOf(clueBuildings);
         }
     }
 
