@@ -132,6 +132,9 @@
     #checkBtn { display: block; }
   }
   @media (pointer: coarse) { #checkBtn { display: block; } }
+#campusSelect { font: inherit; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; width: 100%;
+  max-width: 100%; padding: 8px 10px; background: #fff8e1; color: #1d2038; border: 2px solid #1d2038;
+  box-shadow: 3px 3px 0 rgba(0,0,0,0.35); border-radius: 0; cursor: pointer; }
 </style>
 </head>
 <body>
@@ -776,14 +779,136 @@ function placeLabels() {
 
 // ---------- avatar ----------
 /** The player's avatar: the campus pack's mascot, or a student by default. */
+/** Which blocky body draws each mascot species (related species share one, in their own school colours). */
+const MASCOT_BODIES = {
+  beaver: (p, h, c) => beaverFeatures(p, h, c), lion: (p, h, c) => lionFeatures(p, h, c), tiger: (p, h, c) => lionFeatures(p, h, c),
+  marauder: (p, h, c) => marauderFeatures(p, h, c), viking: (p, h, c) => marauderFeatures(p, h, c),
+  carabin: (p, h, c) => marauderFeatures(p, h, c), gryphon: (p, h, c) => gryphonFeatures(p, h, c),
+  hawk: (p, h, c) => hawkFeatures(p, h, c), seahawk: (p, h, c) => hawkFeatures(p, h, c), raven: (p, h, c) => hawkFeatures(p, h, c),
+  martlet: (p, h, c) => hawkFeatures(p, h, c), thunderbird: (p, h, c) => hawkFeatures(p, h, c),
+  bear: (p, h, c) => bearFeatures(p, h, c), dog: (p, h, c) => dogFeatures(p, h, c), husky: (p, h, c) => dogFeatures(p, h, c),
+  horse: (p, h, c) => horseFeatures(p, h, c), mustang: (p, h, c) => horseFeatures(p, h, c),
+  bison: (p, h, c) => bisonFeatures(p, h, c), dinosaur: (p, h, c) => dinosaurFeatures(p, h, c), bee: (p, h, c) => beeFeatures(p, h, c),
+};
+/** "Play as Howler the husky", but just "Play as Sea-Hawk" or "Play as Yeo the Lion" when the name says it already. */
+function mascotNamesItself(m) {
+  const name = m.name.toLowerCase().replace(/[^a-z ]/g, '');
+  return name.includes(m.species) || / the /.test(` ${m.name.toLowerCase()} `.replace(/^ /, ''))
+    || ['student', 'carabin', 'seahawk'].includes(m.species);
+}
 function avatarFeatures(p, heading) {
-  const mascot = pack?.mascot;
-  if (mascot?.species === 'beaver') return beaverFeatures(p, heading, mascot.colors);
-  if (mascot?.species === 'lion') return lionFeatures(p, heading, mascot.colors);
-  if (mascot?.species === 'marauder') return marauderFeatures(p, heading, mascot.colors);
-  if (mascot?.species === 'gryphon') return gryphonFeatures(p, heading, mascot.colors);
-  if (mascot?.species === 'hawk') return hawkFeatures(p, heading, mascot.colors);
-  return studentFeatures(p, heading);
+  const mascot = pack?.mascot, body = MASCOT_BODIES[mascot?.species];
+  return body ? body(p, heading, mascot.colors) : studentFeatures(p, heading);
+}
+
+/** Boxes [x0, x1, y0, y1, z0, z1, colour] in body units (x right, y forward, z up), scaled by S, plus a shadow. */
+function blocky(p, heading, parts, shadow = [-0.9, 0.9, -1.2, 1.0]) {
+  const S = 2.4;
+  return [box(p, heading, shadow[0] * S, shadow[1] * S, shadow[2] * S, shadow[3] * S, 0, 0.05, '#00000055'),
+    ...parts.map(([x0, x1, y0, y1, z0, z1, col]) => box(p, heading, x0 * S, x1 * S, y0 * S, y1 * S, z0 * S, z1 * S, col))];
+}
+
+/** An original blocky bear standing upright in a school-colour jersey. */
+function bearFeatures(p, heading, c) {
+  return blocky(p, heading, [
+    [-0.45, -0.12, -0.15, 0.25, 0, 0.45, c.dark], [0.12, 0.45, -0.15, 0.25, 0, 0.45, c.dark],        // legs
+    [-0.6, 0.6, -0.45, 0.4, 0.45, 1.55, c.primary],                                                // jersey
+    [-0.62, 0.62, -0.47, 0.42, 1.0, 1.12, c.secondary],                                            // jersey stripe
+    [-0.85, -0.6, -0.15, 0.2, 0.8, 1.45, c.fur], [0.6, 0.85, -0.15, 0.2, 0.8, 1.45, c.fur],        // arms
+    [-0.45, 0.45, -0.3, 0.45, 1.55, 2.3, c.fur],                                                   // head
+    [-0.22, 0.22, 0.45, 0.7, 1.62, 1.92, c.belly],                                                 // muzzle
+    [-0.09, 0.09, 0.7, 0.76, 1.8, 1.92, '#1b1b1b'],                                                // nose
+    [-0.3, -0.15, 0.45, 0.48, 2.0, 2.12, '#1b1b1b'], [0.15, 0.3, 0.45, 0.48, 2.0, 2.12, '#1b1b1b'], // eyes
+    [-0.48, -0.26, -0.1, 0.08, 2.3, 2.5, c.fur], [0.26, 0.48, -0.1, 0.08, 2.3, 2.5, c.fur],        // ears
+  ]);
+}
+
+/** An original blocky dog on all fours with pointed ears, a collar and a wagging tail. */
+function dogFeatures(p, heading, c) {
+  return blocky(p, heading, [
+    [-0.38, -0.14, 0.35, 0.58, 0, 0.55, c.fur], [0.14, 0.38, 0.35, 0.58, 0, 0.55, c.fur],          // front legs
+    [-0.38, -0.14, -0.7, -0.47, 0, 0.55, c.fur], [0.14, 0.38, -0.7, -0.47, 0, 0.55, c.fur],        // hind legs
+    [-0.42, 0.42, -0.75, 0.65, 0.5, 1.15, c.fur],                                                  // body
+    [-0.3, 0.3, -0.5, 0.5, 0.46, 0.6, c.belly],                                                    // belly
+    [-0.36, 0.36, 0.55, 0.75, 1.05, 1.2, c.primary],                                               // collar
+    [-0.32, 0.32, 0.55, 1.05, 1.15, 1.7, c.fur],                                                   // head
+    [-0.18, 0.18, 1.05, 1.35, 1.2, 1.45, c.belly],                                                 // snout
+    [-0.08, 0.08, 1.35, 1.4, 1.36, 1.46, '#1b1b1b'],                                               // nose
+    [-0.24, -0.1, 1.04, 1.07, 1.5, 1.6, '#1b1b1b'], [0.1, 0.24, 1.04, 1.07, 1.5, 1.6, '#1b1b1b'],   // eyes
+    [-0.32, -0.14, 0.62, 0.78, 1.7, 2.0, c.dark], [0.14, 0.32, 0.62, 0.78, 1.7, 2.0, c.dark],      // ears
+    [-0.07, 0.07, -1.05, -0.75, 1.05, 1.45, c.fur],                                                // tail
+  ], [-0.7, 0.7, -1.1, 1.4]);
+}
+
+/** An original blocky horse with a mane, a saddle blanket in school colours and a tail. */
+function horseFeatures(p, heading, c) {
+  return blocky(p, heading, [
+    [-0.36, -0.14, 0.45, 0.66, 0, 0.9, c.fur], [0.14, 0.36, 0.45, 0.66, 0, 0.9, c.fur],            // front legs
+    [-0.36, -0.14, -0.8, -0.59, 0, 0.9, c.fur], [0.14, 0.36, -0.8, -0.59, 0, 0.9, c.fur],          // hind legs
+    [-0.36, 0.36, 0.45, 0.66, 0, 0.12, c.dark], [-0.36, 0.36, -0.8, -0.59, 0, 0.12, c.dark],       // hooves
+    [-0.4, 0.4, -0.85, 0.75, 0.85, 1.5, c.fur],                                                    // body
+    [-0.43, 0.43, -0.35, 0.3, 1.2, 1.53, c.primary],                                               // saddle blanket
+    [-0.44, 0.44, -0.37, 0.32, 1.2, 1.28, c.secondary],
+    [-0.24, 0.24, 0.6, 0.95, 1.4, 2.2, c.fur],                                                     // neck
+    [-0.24, 0.24, 0.85, 1.45, 1.95, 2.35, c.fur],                                                  // head
+    [-0.2, 0.2, 1.3, 1.5, 1.95, 2.15, c.belly],                                                    // muzzle
+    [-0.25, -0.12, 1.05, 1.08, 2.18, 2.28, '#1b1b1b'], [0.12, 0.25, 1.05, 1.08, 2.18, 2.28, '#1b1b1b'], // eyes
+    [-0.08, 0.08, 0.5, 1.0, 1.5, 2.45, c.dark],                                                    // mane
+    [-0.2, -0.08, 0.9, 1.0, 2.35, 2.55, c.fur], [0.08, 0.2, 0.9, 1.0, 2.35, 2.55, c.fur],          // ears
+    [-0.08, 0.08, -1.15, -0.85, 0.75, 1.4, c.dark],                                                // tail
+  ], [-0.7, 0.7, -1.3, 1.6]);
+}
+
+/** An original blocky bison: big shaggy hump, small horns, beard and a school scarf. */
+function bisonFeatures(p, heading, c) {
+  return blocky(p, heading, [
+    [-0.42, -0.16, 0.3, 0.55, 0, 0.6, c.dark], [0.16, 0.42, 0.3, 0.55, 0, 0.6, c.dark],            // front legs
+    [-0.38, -0.14, -0.75, -0.5, 0, 0.6, c.dark], [0.14, 0.38, -0.75, -0.5, 0, 0.6, c.dark],        // hind legs
+    [-0.45, 0.45, -0.85, 0.2, 0.55, 1.3, c.fur],                                                   // hindquarters
+    [-0.55, 0.55, 0.0, 0.7, 0.5, 1.75, c.belly],                                                   // shaggy hump
+    [-0.57, 0.57, 0.55, 0.72, 1.0, 1.15, c.secondary],                                             // scarf
+    [-0.32, 0.32, 0.7, 1.15, 0.65, 1.3, c.belly],                                                  // head
+    [-0.2, 0.2, 1.15, 1.25, 0.7, 1.0, c.dark],                                                     // muzzle
+    [-0.16, 0.16, 0.85, 1.1, 0.4, 0.65, c.belly],                                                  // beard
+    [-0.25, -0.12, 1.14, 1.17, 1.05, 1.15, '#1b1b1b'], [0.12, 0.25, 1.14, 1.17, 1.05, 1.15, '#1b1b1b'], // eyes
+    [-0.5, -0.32, 0.85, 0.97, 1.2, 1.32, '#e8e0c8'], [0.32, 0.5, 0.85, 0.97, 1.2, 1.32, '#e8e0c8'], // horns
+    [-0.5, -0.42, 0.85, 0.97, 1.32, 1.5, '#e8e0c8'], [0.42, 0.5, 0.85, 0.97, 1.32, 1.5, '#e8e0c8'],
+    [-0.06, 0.06, -1.1, -0.85, 0.9, 1.15, c.dark],                                                 // tail
+  ], [-0.8, 0.8, -1.2, 1.4]);
+}
+
+/** An original blocky dinosaur: upright on strong legs, tiny arms, back spikes and a long tail. */
+function dinosaurFeatures(p, heading, c) {
+  return blocky(p, heading, [
+    [-0.42, -0.14, -0.2, 0.2, 0, 0.6, c.fur], [0.14, 0.42, -0.2, 0.2, 0, 0.6, c.fur],              // legs
+    [-0.42, -0.14, 0.2, 0.35, 0, 0.12, c.dark], [0.14, 0.42, 0.2, 0.35, 0, 0.12, c.dark],          // claws
+    [-0.48, 0.48, -0.45, 0.4, 0.55, 1.55, c.fur],                                                  // body
+    [-0.32, 0.32, 0.4, 0.46, 0.65, 1.4, c.belly],                                                  // belly
+    [-0.62, -0.48, 0.25, 0.55, 1.15, 1.25, c.fur], [0.48, 0.62, 0.25, 0.55, 1.15, 1.25, c.fur],    // tiny arms
+    [-0.36, 0.36, -0.15, 0.9, 1.55, 2.1, c.fur],                                                   // head
+    [-0.3, 0.3, 0.6, 0.92, 1.55, 1.72, c.belly],                                                   // jaw
+    [-0.28, -0.12, 0.55, 0.58, 1.9, 2.02, '#1b1b1b'], [0.12, 0.28, 0.55, 0.58, 1.9, 2.02, '#1b1b1b'], // eyes
+    [-0.06, 0.06, -0.3, 0.05, 2.1, 2.3, c.secondary], [-0.06, 0.06, -0.55, -0.25, 1.55, 1.78, c.secondary], // spikes
+    [-0.28, 0.28, -1.0, -0.45, 0.65, 1.15, c.fur],                                                 // tail
+    [-0.16, 0.16, -1.5, -1.0, 0.55, 0.85, c.fur],
+    [-0.06, 0.06, -1.0, -0.7, 1.15, 1.32, c.secondary],
+  ], [-0.8, 0.8, -1.6, 1.0]);
+}
+
+/** An original blocky bee: striped body, wings, antennae and a stinger. */
+function beeFeatures(p, heading, c) {
+  const stripe = c.belly;
+  return blocky(p, heading, [
+    [-0.36, -0.14, -0.1, 0.15, 0, 0.5, stripe], [0.14, 0.36, -0.1, 0.15, 0, 0.5, stripe],          // legs
+    [-0.5, 0.5, -0.6, 0.45, 0.45, 1.5, c.fur],                                                     // body
+    [-0.52, 0.52, -0.62, 0.47, 0.7, 0.85, stripe], [-0.52, 0.52, -0.62, 0.47, 1.05, 1.2, stripe],  // stripes
+    [-0.08, 0.08, -0.85, -0.6, 0.85, 0.98, stripe],                                                // stinger
+    [-1.05, -0.5, -0.4, 0.15, 1.35, 1.42, '#d8eef7'], [0.5, 1.05, -0.4, 0.15, 1.35, 1.42, '#d8eef7'], // wings
+    [-0.38, 0.38, -0.2, 0.5, 1.5, 2.15, c.fur],                                                    // head
+    [-0.28, -0.1, 0.5, 0.54, 1.75, 1.95, '#1b1b1b'], [0.1, 0.28, 0.5, 0.54, 1.75, 1.95, '#1b1b1b'], // eyes
+    [-0.3, -0.24, 0.1, 0.16, 2.15, 2.55, stripe], [0.24, 0.3, 0.1, 0.16, 2.15, 2.55, stripe],      // antennae
+    [-0.4, 0.4, -0.22, 0.52, 1.48, 1.6, c.primary],                                                // school scarf
+  ], [-1.0, 1.0, -0.9, 0.7]);
 }
 
 function studentFeatures(p, heading) {
@@ -1765,15 +1890,32 @@ function storedDailyResult() {
 function renderChoices() {
   const box = $('campusChoice');
   box.innerHTML = '';
-  for (const c of campusIndex) {
+  const go = id => {
+    if (id === pack.id) return;
+    store.set('campus', id);
+    const url = new URL(location.href); url.searchParams.set('campus', id); location.href = url.toString();
+  };
+  if (campusIndex.length > 6) {
+    // Many campuses: one dropdown grouped by province, sorted by name.
+    const select = document.createElement('select');
+    select.id = 'campusSelect'; select.setAttribute('aria-label', 'University');
+    const regions = [...new Set(campusIndex.map(c => c.region || 'Other'))].sort();
+    for (const region of regions) {
+      const group = document.createElement('optgroup'); group.label = region;
+      for (const c of campusIndex.filter(c => (c.region || 'Other') === region).sort((a, b) => a.name.localeCompare(b.name))) {
+        const o = document.createElement('option'); o.value = c.id; o.textContent = c.name; o.selected = c.id === pack.id;
+        group.append(o);
+      }
+      select.append(group);
+    }
+    select.addEventListener('change', () => go(select.value));
+    box.append(select);
+  }
+  for (const c of campusIndex.length > 6 ? [] : campusIndex) {
     const b = document.createElement('button');
     b.className = 'secondary'; b.textContent = c.short || c.name; b.setAttribute('role', 'radio');
     b.setAttribute('aria-checked', String(c.id === pack.id));
-    b.addEventListener('click', () => {
-      if (c.id === pack.id) return;
-      store.set('campus', c.id);
-      const url = new URL(location.href); url.searchParams.set('campus', c.id); location.href = url.toString();
-    });
+    b.addEventListener('click', () => go(c.id));
     box.append(b);
   }
   if (campusIndex.length < 2) {
@@ -2127,7 +2269,7 @@ for (const card of document.querySelectorAll('.hintcard')) {
   }
   named = pack.buildings.filter(b => b.name);
   if (pack.mascot) $('mascotLine').textContent = ` · Play as ${pack.mascot.name}`
-    + (pack.mascot.name.toLowerCase().includes(pack.mascot.species) ? '' : ` the ${pack.mascot.species}`);
+    + (mascotNamesItself(pack.mascot) ? '' : ` the ${pack.mascot.species}`);
   landmarkBuildings = named.filter(b => b.category);
   ORIGIN = [(pack.bounds.west + pack.bounds.east) / 2, (pack.bounds.south + pack.bounds.north) / 2];
   buildGrid(pack.bounds, pack.buildings);
