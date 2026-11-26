@@ -84,7 +84,7 @@
 
   /* Screens */
   .screen { position: fixed; inset: 0; display: grid; place-items: center; background: #1b1f3a66; padding: 16px; }
-  .card { max-width: 640px; width: 100%; }
+  .card { max-width: 640px; width: 100%; max-height: calc(100dvh - 32px); overflow-y: auto; }   /* short screens scroll */
   h1 { font-size: clamp(28px, 6vw, 52px); line-height: 1; margin: 0 0 6px; color: var(--gold); text-shadow: 4px 4px 0 var(--hot); }
   h1 .amp { font-family: Georgia, "Times New Roman", serif; font-style: italic; }
   h2 { margin: 0 0 8px; color: var(--gold); }
@@ -132,6 +132,11 @@
     #checkBtn { display: block; }
   }
   @media (pointer: coarse) { #checkBtn { display: block; } }
+/* On short screens the map picker needs the room: the rules and key list live in "How to play" anyway. */
+@media (max-height: 860px) { #title .rules, #title .controls:not(#difficulty) { display: none; } }
+#campusMap { flex: 1 0 100%; width: 100%; height: clamp(150px, 26vh, 260px); border: 3px solid var(--ink); box-shadow: 0 4px 0 var(--ink); margin-bottom: 4px; }
+#campusMap canvas { image-rendering: pixelated; }
+#campusCaption { flex: 1 0 100%; margin: 2px 0 0; }
 #campusSelect { font: inherit; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; width: 100%;
   max-width: 100%; padding: 8px 10px; background: #fff8e1; color: #1d2038; border: 2px solid #1d2038;
   box-shadow: 3px 3px 0 rgba(0,0,0,0.35); border-radius: 0; cursor: pointer; }
@@ -2080,29 +2085,66 @@ function storedDailyResult() {
   } catch (e) { return null; }
 }
 
+/**
+ * Choose a university on a pannable, zoomable map of Canada: a dot and label per campus (labels that would
+ * overlap hide until you zoom in). The current campus is gold. Built once; the start screen reuses it.
+ */
+function campusPicker(box, go) {
+  const el = document.createElement('div');
+  el.id = 'campusMap'; el.setAttribute('role', 'application'); el.setAttribute('aria-label', 'Map of Canadian campuses');
+  const caption = document.createElement('div');
+  caption.className = 'note'; caption.id = 'campusCaption';
+  const current = campusIndex.find(c => c.id === pack.id);
+  caption.textContent = `${current?.name || pack.campus} · click another campus to switch, drag and scroll to explore`;
+  box.append(el, caption);
+  const picker = new maplibregl.Map({
+    container: el, pixelRatio: Math.max(PIX, 0.55), attributionControl: false, dragRotate: false, pitchWithRotate: false,
+    center: current?.center || [-96, 55], zoom: 3.4, minZoom: 2, maxZoom: 14, maxBounds: [[-160, 30], [-35, 75]],
+    style: {
+      version: 8, glyphs: 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf',
+      sources: { omt: { type: 'vector', url: 'https://tiles.openfreemap.org/planet' } },
+      layers: [
+        { id: 'land', type: 'background', paint: { 'background-color': '#8fb46a' } },
+        { id: 'water', type: 'fill', source: 'omt', 'source-layer': 'water', paint: { 'fill-color': '#3f7fd1' } },
+        { id: 'provinces', type: 'line', source: 'omt', 'source-layer': 'boundary', filter: ['==', ['get', 'admin_level'], 4],
+          paint: { 'line-color': '#4d6b3a', 'line-width': 1, 'line-dasharray': [3, 2] } },
+        { id: 'countries', type: 'line', source: 'omt', 'source-layer': 'boundary', filter: ['==', ['get', 'admin_level'], 2],
+          paint: { 'line-color': '#1d2038', 'line-width': 2 } },
+      ],
+    },
+  });
+  picker.touchZoomRotate.disableRotation();
+  picker.on('load', () => {
+    picker.addSource('campuses', { type: 'geojson', data: fc(campusIndex.filter(c => c.center).map(c => ({ type: 'Feature',
+      properties: { id: c.id, label: c.short || c.name, current: c.id === pack.id ? 1 : 0 },
+      geometry: { type: 'Point', coordinates: c.center } }))) });
+    const isCurrent = ['==', ['get', 'current'], 1];
+    picker.addLayer({ id: 'campus-dots', type: 'circle', source: 'campuses', paint: {
+      'circle-radius': ['case', isCurrent, 8, 6], 'circle-color': ['case', isCurrent, '#ffd23f', '#e94f37'],
+      'circle-stroke-width': 3, 'circle-stroke-color': '#1d2038' } });
+    picker.addLayer({ id: 'campus-labels', type: 'symbol', source: 'campuses', layout: {
+      'text-field': ['get', 'label'], 'text-font': ['Noto Sans Bold'], 'text-size': 12, 'text-transform': 'uppercase',
+      'text-anchor': 'top', 'text-offset': [0, 0.9], 'symbol-sort-key': ['-', 1, ['get', 'current']], 'text-padding': 3 },
+      paint: { 'text-color': ['case', isCurrent, '#ffd23f', '#fff8e1'], 'text-halo-color': '#1d2038', 'text-halo-width': 2 } });
+    for (const layer of ['campus-dots', 'campus-labels']) {
+      picker.on('click', layer, e => go(e.features[0].properties.id));
+      picker.on('mouseenter', layer, () => (picker.getCanvas().style.cursor = 'pointer'));
+      picker.on('mouseleave', layer, () => (picker.getCanvas().style.cursor = ''));
+    }
+  });
+}
+
 function renderChoices() {
   const box = $('campusChoice');
-  box.innerHTML = '';
   const go = id => {
     if (id === pack.id) return;
     store.set('campus', id);
     const url = new URL(location.href); url.searchParams.set('campus', id); location.href = url.toString();
   };
   if (campusIndex.length > 6) {
-    // Many campuses: one dropdown grouped by province, sorted by name.
-    const select = document.createElement('select');
-    select.id = 'campusSelect'; select.setAttribute('aria-label', 'University');
-    const regions = [...new Set(campusIndex.map(c => c.region || 'Other'))].sort();
-    for (const region of regions) {
-      const group = document.createElement('optgroup'); group.label = region;
-      for (const c of campusIndex.filter(c => (c.region || 'Other') === region).sort((a, b) => a.name.localeCompare(b.name))) {
-        const o = document.createElement('option'); o.value = c.id; o.textContent = c.name; o.selected = c.id === pack.id;
-        group.append(o);
-      }
-      select.append(group);
-    }
-    select.addEventListener('change', () => go(select.value));
-    box.append(select);
+    if (!box.querySelector('#campusMap')) { box.innerHTML = ''; campusPicker(box, go); }
+  } else {
+    box.innerHTML = '';
   }
   for (const c of campusIndex.length > 6 ? [] : campusIndex) {
     const b = document.createElement('button');

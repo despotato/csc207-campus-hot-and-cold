@@ -6,7 +6,11 @@
       "short": "U of T St. George",
       "file": "st-george.json",
       "timezone": "America/Toronto",
-      "region": "Ontario"
+      "region": "Ontario",
+      "center": [
+        -79.3957,
+        43.663
+      ]
     },
     {
       "id": "uwaterloo",
@@ -14,7 +18,11 @@
       "short": "UWaterloo",
       "file": "uwaterloo.json",
       "timezone": "America/Toronto",
-      "region": "Ontario"
+      "region": "Ontario",
+      "center": [
+        -80.5435,
+        43.471
+      ]
     },
     {
       "id": "mcmaster",
@@ -22,7 +30,11 @@
       "short": "McMaster",
       "file": "mcmaster.json",
       "timezone": "America/Toronto",
-      "region": "Ontario"
+      "region": "Ontario",
+      "center": [
+        -79.9195,
+        43.2617
+      ]
     },
     {
       "id": "guelph",
@@ -30,7 +42,11 @@
       "short": "Guelph",
       "file": "guelph.json",
       "timezone": "America/Toronto",
-      "region": "Ontario"
+      "region": "Ontario",
+      "center": [
+        -80.2283,
+        43.5312
+      ]
     },
     {
       "id": "laurier",
@@ -38,7 +54,11 @@
       "short": "Laurier",
       "file": "laurier.json",
       "timezone": "America/Toronto",
-      "region": "Ontario"
+      "region": "Ontario",
+      "center": [
+        -80.527,
+        43.4738
+      ]
     },
     {
       "id": "ubc",
@@ -46,7 +66,11 @@
       "short": "UBC",
       "file": "ubc.json",
       "timezone": "America/Vancouver",
-      "region": "British Columbia"
+      "region": "British Columbia",
+      "center": [
+        -123.2488,
+        49.2608
+      ]
     },
     {
       "id": "sfu",
@@ -54,7 +78,11 @@
       "short": "SFU",
       "file": "sfu.json",
       "timezone": "America/Vancouver",
-      "region": "British Columbia"
+      "region": "British Columbia",
+      "center": [
+        -122.9183,
+        49.2767
+      ]
     },
     {
       "id": "uvic",
@@ -62,7 +90,11 @@
       "short": "UVic",
       "file": "uvic.json",
       "timezone": "America/Vancouver",
-      "region": "British Columbia"
+      "region": "British Columbia",
+      "center": [
+        -123.3105,
+        48.463
+      ]
     },
     {
       "id": "ualberta",
@@ -70,7 +102,11 @@
       "short": "UAlberta",
       "file": "ualberta.json",
       "timezone": "America/Edmonton",
-      "region": "Alberta"
+      "region": "Alberta",
+      "center": [
+        -113.5238,
+        53.5236
+      ]
     },
     {
       "id": "ucalgary",
@@ -78,7 +114,11 @@
       "short": "UCalgary",
       "file": "ucalgary.json",
       "timezone": "America/Edmonton",
-      "region": "Alberta"
+      "region": "Alberta",
+      "center": [
+        -114.136,
+        51.075
+      ]
     },
     {
       "id": "usask",
@@ -86,7 +126,11 @@
       "short": "USask",
       "file": "usask.json",
       "timezone": "America/Regina",
-      "region": "Saskatchewan"
+      "region": "Saskatchewan",
+      "center": [
+        -106.6325,
+        52.1315
+      ]
     },
     {
       "id": "western",
@@ -94,7 +138,11 @@
       "short": "Western",
       "file": "western.json",
       "timezone": "America/Toronto",
-      "region": "Ontario"
+      "region": "Ontario",
+      "center": [
+        -81.2762,
+        43.0053
+      ]
     },
     {
       "id": "queens",
@@ -102,7 +150,11 @@
       "short": "Queen's",
       "file": "queens.json",
       "timezone": "America/Toronto",
-      "region": "Ontario"
+      "region": "Ontario",
+      "center": [
+        -76.504,
+        44.2251
+      ]
     },
     {
       "id": "uottawa",
@@ -110,7 +162,11 @@
       "short": "uOttawa",
       "file": "uottawa.json",
       "timezone": "America/Toronto",
-      "region": "Ontario"
+      "region": "Ontario",
+      "center": [
+        -75.6817,
+        45.4224
+      ]
     },
     {
       "id": "carleton",
@@ -118,7 +174,11 @@
       "short": "Carleton",
       "file": "carleton.json",
       "timezone": "America/Toronto",
-      "region": "Ontario"
+      "region": "Ontario",
+      "center": [
+        -75.6953,
+        45.3858
+      ]
     },
     {
       "id": "york",
@@ -126,7 +186,11 @@
       "short": "York",
       "file": "york.json",
       "timezone": "America/Toronto",
-      "region": "Ontario"
+      "region": "Ontario",
+      "center": [
+        -79.5025,
+        43.7745
+      ]
     },
     {
       "id": "tmu",
@@ -134,7 +198,11 @@
       "short": "TMU",
       "file": "tmu.json",
       "timezone": "America/Toronto",
-      "region": "Ontario"
+      "region": "Ontario",
+      "center": [
+        -79.3794,
+        43.6577
+      ]
     },
     {
       "id": "mcgill",
@@ -142,7 +210,11 @@
       "short": "McGill",
       "file": "mcgill.json",
       "timezone": "America/Toronto",
-      "region": "Quebec"
+      "region": "Quebec",
+      "center": [
+        -73.577,
+        45.506
+      ]
     },
     {
       "id": "concordia",
@@ -150,7 +222,11 @@
       "short": "Concordia",
       "file": "concordia.json",
       "timezone": "America/Toronto",
-      "region": "Quebec"
+      "region": "Quebec",
+      "center": [
+        -73.578,
+        45.4963
+      ]
     },
     {
       "id": "umontreal",
@@ -158,7 +234,11 @@
       "short": "UdeM",
       "file": "umontreal.json",
       "timezone": "America/Toronto",
-      "region": "Quebec"
+      "region": "Quebec",
+      "center": [
+        -73.6149,
+        45.5056
+      ]
     },
     {
       "id": "ulaval",
@@ -166,7 +246,11 @@
       "short": "Laval",
       "file": "ulaval.json",
       "timezone": "America/Toronto",
-      "region": "Quebec"
+      "region": "Quebec",
+      "center": [
+        -71.2761,
+        46.7816
+      ]
     },
     {
       "id": "dal",
@@ -174,7 +258,11 @@
       "short": "Dal",
       "file": "dal.json",
       "timezone": "America/Halifax",
-      "region": "Nova Scotia"
+      "region": "Nova Scotia",
+      "center": [
+        -63.5846,
+        44.6385
+      ]
     },
     {
       "id": "mun",
@@ -182,7 +270,11 @@
       "short": "Memorial",
       "file": "mun.json",
       "timezone": "America/St_Johns",
-      "region": "Newfoundland and Labrador"
+      "region": "Newfoundland and Labrador",
+      "center": [
+        -52.7345,
+        47.574
+      ]
     }
   ]
 }
