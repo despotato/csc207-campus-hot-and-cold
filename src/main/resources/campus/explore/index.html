@@ -920,9 +920,27 @@ function autopilotStep(dt) {
 }
 
 /** The server's own test: the straight line between two sent points must stay outside buildings. */
+/** Exact grid traversal, identical to Java's OpenSpace.clearPath, so the page and server always agree. */
 function chordClear(a, b) {
-  const n = Math.max(1, Math.ceil(distOf(a, b) / (CELL / 4)));
-  for (let i = 0; i <= n; i++) if (!isOpen([a[0] + (b[0] - a[0]) * i / n, a[1] + (b[1] - a[1]) * i / n])) return false;
+  const gx = p => (p[0] - grid.west) * M_LON / CELL, gy = p => (p[1] - grid.south) * M_LAT / CELL;
+  const open = (c, r) => c >= 0 && r >= 0 && c < grid.cols && r < grid.rows && !grid.blocked[r * grid.cols + c];
+  const x0 = gx(a), y0 = gy(a), x1 = gx(b), y1 = gy(b);
+  let cx = Math.floor(x0), cy = Math.floor(y0);
+  const endX = Math.floor(x1), endY = Math.floor(y1);
+  if (!open(cx, cy)) return false;
+  const dx = x1 - x0, dy = y1 - y0, stepX = dx > 0 ? 1 : -1, stepY = dy > 0 ? 1 : -1;
+  const tDeltaX = dx === 0 ? Infinity : Math.abs(1 / dx), tDeltaY = dy === 0 ? Infinity : Math.abs(1 / dy);
+  let tMaxX = dx === 0 ? Infinity : (dx > 0 ? cx + 1 - x0 : x0 - cx) * tDeltaX;
+  let tMaxY = dy === 0 ? Infinity : (dy > 0 ? cy + 1 - y0 : y0 - cy) * tDeltaY;
+  const cornerT = 1e-4 / Math.max(Math.hypot(dx, dy), 1e-12);   // same corner tolerance as Java
+  while (cx !== endX || cy !== endY) {
+    if (Math.min(tMaxX, tMaxY) > 1) break;
+    if (Math.abs(tMaxX - tMaxY) < cornerT) {
+      if (!open(cx + stepX, cy) || !open(cx, cy + stepY)) return false;
+      cx += stepX; cy += stepY; tMaxX += tDeltaX; tMaxY += tDeltaY;
+    } else if (tMaxX < tMaxY) { cx += stepX; tMaxX += tDeltaX; } else { cy += stepY; tMaxY += tDeltaY; }
+    if (!open(cx, cy)) return false;
+  }
   return true;
 }
 function push(point) {

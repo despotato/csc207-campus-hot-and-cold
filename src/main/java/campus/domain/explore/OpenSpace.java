@@ -15,6 +15,9 @@ import java.util.function.Predicate;
  * with the same rule (a cell is blocked if its centre is inside a building), so both sides agree.
  */
 public final class OpenSpace {
+    /** How close (in cells) a line may pass a cell corner before both neighbouring cells must be open. */
+    static final double CORNER_TOLERANCE = 1e-4;
+
     private final GeoPoint southWest;
     private final double cellMetres;
     private final int columns;
@@ -62,16 +65,99 @@ public final class OpenSpace {
         return inside(column, row) && !blocked.get(row * columns + column);
     }
 
-    /** True if a straight walk between the points never enters a building (sampled every quarter cell). */
+    /** True if a straight walk between the points never enters a building or leaves the map. */
     public boolean clearPath(GeoPoint from, GeoPoint to) {
-        double metres = from.distanceTo(to);
-        int samples = Math.max(1, (int) Math.ceil(metres / (cellMetres / 4)));
-        for (int i = 0; i <= samples; i++) {
-            if (!isOpen(from.towards(to, (double) i / samples))) {
+        // Exact grid traversal (Amanatides-Woo): every cell the segment passes through must be open. Because this
+        // is exact, any part of a clear segment is also clear, so a route checked in one piece is never refused
+        // when walked in steps.
+        LineWalk walk = new LineWalk(gridX(from), gridY(from), gridX(to), gridY(to));
+        if (!open(walk.cx, walk.cy)) {
+            return false;
+        }
+        while (!walk.done()) {
+            if (walk.nearCorner() && (!open(walk.cx + walk.stepX, walk.cy) || !open(walk.cx, walk.cy + walk.stepY))) {
+                return false;   // squeezing diagonally past a corner
+            }
+            walk.advance();
+            if (!open(walk.cx, walk.cy)) {
                 return false;
             }
         }
         return true;
+    }
+
+    /** The cells a straight line crosses, one at a time, in grid units. */
+    private static final class LineWalk {
+        private int cx;
+        private int cy;
+        private final int endX;
+        private final int endY;
+        private final int stepX;
+        private final int stepY;
+        private final double tDeltaX;
+        private final double tDeltaY;
+        private final double cornerT;
+        private double tMaxX;
+        private double tMaxY;
+
+        LineWalk(double x0, double y0, double x1, double y1) {
+            cx = (int) Math.floor(x0);
+            cy = (int) Math.floor(y0);
+            endX = (int) Math.floor(x1);
+            endY = (int) Math.floor(y1);
+            double dx = x1 - x0;
+            double dy = y1 - y0;
+            stepX = dx > 0 ? 1 : -1;
+            stepY = dy > 0 ? 1 : -1;
+            tDeltaX = dx == 0 ? Double.POSITIVE_INFINITY : Math.abs(1 / dx);
+            tDeltaY = dy == 0 ? Double.POSITIVE_INFINITY : Math.abs(1 / dy);
+            tMaxX = dx == 0 ? Double.POSITIVE_INFINITY : (dx > 0 ? cx + 1 - x0 : x0 - cx) * tDeltaX;
+            tMaxY = dy == 0 ? Double.POSITIVE_INFINITY : (dy > 0 ? cy + 1 - y0 : y0 - cy) * tDeltaY;
+            // A crossing within CORNER_TOLERANCE cells of a corner touches both cells beside it, so the answer never
+            // depends on floating-point rounding (a long segment and its short steps always agree).
+            cornerT = CORNER_TOLERANCE / Math.max(Math.hypot(dx, dy), 1e-12);
+        }
+
+        boolean done() {
+            return (cx == endX && cy == endY) || Math.min(tMaxX, tMaxY) > 1;
+        }
+
+        boolean nearCorner() {
+            return Math.abs(tMaxX - tMaxY) < cornerT;
+        }
+
+        void advance() {
+            if (nearCorner()) {
+                stepX();
+                stepY();
+            } else if (tMaxX < tMaxY) {
+                stepX();
+            } else {
+                stepY();
+            }
+        }
+
+        private void stepX() {
+            cx += stepX;
+            tMaxX += tDeltaX;
+        }
+
+        private void stepY() {
+            cy += stepY;
+            tMaxY += tDeltaY;
+        }
+    }
+
+    private double gridX(GeoPoint point) {
+        return (point.longitude() - southWest.longitude()) * metresPerLongitude / cellMetres;
+    }
+
+    private double gridY(GeoPoint point) {
+        return (point.latitude() - southWest.latitude()) * metresPerLatitude / cellMetres;
+    }
+
+    private boolean open(int column, int row) {
+        return inside(column, row) && !blocked.get(row * columns + column);
     }
 
     /** The open spot nearest to {@code point} within {@code maxMetres} (the point itself if it is open). */

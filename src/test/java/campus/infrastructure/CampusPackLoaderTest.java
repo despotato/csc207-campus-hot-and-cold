@@ -2,6 +2,7 @@ package campus.infrastructure;
 
 import campus.domain.explore.CampusMap;
 import campus.domain.explore.Expedition;
+import campus.domain.explore.GeoPoint;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
@@ -75,6 +76,32 @@ class CampusPackLoaderTest {
                 days++;
             }
             assertEquals(400, days, id);
+        }
+    }
+
+    @Test void theShortestRouteCanBeWalkedInSmallStepsWithoutBeingRefused() throws Exception {
+        // The route is checked in long straight pieces; the page walks it in ~0.75 m steps. Both must agree.
+        var catalog = new PackCatalog();
+        for (String id : catalog.campusIds()) {
+            CampusMap map = catalog.campus(id).orElseThrow();
+            for (int day = 0; day < 20; day++) {
+                var date = java.time.LocalDate.of(2026, 11, 25).plusDays(day * 19L);
+                Expedition round = Expedition.daily(map, date, Instant.EPOCH);
+                var zone = round.zoneForDiagnostics();
+                List<GeoPoint> route = map.openSpace().shortestRoute(round.start(), zone::contains).orElseThrow().points();
+                Instant time = Instant.EPOCH;
+                GeoPoint here = route.getFirst();
+                for (GeoPoint corner : route.subList(1, route.size())) {
+                    int steps = Math.max(1, (int) Math.ceil(here.distanceTo(corner) / 0.75));
+                    for (int i = 1; i <= steps; i++) {
+                        time = time.plusMillis(100);
+                        round.moveAlong(List.of(here.towards(corner, (double) i / steps)), time);
+                    }
+                    here = corner;
+                }
+                var day0 = date;
+                assertTrue(zone.contains(round.position()), () -> id + " " + day0 + ": walked into the zone");
+            }
         }
     }
 
