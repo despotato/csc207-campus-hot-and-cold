@@ -56,6 +56,8 @@
   #mapBtn { position: fixed; right: 12px; bottom: 150px; font-size: 16px; padding: 10px 14px; text-align: left; }
   #mapBtn small { display: block; font-size: 10px; margin-top: 2px; }
   #mapBtn.pulse { animation: pulse 900ms steps(2) infinite; }
+  #checkBtn { display: none; position: fixed; left: 12px; bottom: max(16px, env(safe-area-inset-bottom));
+    min-width: 116px; min-height: 52px; touch-action: manipulation; }
   @keyframes pulse { 50% { box-shadow: 0 0 0 6px #ffd23f99, 0 4px 0 var(--ink); } }
   #travelCursor { position: fixed; left: 0; top: 0; pointer-events: none; padding: 4px 8px; font-size: 11px;
     transform: translate(14px, -30px); background: #1b1f3aee; border: 2px solid var(--gold); color: var(--gold); white-space: nowrap; }
@@ -125,7 +127,9 @@
   #legend span { display: inline-block; width: 18px; height: 6px; margin-right: 6px; vertical-align: middle; }
   @media (max-width: 640px) {
     #log { display: none; } #help { display: none; } #cards { grid-template-columns: 1fr; } .hintcard { aspect-ratio: auto; min-height: 90px; }
+    #checkBtn { display: block; }
   }
+  @media (pointer: coarse) { #checkBtn { display: block; } }
 </style>
 </head>
 <body>
@@ -142,6 +146,7 @@
 <div id="log" class="panel hidden"><h3>Checks</h3><ol id="checks"></ol><p id="nochecks">None yet. Press <kbd>Space</kbd>.</p></div>
 <div id="compass" class="hidden" title="North"><span id="needle">▲N</span></div>
 <button id="mapBtn" class="hidden" title="Open the campus map and travel">🗺 Map <kbd>M</kbd><small>Click anywhere to travel</small></button>
+<button id="checkBtn" class="hidden" type="button" aria-label="Check the temperature">Check</button>
 <div id="travelCursor" class="hidden"></div>
 <div id="checkLabels"></div>
 <div id="help" class="panel hidden">
@@ -926,7 +931,7 @@ async function doCheck() {
   if (game.phase !== 'walk' || game.mapView || game.checking) return;
   if (game.checksLeft <= 0 && !(game.armedSearch && performance.now() - game.armedSearch < 3000)) {
     game.armedSearch = performance.now();
-    toast('FINAL SEARCH?', 'warm', 'Press Space again. If the zone isn\'t here, the round ends.');
+    toast('FINAL SEARCH?', 'warm', 'Press Space or tap Check again. If the zone isn\'t here, the round ends.');
     return;
   }
   game.armedSearch = 0;
@@ -986,6 +991,7 @@ function toggleMapView(force) {
   setInteractive(open);
   map.dragRotate.disable();
   $('mapBtn').classList.toggle('hidden', open);
+  $('checkBtn').classList.toggle('hidden', open);
   $('travelCursor').classList.add('hidden');
   if (open) {
     game.usedMap = true;
@@ -1039,6 +1045,7 @@ function enterZone(zone) {
   if (game.phase !== 'walk') return;
   toggleMapView(false);
   hide('mapBtn');
+  hide('checkBtn');
   game.phase = 'zone'; game.zone = zone; game.zoneAt = performance.now(); game.keys = {}; game.autopilot = null;
   hide('help');
   map.getSource('zone').setData(fc([{ type: 'Feature', properties: {},
@@ -1130,7 +1137,7 @@ async function finish(result, saveError) {
     map.getSource('zone').setData(fc([{ type: 'Feature', properties: {},
       geometry: { type: 'Polygon', coordinates: [circle(result.zone.centre, result.zone.radius, 64)] } }]));
   }
-  game.mapView = false; hide('mapTitle'); hide('hud'); hide('compass');
+  game.mapView = false; hide('mapTitle'); hide('hud'); hide('compass'); hide('checkBtn');
   game.zoneBuildings = new Set([...game.zoneBuildings].filter(id => game.guessed.has(id)));
   refreshHighlights();
   const roof = buildings.get(t.buildingId)?.height || 10;
@@ -1683,7 +1690,7 @@ async function startRound() {
   game.camBearing = game.heading;
   game.startedAt = performance.now();
   renderHud();
-  for (const id of ['hud', 'log', 'compass', 'help', 'mapBtn']) show(id);
+  for (const id of ['hud', 'log', 'compass', 'help', 'mapBtn', 'checkBtn']) show(id);
   $('mapBtn').classList.add('pulse');
   await flyTo({ center: offsetPt(game.pos, game.heading, 6), zoom: game.followZoom, pitch: pitchFor(game.followZoom), bearing: game.heading, duration: 3200 });
   game.phase = 'walk';
@@ -1748,6 +1755,7 @@ function renderHud() {
   const total = game.checksLeft + game.checkCount;
   if (pips.childElementCount !== total) pips.innerHTML = '<i></i>'.repeat(total);
   [...pips.children].forEach((pip, i) => pip.classList.toggle('used', i < game.checkCount));
+  $('checkBtn').textContent = game.checksLeft > 0 ? 'Check' : 'Final search';
 }
 const clock = s => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
 
@@ -1843,6 +1851,7 @@ $('viewDailyResult').addEventListener('click', () => {
   finish(result, null);
 });
 $('mapBtn').addEventListener('click', () => toggleMapView(true));
+$('checkBtn').addEventListener('click', doCheck);
 // A spoiler-free summary to compare with friends (no building name, no route).
 $('shareBtn').addEventListener('click', async () => {
   const r = game.result;
