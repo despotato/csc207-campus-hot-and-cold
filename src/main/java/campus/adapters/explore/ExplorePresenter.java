@@ -34,7 +34,7 @@ public final class ExplorePresenter implements ExploreOutputBoundary {
                 body.put("checksRemaining", started.checksRemaining());
                 body.put("guessLimit", started.guessLimit());
                 body.put("difficulty", started.difficulty());
-                putClue(body, started.clueBuilding());
+                putClue(body, started.clueBuilding(), started.clueText());
                 body.put("message", "Find the zone. Check inside it to know you're there. "
                         + started.checksRemaining() + " checks.");
             }
@@ -125,9 +125,12 @@ public final class ExplorePresenter implements ExploreOutputBoundary {
         }
     }
 
-    private static void putClue(Map<String, Object> body, Integer clueBuilding) {
+    private static void putClue(Map<String, Object> body, Integer clueBuilding, String clueText) {
         if (clueBuilding != null) {
             body.put("clueBuilding", clueBuilding);
+        }
+        if (clueText != null) {
+            body.put("clueText", clueText);
         }
     }
 
@@ -139,7 +142,7 @@ public final class ExplorePresenter implements ExploreOutputBoundary {
         body.put("mode", "daily");
         body.put("date", r.date());
         body.put("stage", r.stage());
-        putClue(body, r.clueBuilding());
+        putClue(body, r.clueBuilding(), r.clueText());
         body.put("point", point(r.position()));
         body.put("metresWalked", round(r.metresWalked()));
         body.put("elapsedSeconds", r.elapsedSeconds());

@@ -400,6 +400,33 @@ class ExpeditionTest {
         assertEquals(clue, again.clueBuilding().orElseThrow(), "the same zone always shows the same photo");
     }
 
+    @Test void theWrittenClueIsAboutThePhotographedBuildingOrAnotherOrdinaryOne() {
+        CampusMap map = campus(Set.of(2));
+        Expedition photographed = new Expedition(map, map.landmarks().getFirst(), new Zone(at(1000, 75), 90), START,
+                T0);
+        assertEquals(2, photographed.clueBuilding().orElseThrow());
+        assertEquals("One building in the zone is 3 storeys, brick.", photographed.clueText().orElseThrow(),
+                "North Hall: 11 m, no recorded history");
+        String words = round().clueText().orElseThrow();
+        for (String name : List.of("Hall", "Target")) {
+            assertFalse(words.contains(name), "never a name: " + words);
+        }
+        Expedition onlyLandmark = new Expedition(map, map.landmarks().get(1), new Zone(at(100, 140), 30), START, T0);
+        assertTrue(onlyLandmark.clueText().isEmpty(), "Far Hall is a landmark");
+    }
+
+    @Test void historyComesFirstAndNeverRepeatsTheCurrentName() {
+        assertEquals("One building in the zone used to be called the Physics Building.", Expedition.describe(
+                new Building(9, "Sandford Fleming", at(0, 0), 15, "stone", true, 1907, "Darling", "the Physics Building")));
+        assertEquals("One building in the zone was designed by Darling & Pearson.", Expedition.describe(
+                new Building(9, "Old Hall", at(0, 0), 15, "stone", true, 1892, "Darling & Pearson", "Old Hall Annex")),
+                "a former name that contains the current one is skipped");
+        assertEquals("One building in the zone dates from the 1890s.", Expedition.describe(
+                new Building(9, null, at(0, 0), 15, "stone", true, 1892, null, null)));
+        assertEquals("One building in the zone is 1 storey, glass.", Expedition.describe(
+                new Building(9, null, at(0, 0), 3, "glass", false, null, null, null)));
+    }
+
     @Test void noPhotoNoClue() {
         assertTrue(round().clueBuilding().isEmpty(), "no stored photos");
         CampusMap map = campus(Set.of(1, 5));

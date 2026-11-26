@@ -502,16 +502,65 @@ public final class Expedition {
      * everyone. Empty when the zone has no photographed building. The page mirrors this (LocalRules clueBuilding).
      */
     public Optional<Integer> clueBuilding() {
+        return pickClue(ordinaryBuildingsInZone().stream().filter(building -> map.hasCluePhoto(building.id()))
+                .toList()).map(Building::id);
+    }
+
+    /**
+     * The start-of-round clue in words, for when there's no photo (or it can't load): a piece of recorded history
+     * about an ordinary building in the zone, or failing that a deliberately vague look. With a photo it's about the
+     * photographed building. Never its current name (names are labelled on the map) and never where it is. Empty
+     * only when the zone has no ordinary building. The page mirrors this (LocalRules clueText).
+     */
+    public Optional<String> clueText() {
+        Optional<Building> described = clueBuilding().map(id -> map.building(id).orElseThrow());
+        if (described.isEmpty()) {
+            List<Building> ordinary = ordinaryBuildingsInZone();
+            described = pickClue(ordinary.stream().filter(Expedition::hasHistory).toList())
+                    .or(() -> pickClue(ordinary));
+        }
+        return described.map(Expedition::describe);
+    }
+
+    private static boolean hasHistory(Building building) {
+        return usableFormerName(building) || building.architect() != null || building.built() != null;
+    }
+
+    private static boolean usableFormerName(Building building) {
+        return building.formerName() != null
+                && (building.name() == null || !LandmarkNames.givesAway(building.formerName(), building.name()));
+    }
+
+    private List<Building> ordinaryBuildingsInZone() {
         Set<Integer> landmarkBuildings = map.landmarks().stream().map(CampusLandmark::buildingId)
                 .collect(Collectors.toSet());
-        List<Building> candidates = map.buildingsIn(new Zone(zone.centre(), zone.radiusMetres() - CLUE_INSET))
-                .stream().filter(building -> map.hasCluePhoto(building.id()))
+        return map.buildingsIn(new Zone(zone.centre(), zone.radiusMetres() - CLUE_INSET)).stream()
                 .filter(building -> !landmarkBuildings.contains(building.id())).toList();
+    }
+
+    /** The same pick for everyone: an index taken from the zone's centre. */
+    private Optional<Building> pickClue(List<Building> candidates) {
         if (candidates.isEmpty()) {
             return Optional.empty();
         }
         long seed = Math.round(zone.centre().latitude() * 1e6) + Math.round(zone.centre().longitude() * 1e6);
-        return Optional.of(candidates.get((int) Math.floorMod(seed, (long) candidates.size())).id());
+        return Optional.of(candidates.get((int) Math.floorMod(seed, (long) candidates.size())));
+    }
+
+    /** History first (a former name, the architect, the decade it was built); else storeys and facade only. */
+    static String describe(Building building) {
+        if (usableFormerName(building)) {
+            return "One building in the zone used to be called " + building.formerName() + ".";
+        }
+        if (building.architect() != null) {
+            return "One building in the zone was designed by " + building.architect() + ".";
+        }
+        if (building.built() != null) {
+            return "One building in the zone dates from the " + (building.built() / 10 * 10) + "s.";
+        }
+        long floors = Math.max(1, Math.round(building.height() / 3.66));
+        return "One building in the zone is " + floors + (floors == 1 ? " storey, " : " storeys, ")
+                + building.material() + ".";
     }
 
     /** The badges this round has earned so far, in {@link Achievement} order. */
