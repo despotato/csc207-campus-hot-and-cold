@@ -2307,7 +2307,8 @@ $('clueThumb').addEventListener('click', openClueCard);
 /** Same catalogue and order as the Java Achievement enum; icons are 11×11 pixel art (palette letters below). */
 const BETA_ENDS = Date.parse('2027-01-01T05:00:00Z');   // midnight in Toronto
 const ACHIEVEMENTS = [
-  { id: 'beta_player', title: 'Beta Player', subtitle: 'Here before launch', share: '🧪',
+  // once: a milestone, not a feat; shown with a result only the round it's first unlocked.
+  { id: 'beta_player', title: 'Beta Player', subtitle: 'Here before launch', share: '🧪', once: true,
     description: 'Finish a round while the game is in beta (before 2027).',
     pixels: ['...........', '...bbbb....', '..bb..bb...', '..bb..bb...', '..bbbbb....', '..bb..bb...',
       '..bb...bb..', '..bb...bb..', '..bbbbbb...', '..bb.......', '..bb.......'] },
@@ -2349,7 +2350,10 @@ function showBadges(earned) {
   const seen = unlockedAchievements();
   const box = $('badges');
   box.innerHTML = '';
-  earned.forEach((a, i) => {
+  // Feats show every time they're earned; one-time milestones only when new. Share uses the same list.
+  const shown = earned.filter(a => !(ACHIEVEMENTS.find(x => x.id === a.id)?.once && seen[a.id]));
+  game.shownBadges = shown;
+  shown.forEach((a, i) => {
     const el = badgeElement(a);
     el.style.animationDelay = (600 + i * 250) + 'ms';
     el.title = 'See all achievements';
@@ -3444,7 +3448,7 @@ $('shareBtn').addEventListener('click', async () => {
   const checks = r.checks.map(c => heat[c.heat] || '⬜').join('');
   const guesses = '❌'.repeat(Math.max(0, r.guessesUsed - (r.won ? 1 : 0))) + (r.won ? '✅' : '');
   const title = game.mode === 'daily' ? `Campus Hot & Cold · ${$('campusName').textContent} daily ${game.date}` : 'Campus Hot & Cold';
-  const badges = (r.achievements || []).map(a => `${ACHIEVEMENTS.find(x => x.id === a.id)?.share || '🏅'} ${a.title}`).join(' · ');
+  const badges = (game.shownBadges || []).map(a => `${ACHIEVEMENTS.find(x => x.id === a.id)?.share || '🏅'} ${a.title}`).join(' · ');
   const text = `${title}\n${r.score.total}/1000 · ${r.hintLevel || 'no'} hint\nChecks ${checks}\nGuesses ${guesses}\n${badges ? badges + '\n' : ''}${location.origin + location.pathname}`;
   try { await navigator.clipboard.writeText(text); toast('COPIED', 'warm', 'Paste it to your friends.'); }
   catch (e) { prompt('Copy your result:', text); }
