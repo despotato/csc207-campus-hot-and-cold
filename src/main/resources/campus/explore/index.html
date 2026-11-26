@@ -1357,6 +1357,7 @@ function addGameLayers() {
   map.on('mouseleave', 'buildings', () => setHover(null));
   map.on('click', 'buildings', onBuildingClick);
   map.on('render', placeLabels);
+  map.on('resize', reaimFlight);
   map.on('click', e => { if (game.mapView) travelTo(e.lngLat); });
   map.on('mousemove', e => {
     if (!game.mapView || game.travelling) return;
@@ -1891,12 +1892,12 @@ function toggleMapView(force) {
     map.getSource('routes').setData(fc(game.trail.length > 1 ? [{ type: 'Feature', properties: { color: '#ff5fa2', scale: 0.6 },
       geometry: { type: 'LineString', coordinates: game.trail } }] : []));
     const b = pack.bounds;
-    map.fitBounds([[b.west, b.south], [b.east, b.north]], { padding: 40, pitch: 0, bearing: 0, duration: 900 });
+    fitBounds([[b.west, b.south], [b.east, b.north]], () => ({ padding: 40, pitch: 0, bearing: 0, duration: 900 }));
   } else {
     map.getCanvas().style.cursor = '';
     map.getSource('routes').setData(fc([]));
     drawAvatar();
-    map.flyTo({ center: game.pos, zoom: LOOK_ZOOM, pitch: 55, bearing: game.camBearing, duration: 700 });
+    flyTo({ center: game.pos, zoom: LOOK_ZOOM, pitch: 55, bearing: game.camBearing, duration: 700 });
     lookAroundMode();
   }
 }
@@ -2155,9 +2156,8 @@ async function replay() {
   const z = game.zone;
   const all = [...r.route, ...r.shortestRoute, ...(z ? [0, 90, 180, 270].map(b => offsetPt(z.centre, b, z.radius)) : [])];
   const lons = all.map(p => p[0]), lats = all.map(p => p[1]);
-  map.fitBounds([[Math.min(...lons), Math.min(...lats)], [Math.max(...lons), Math.max(...lats)]],
-    { padding: { top: 60, bottom: 90, left: 60, right: Math.min(420, innerWidth / 2) }, pitch: 35, bearing: 0, duration: 1800 });
-  await new Promise(res => map.once('moveend', res));
+  await fitBounds([[Math.min(...lons), Math.min(...lats)], [Math.max(...lons), Math.max(...lats)]],
+    () => ({ padding: { top: 60, bottom: 90, left: 60, right: Math.min(420, innerWidth / 2) }, pitch: 35, bearing: 0, duration: 1800 }));
   show('legend');
   // Drawn wider underneath, so it shows as an outline where your route matches it.
   const shortest = { type: 'Feature', properties: { color: '#4cf0d4', scale: 2.2 }, geometry: { type: 'LineString', coordinates: r.shortestRoute } };
@@ -2699,10 +2699,13 @@ function showCanada(mode = 'visit', firstVisit = false) {
   // Frame every campus, so a narrow phone screen shows Victoria to St. John's too.
   const placed = campusIndex.filter(c => c.center);
   const lons = placed.map(c => c.center[0]), lats = placed.map(c => c.center[1]);
-  const bar = $('pickerBar').getBoundingClientRect();
-  const view = lons.length && map.cameraForBounds([[Math.min(...lons), Math.min(...lats)], [Math.max(...lons), Math.max(...lats)]],
-    { padding: { top: bar.bottom + 30, bottom: 40, left: 40, right: 40 } });
-  map.flyTo({ center: view?.center || [-92, 52], zoom: Math.min(3.4, view?.zoom ?? 3.4), pitch: 0, bearing: 0, duration: 2600, essential: true });
+  const canada = () => {   // measured at the current window size, so a re-aimed flight still frames it
+    const bar = $('pickerBar').getBoundingClientRect();
+    const view = lons.length && map.cameraForBounds([[Math.min(...lons), Math.min(...lats)], [Math.max(...lons), Math.max(...lats)]],
+      { padding: { top: bar.bottom + 30, bottom: 40, left: 40, right: 40 } });
+    return { center: view?.center || [-92, 52], zoom: Math.min(3.4, view?.zoom ?? 3.4), pitch: 0, bearing: 0 };
+  };
+  glide((duration, again) => map[again ? 'easeTo' : 'flyTo']({ ...canada(), duration, essential: true }), 2600);
 }
 function closeCanada() {
   if (!game.picking || game.firstPick) return;   // the first visit needs an answer
@@ -2710,8 +2713,8 @@ function closeCanada() {
   map.setLayoutProperty('campus-dots', 'visibility', 'none');
   for (const pin of game.campusPins) pin.remove();
   $('pickerBar').classList.add('hidden'); setInteractive(false);
-  map.flyTo({ center: ORIGIN, ...CAMPUS_VIEW, bearing: -20, duration: 2600, essential: true });
-  map.once('moveend', () => { $('title').classList.remove('hidden'); game.orbiting = true; });
+  flyTo({ center: ORIGIN, ...CAMPUS_VIEW, bearing: -20, duration: 2600 })
+    .then(() => { $('title').classList.remove('hidden'); game.orbiting = true; });
 }
 function pickCampus(id) {
   const settingHome = game.pickMode === 'home';
@@ -2722,8 +2725,7 @@ function pickCampus(id) {
   $('pickerBar').classList.add('hidden');
   for (const pin of game.campusPins) pin.remove();
   // Fly all the way down, then load that campus at the same view so the switch is seamless.
-  map.flyTo({ center: campus.center, ...CAMPUS_VIEW, bearing: -20, duration: 3200, essential: true });
-  map.once('moveend', () => {
+  flyTo({ center: campus.center, ...CAMPUS_VIEW, bearing: -20, duration: 3200 }).then(() => {
     const url = new URL(location.href); url.searchParams.delete('v');
     if (settingHome) url.searchParams.delete('campus'); else url.searchParams.set('campus', id);   // home needs no parameter
     location.href = url.toString();
@@ -3040,8 +3042,41 @@ function lookAroundMode() {
 function setInteractive(on) {
   for (const h of ['dragPan', 'dragRotate', 'scrollZoom', 'touchZoomRotate', 'doubleClickZoom', 'keyboard']) on ? map[h].enable() : map[h].disable();
 }
+// ---------- camera flights ----------
+/**
+ * MapLibre aims a flight at the screen centre it had when the flight began, so resizing the window mid-flight
+ * landed the camera off target. A flight is a function of its duration (and whether it is being re-aimed); when the
+ * map resizes mid-flight, it is re-aimed from wherever the camera is, in the time left. Resolves on arrival, or when
+ * something else takes over the camera.
+ */
+let flight = null;
+function glide(go, duration) {
+  flight?.done();
+  return new Promise(resolve => {
+    const f = { go, ends: performance.now() + duration, reaiming: false };
+    const arrived = () => { if (!f.reaiming) f.done(); };
+    f.done = () => { map.off('moveend', arrived); if (flight === f) flight = null; resolve(); };
+    flight = f;
+    go(duration, false);   // registered after the call: starting a flight ends the previous one with a moveend
+    if (map.isMoving()) map.on('moveend', arrived); else f.done();
+  });
+}
+function reaimFlight() {
+  const f = flight;
+  if (!f || !map.isMoving()) return;
+  f.reaiming = true;
+  f.go(Math.max(250, f.ends - performance.now()), true);
+  f.reaiming = false;
+}
+/** Re-aimed flights ease from where they are, so the camera doesn't start a second zoom-out arc. */
 function flyTo(options) {
-  return new Promise(resolve => { map.once('moveend', resolve); map.flyTo({ ...options, essential: true }); });
+  return glide((duration, again) => map[again ? 'easeTo' : 'flyTo']({ ...options, duration, essential: true }), options.duration ?? 1000);
+}
+function easeTo(options) {
+  return glide(duration => map.easeTo({ ...options, duration, essential: true }), options.duration ?? 500);
+}
+function fitBounds(bounds, options) {
+  return glide(duration => map.fitBounds(bounds, { ...options(), duration, essential: true }), options().duration ?? 1000);
 }
 
 // W/S and ↑/↓ move, A/D strafe, ←/→ turn. Around the zone, A/D and ←/→ both orbit and W/S tilt.
@@ -3058,7 +3093,7 @@ addEventListener('keydown', e => {
     if (e.code === 'Space' && !e.repeat) { doCheck(); e.preventDefault(); return; }
   }
   if (LOOK_PHASES.has(game.phase) && !game.mapView && KEYMAP[e.code]) { game.keys[KEYMAP[e.code]] = true; e.preventDefault(); }
-  if (LOOK_PHASES.has(game.phase) && !game.mapView && e.code === 'KeyC' && game.pos) map.easeTo({ center: game.pos, duration: 600 });
+  if (LOOK_PHASES.has(game.phase) && !game.mapView && e.code === 'KeyC' && game.pos) easeTo({ center: game.pos, duration: 600 });
 });
 addEventListener('keyup', e => { if (KEYMAP[e.code]) game.keys[KEYMAP[e.code]] = false; });
 addEventListener('blur', () => (game.keys = {}));
