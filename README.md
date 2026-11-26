@@ -136,7 +136,7 @@ Explore is the two-stage version of the game, played in a pixel-art 3D model of 
 
 **Stage 1: find the zone**
 - You start somewhere on campus, 450–900 m from a hidden 90 m zone. You walk a third-person avatar along real campus paths: <kbd>W</kbd>/<kbd>↑</kbd> walks, <kbd>A</kbd>/<kbd>D</kbd> turns at path junctions (yellow arrows show where you'll go), <kbd>S</kbd> turns around, and <kbd>Shift</kbd> runs.
-- Press <kbd>Space</kbd> to spend one of 6 temperature checks. You see **hot** (<150 m from the zone), **warm** (<300 m), **cool** (<500 m) or **cold**, and whether you're warmer or colder than at your last check. Each check leaves a coloured flag. Walking into the zone is silent: a check made inside it finds the zone and ends stage 1. With no checks left, your next check is a final search: inside the zone it continues, anywhere else the round ends.
+- Press <kbd>Space</kbd> to spend one of 6 temperature checks. You see **hot** (<150 m from the zone), **warm** (<300 m), **cool** (<500 m) or **cold**, and whether you're warmer or colder than at your last check. Each check leaves a coloured flag. The avatar has a 3 m radius: touching the zone edge counts, and a check there ends stage 1. With no checks left, your next check is a final search: touching the zone continues, anywhere else the round ends.
 - <kbd>M</kbd> opens the campus map with your checks and trail; clicking a spot travels there, charged as the shortest walk (distance and time).
 - Distance walked (including backtracking) and time are shown at all times.
 

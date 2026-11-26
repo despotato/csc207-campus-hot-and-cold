@@ -55,15 +55,21 @@ public final class WikipediaFactsGateway implements LandmarkFactsGateway {
 
     @Override
     public List<String> facts(String wikipediaTitle, String landmarkName) {
+        return facts(wikipediaTitle, landmarkName, "University of Toronto");
+    }
+
+    @Override
+    public List<String> facts(String wikipediaTitle, String landmarkName, String campusName) {
         if (landmarkName == null || landmarkName.isBlank()) {
             return List.of();
         }
-        String key = wikipediaTitle + "|" + landmarkName;
+        String campus = campusName == null ? "" : campusName.split(" — ", 2)[0];
+        String key = wikipediaTitle + "|" + landmarkName + "|" + campus;
         List<String> cached = cache.get(key);
         if (cached != null) {
             return cached;
         }
-        List<String> facts = fetch(wikipediaTitle, landmarkName);
+        List<String> facts = fetch(wikipediaTitle, landmarkName, campus);
         if (!facts.isEmpty()) {
             cache.put(key, facts);
         }
@@ -71,13 +77,13 @@ public final class WikipediaFactsGateway implements LandmarkFactsGateway {
     }
 
     /** Requests are made one at a time, as Wikipedia's API etiquette asks. */
-    private List<String> fetch(String wikipediaTitle, String landmarkName) {
+    private List<String> fetch(String wikipediaTitle, String landmarkName, String campus) {
         try {
             Set<String> titles = new LinkedHashSet<>();
             if (wikipediaTitle != null && !wikipediaTitle.isBlank()) {
                 titles.add(wikipediaTitle);
             }
-            titles.addAll(search("\"" + landmarkName + "\" Toronto"));
+            titles.addAll(search("\"" + landmarkName + "\" \"" + campus + "\""));
             List<String> pages = titles.stream().limit(MAX_ARTICLES).map(this::extract).toList();
             List<String> known = new ArrayList<>();
             List<String> obscure = new ArrayList<>();

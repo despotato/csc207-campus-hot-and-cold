@@ -22,6 +22,8 @@ public final class Expedition {
     public static final int GUESS_LIMIT = 3;
     /** The target sits at most this far from the zone centre, so the centre never gives it away exactly. */
     static final double MAX_ZONE_OFFSET = 50;
+    /** Players have a 3 m footprint, so touching the edge counts as reaching the zone. */
+    static final double PLAYER_RADIUS = 3;
     /** A fast sprint with slack for network jitter; anything quicker is treated as teleporting. */
     static final double MAX_SPEED = 60;
     static final double SPEED_SLACK_SECONDS = 0.75;
@@ -122,10 +124,10 @@ public final class Expedition {
         if (!zone.contains(map.buildingOf(target).centre())) {
             throw new IllegalArgumentException("The target must be inside the zone.");
         }
-        if (zone.contains(start)) {
+        if (zone.overlaps(start, PLAYER_RADIUS)) {
             throw new IllegalArgumentException("The start must be outside the zone.");
         }
-        OpenSpace.Route route = ground.shortestRoute(start, zone::contains)
+        OpenSpace.Route route = ground.shortestRoute(start, point -> zone.overlaps(point, PLAYER_RADIUS))
                 .orElseThrow(() -> new IllegalArgumentException("The zone cannot be reached on foot."));
         this.start = start;
         this.position = start;
@@ -264,7 +266,7 @@ public final class Expedition {
         }
         GeoPoint here = position;
         double distance = here.distanceTo(zone.centre());
-        if (zone.contains(here)) {
+        if (zone.overlaps(here, PLAYER_RADIUS)) {
             Check found = new Check(here, Heat.HOT, Trend.FIRST, distance, true);
             checks.add(found);
             confirmZone(now);
@@ -290,7 +292,7 @@ public final class Expedition {
         if (checksRemaining() > 0) {
             throw new IllegalStateException("Use a check first; the final search is for when they run out.");
         }
-        if (zone.contains(position)) {
+        if (zone.overlaps(position, PLAYER_RADIUS)) {
             confirmZone(now);
             return true;
         }
@@ -344,11 +346,27 @@ public final class Expedition {
         String category = target.category().toLowerCase(Locale.ROOT);
         String article = category.matches("^[aeiou].*") ? "an " : "a ";
         return Optional.of(switch (hintLevel) {
-            case EASY -> appearance();
+            case EASY -> appearance() + " " + positionClue();
             case NORMAL -> "It's " + article + category + " building. " + (outsideClue != null ? outsideClue
-                    : "Its name starts with \"" + Character.toUpperCase(target.name().charAt(0)) + "\".");
-            case HARD -> outsideClue != null ? outsideClue : recordedHistory();
+                    : "Its name starts with \"" + Character.toUpperCase(target.name().charAt(0)) + "\".")
+                    + " " + positionClue();
+            case HARD -> (outsideClue != null ? outsideClue : recordedHistory()) + " " + positionClue();
         });
+    }
+
+    /** A distinct spatial clue for every hint, including when an encyclopedia fact is vague. */
+    private String positionClue() {
+        List<Building> named = map.buildingsIn(zone).stream().filter(building -> building.name() != null)
+                .sorted(java.util.Comparator.comparingDouble((Building building) -> building.centre().longitude())
+                        .thenComparingDouble(building -> building.centre().latitude())
+                        .thenComparingInt(Building::id)).toList();
+        for (int i = 0; i < named.size(); i++) {
+            if (named.get(i).id() == target.buildingId()) {
+                return "Among named buildings, count from west to east: it's #" + (i + 1) + " of "
+                        + named.size() + ".";
+            }
+        }
+        throw new IllegalStateException("The target is not a named building in the zone.");
     }
 
     /** Guesses a building inside the zone. Returns true if it is the target. */

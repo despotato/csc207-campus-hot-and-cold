@@ -64,11 +64,21 @@ class CampusPackLoaderTest {
         CampusMap map = new PackCatalog().campus("uwaterloo").orElseThrow();
         assertEquals("University of Waterloo — Main campus", map.name());
         assertEquals("America/Toronto", map.timezone().getId());
-        assertEquals(61, map.landmarks().size());
+        assertEquals(53, map.landmarks().size());
         assertTrue(map.landmarks().stream().anyMatch(l -> l.name().equals("Dana Porter Library")));
         var daily = Expedition.daily(map, java.time.LocalDate.of(2026, 11, 25), Instant.EPOCH);
         assertTrue(map.openSpace().isOpen(daily.start()), "daily start is outdoors");
         assertTrue(daily.shortestToZone() > 300);
+        var puzzle = map.dailyPuzzle(java.time.LocalDate.of(2026, 11, 25)).orElseThrow();
+        assertEquals("Biology 2", map.landmark(puzzle.landmarkId()).orElseThrow().name());
+        var zone = new campus.domain.explore.Zone(puzzle.zoneCentre(), 90);
+        var destination = map.openSpace().nearestOpen(puzzle.zoneCentre(), 90).orElseThrow();
+        daily.travelTo(destination, Instant.EPOCH.plusSeconds(1));
+        assertTrue(daily.check(Instant.EPOCH.plusSeconds(2)).inZone());
+        String hint = daily.chooseHint(Expedition.HintLevel.NORMAL);
+        assertTrue(hint.contains("#2 of 4"), "fallback identifies one named building by its position");
+        assertFalse(hint.contains(map.landmark(puzzle.landmarkId()).orElseThrow().name()));
+        assertTrue(map.buildingsIn(zone).size() >= 5);
         for (int seed = 0; seed < 10; seed++) {
             Expedition round = Expedition.begin(map, new Random(seed), Instant.EPOCH);
             assertTrue(map.openSpace().isOpen(round.start()), "random start is outdoors");

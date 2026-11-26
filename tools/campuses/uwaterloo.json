@@ -30,12 +30,6 @@
       "wikipedia": null
     },
     {
-      "osm": "w43250588",
-      "name": "Ron Eydt Village",
-      "category": "Residence",
-      "wikipedia": null
-    },
-    {
       "osm": "w43250609",
       "name": "Minota Hagey Residence",
       "category": "Residence",
@@ -60,12 +54,6 @@
       "wikipedia": null
     },
     {
-      "osm": "w148285604",
-      "name": "Mackenzie King Village",
-      "category": "Residence",
-      "wikipedia": null
-    },
-    {
       "osm": "w143668848",
       "name": "UW Place Grand Commons",
       "category": "Residence",
@@ -74,30 +62,6 @@
     {
       "osm": "w141712445",
       "name": "Student Village 1 Central Complex",
-      "category": "Residence",
-      "wikipedia": null
-    },
-    {
-      "osm": "w141712434",
-      "name": "West 2",
-      "category": "Residence",
-      "wikipedia": null
-    },
-    {
-      "osm": "w293219222",
-      "name": "West 1",
-      "category": "Residence",
-      "wikipedia": null
-    },
-    {
-      "osm": "w182922417",
-      "name": "North 3",
-      "category": "Residence",
-      "wikipedia": null
-    },
-    {
-      "osm": "w293225024",
-      "name": "South 2",
       "category": "Residence",
       "wikipedia": null
     },
@@ -120,20 +84,8 @@
       "wikipedia": null
     },
     {
-      "osm": "w43250610",
-      "name": "Conrad Grebel University College",
-      "category": "College",
-      "wikipedia": null
-    },
-    {
       "osm": "w1246717243",
       "name": "Renison University College",
-      "category": "College",
-      "wikipedia": null
-    },
-    {
-      "osm": "w43250612",
-      "name": "St. Jerome's University",
       "category": "College",
       "wikipedia": null
     },

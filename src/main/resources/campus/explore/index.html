@@ -178,7 +178,7 @@
     </div>
     <!-- Difficulty selector: the start request already sends { difficulty }. See the team task "Difficulty levels". -->
     <div id="difficulty" data-value="normal" class="controls">Difficulty: Normal</div>
-    <div class="buttons"><button id="startBtn" autofocus>Start <kbd>Enter</kbd></button><button id="tutorialBtn" class="secondary">How to play</button></div>
+    <div class="buttons"><button id="startBtn" autofocus>Start <kbd>Enter</kbd></button><button id="viewDailyResult" class="secondary hidden">View today's result</button><button id="tutorialBtn" class="secondary">How to play</button></div>
     <p id="loading">Loading campus…</p>
   </div>
 </section>
@@ -237,6 +237,7 @@ const HEAT_COLORS = { hot: '#ff4d2e', warm: '#ff9f1c', cool: '#4cc9f0', cold: '#
 const TREND_TEXT = { first: '', warmer: '▲ Warmer', same: '■ Same', colder: '▼ Colder' };
 // About 30 seconds from one edge of campus to the other. Java's Expedition.TRAVEL_SPEED matches WALK_SPEED.
 const WALK_SPEED = 47, BACK_SPEED = 16, TURN_RATE = 190, AUTOPILOT_SPEED = 47;
+const PLAYER_RADIUS = 3; // metres; the avatar can overlap the edge of the hidden zone
 const ZOOM_MIN = 17, ZOOM_MAX = 20.6;
 // Must match CampusPackLoader.CELL_METRES and GeoPoint's metres per degree in Java.
 const CELL = 1.5, BODY = 0.6, M_LAT = Math.PI * 6371000 / 180;
@@ -1116,6 +1117,11 @@ async function onBuildingClick(e) {
 // ---------- reveal, results, replay ----------
 async function finish(result, saveError) {
   game.phase = 'done'; game.result = result;
+  if (game.mode === 'daily') {
+    const date = game.date || campusDate();
+    store.set(dailyKey(date), String(result.score.total));
+    store.set(dailyResultKey(date), JSON.stringify(result));
+  }
   hide('banner'); hide('log'); hide('help');
   const t = result.target;
   game.target = t.buildingId;
@@ -1151,7 +1157,6 @@ function orbit(centre) {
 
 function fillResults(r, saveError) {
   $('modeLabel').textContent = game.mode === 'daily' ? `Daily · ${game.date} · ${$('campusName').textContent}` : 'Unlimited';
-  if (game.mode === 'daily') store.set(dailyKey(), String(r.score.total));
   const fmt = m => m >= 1000 ? (m / 1000).toFixed(2) + ' km' : m + ' m';
   $('outcome').textContent = r.won ? `Identified in ${r.guessesUsed} ${r.guessesUsed === 1 ? 'guess' : 'guesses'}`
     : r.secondsToZone == null ? 'Zone not found' : 'Out of guesses';
@@ -1235,7 +1240,7 @@ const TUTORIAL = [
   ['Walk the real campus', '<kbd>W</kbd><kbd>S</kbd> walk &nbsp; <kbd>A</kbd><kbd>D</kbd> sidestep &nbsp; <kbd>←</kbd><kbd>→</kbd> turn<br>Drag to turn · pinch or scroll to zoom',
     "You're somewhere on your selected campus. Somewhere 450 to 900 m away is a hidden zone around one building. Walk anywhere; buildings are solid."],
   ['Check the temperature', '<kbd>Space</kbd> → <span style="color:#ff4d2e">40°C hot</span> … <span style="color:#6f8cff">-10°C cold</span><br>▲ +4° warmer · ▼ -3° colder than your last check',
-    'You have 6 checks. Each gives a temperature: 40°C at the zone centre, a degree cooler for every 20 m away. Checks are numbered on the right and on the map. Walking into the zone is silent: check inside it to find it. Out of checks? Your next Space is a final search.'],
+    'You have 6 checks. Each gives a temperature: 40°C at the zone centre, a degree cooler for every 20 m away. Checks are numbered on the right and on the map. Your avatar has a 3 m reach: touching the zone edge counts. Press Space there to find it. Out of checks? Your next Space is a final search.'],
   ['Travel by map', '<kbd>M</kbd> or the 🗺 Map button · click anywhere to go there',
     'Campus is big. Open the map to see every check and your trail, then click a spot to travel there in a moment. The trip counts as the shortest walk.'],
   ['Pick a hint blind', 'EASY ×1 what you can see<br>NORMAL ×1.5 what students know<br>HARD ×2 campus history',
@@ -1270,6 +1275,7 @@ const LocalRules = (() => {
   const ok = body => ({ status: 200, body });
   const fail = (error, status = 400) => ({ status, body: { type: 'error', error } });
   const inZone = (z, p) => distOf(z.centre, p) <= z.radius;
+  const playerInZone = (z, p) => distOf(z.centre, p) <= z.radius + PLAYER_RADIUS;
   const zoneBuildings = z => pack.buildings.filter(b => inZone(z, b.center));
 
   /** Start spots: footpath points on open ground, which are outdoors and well connected. */
@@ -1347,7 +1353,8 @@ const LocalRules = (() => {
     if (store.get('claimed:' + dailyKey())) return fail("You've already played today's daily. Come back tomorrow, or play unlimited.");
     const target = pack.landmarks.find(l => l.id === puzzle.landmark), building = buildings.get(target.building);
     const zone = { centre: puzzle.zone, radius: RADIUS }, startPoint = nearestOpen(puzzle.start, 8);
-    const route = startPoint && shortestRoute(startPoint, p => inZone(zone, p), p => Math.max(0, distOf(p, zone.centre) - zone.radius), 600000);
+    const route = startPoint && shortestRoute(startPoint, p => playerInZone(zone, p),
+      p => Math.max(0, distOf(p, zone.centre) - zone.radius - PLAYER_RADIUS), 600000);
     if (!route) return fail('Could not set up the daily puzzle.');
     store.set('claimed:' + dailyKey(), '1');
     return begin(target, building, zone, startPoint, route, 'daily', date);
@@ -1374,8 +1381,8 @@ const LocalRules = (() => {
       const starts = open.filter(p => { const d = distOf(p, zone.centre); return d >= MIN_START && d <= MAX_START; });
       if (!starts.length) continue;
       const startPoint = starts[Math.floor(Math.random() * starts.length)];
-      const route = shortestRoute(startPoint, p => inZone(zone, p),
-        p => Math.max(0, distOf(p, zone.centre) - zone.radius), 300000);
+      const route = shortestRoute(startPoint, p => playerInZone(zone, p),
+        p => Math.max(0, distOf(p, zone.centre) - zone.radius - PLAYER_RADIUS), 300000);
       if (!route) continue;
       return begin(target, building, zone, startPoint, route, 'unlimited', null);
     }
@@ -1425,11 +1432,11 @@ const LocalRules = (() => {
     const here = round.pos, d = distOf(here, round.zone.centre);
     const zoneView = { centre: round.zone.centre, radius: round.zone.radius };
     if (round.checks.length >= CHECKS) {
-      if (inZone(round.zone, here)) { round.stage = 'identify'; round.zoneAt = Date.now(); return ok({ type: 'checked', point: here, number: round.checks.length + 1, checksRemaining: 0, finalSearch: true, zoneFound: true, zone: zoneView }); }
+      if (playerInZone(round.zone, here)) { round.stage = 'identify'; round.zoneAt = Date.now(); return ok({ type: 'checked', point: here, number: round.checks.length + 1, checksRemaining: 0, finalSearch: true, zoneFound: true, zone: zoneView }); }
       round.stage = 'finished';
       return ok({ type: 'checked', point: here, number: round.checks.length + 1, checksRemaining: 0, finalSearch: true, zoneFound: false, ...finished() });
     }
-    if (inZone(round.zone, here)) {
+    if (playerInZone(round.zone, here)) {
       round.checks.push({ point: here, heat: 'zone', trend: 'first', metres: Math.round(d), temperature: temperatureFor(d) });
       round.stage = 'identify'; round.zoneAt = Date.now();
       return ok({ type: 'checked', point: here, number: round.checks.length, checksRemaining: CHECKS - round.checks.length, finalSearch: false, zoneFound: true, zone: zoneView });
@@ -1467,7 +1474,8 @@ const LocalRules = (() => {
     const key = title + '|' + name;
     if (factCache.has(key)) return factCache.get(key);
     const titles = new Set(title ? [title] : []);
-    const search = await wiki('action=query&list=search&srlimit=3&srsearch=' + encodeURIComponent(`"${name}" Toronto`));
+    const campus = pack.campus.split(' — ')[0];
+    const search = await wiki('action=query&list=search&srlimit=3&srsearch=' + encodeURIComponent(`"${name}" "${campus}"`));
     for (const hit of search?.query?.search || []) titles.add(hit.title);
     const known = [], obscure = [];
     let own = !!title;
@@ -1501,6 +1509,13 @@ const LocalRules = (() => {
     if (b.architect) return `It was designed by ${b.architect}.`;
     return `It stands about ${Math.max(1, Math.round(b.height / 3.66))} storeys tall.`;
   }
+  function positionClue() {
+    const named = zoneBuildings(round.zone).filter(b => b.name).sort((a, b) =>
+      a.center[0] - b.center[0] || a.center[1] - b.center[1] || a.id - b.id);
+    const index = named.findIndex(b => b.id === round.building.id);
+    if (index < 0) throw new Error('The target is not a named building in the zone.');
+    return `Among named buildings, count from west to east: it's #${index + 1} of ${named.length}.`;
+  }
   async function hint(body) {
     if (round.stage === 'finished') return fail('This round is over.');
     if (round.stage !== 'identify') return fail('Check inside the zone to find it first.');
@@ -1509,11 +1524,13 @@ const LocalRules = (() => {
     if (!MULT[level]) return fail('Choose easy, normal, or hard.');
     const t = round.target, category = t.category.toLowerCase(), article = /^[aeiou]/.test(category) ? 'an ' : 'a ';
     let text;
-    if (level === 'easy') text = appearance();
+    if (level === 'easy') text = appearance() + ' ' + positionClue();
     else {
       const list = (await facts(t.wikipedia, t.name)).filter(f => !givesAway(f, t.name));
       const fact = list.length ? (level === 'normal' || list.length === 1 ? list[0] : list[1]) : null;
-      text = level === 'normal' ? `It's ${article}${category} building. ` + (fact || `Its name starts with "${t.name[0].toUpperCase()}".`) : fact || history();
+      text = level === 'normal' ? `It's ${article}${category} building. `
+        + (fact || `Its name starts with "${t.name[0].toUpperCase()}".`) + ' ' + positionClue()
+        : (fact || history()) + ' ' + positionClue();
     }
     round.hint = level;
     return ok({ type: 'hint', level, multiplier: MULT[level], hint: text, zoneBuildings: zoneBuildings(round.zone).map(b => b.id) });
@@ -1569,8 +1586,8 @@ const LocalRules = (() => {
     /** Debug only: the shortest route from where you stand into the zone. */
     /** Debug only: the hidden zone and target, to verify the daily matches the Java app. */
     debugInfo: () => DEBUG && round ? { zone: round.zone, target: round.target.name } : null,
-    debugRoute: () => DEBUG && round ? shortestRoute(round.pos, p => inZone(round.zone, p),
-      p => Math.max(0, distOf(p, round.zone.centre) - round.zone.radius))?.points || [] : [],
+    debugRoute: () => DEBUG && round ? shortestRoute(round.pos, p => playerInZone(round.zone, p),
+      p => Math.max(0, distOf(p, round.zone.centre) - round.zone.radius - PLAYER_RADIUS))?.points || [] : [],
     async handle(action, body) {
       if (action === 'start') return start(body);
       if (!round || body.round !== round.id) return fail('This round has ended or was replaced. Start a new round.');
@@ -1592,7 +1609,14 @@ const store = { get: k => { try { return localStorage.getItem(k); } catch (e) { 
 let campusIndex = [], chosenMode = store.get('mode') || 'daily';
 /** Today's date on the campus clock (the daily changes at local midnight). */
 const campusDate = () => new Intl.DateTimeFormat('en-CA', { timeZone: pack.timezone || 'UTC' }).format(new Date());
-const dailyKey = () => `daily:${pack.id}:${campusDate()}`;
+const dailyKey = (date = campusDate()) => `daily:${pack.id}:${date}`;
+const dailyResultKey = (date = campusDate()) => `dailyResult:${pack.id}:${date}`;
+function storedDailyResult() {
+  try {
+    const result = JSON.parse(store.get(dailyResultKey()));
+    return result?.score && result?.target && Array.isArray(result?.route) ? result : null;
+  } catch (e) { return null; }
+}
 
 function renderChoices() {
   const box = $('campusChoice');
@@ -1616,9 +1640,14 @@ function renderChoices() {
   for (const b of document.querySelectorAll('#modeChoice button')) b.setAttribute('aria-checked', String(b.dataset.mode === chosenMode));
   $('dailyDate').textContent = pack.daily ? campusDate() : '';
   const played = store.get(dailyKey());
+  const claimed = Boolean(store.get('claimed:' + dailyKey()));
+  const saved = storedDailyResult();
+  $('viewDailyResult').classList.toggle('hidden', !saved);
+  $('startBtn').disabled = chosenMode === 'daily' && (Boolean(played) || claimed);
   $('modeNote').textContent = chosenMode === 'daily'
     ? (played === 'unfinished' ? "You started today's daily without finishing it. Come back tomorrow, or play unlimited."
-      : played ? `You've played today's daily: ${played} / 1000. Come back tomorrow, or play unlimited.`
+      : played ? `You've played today's daily: ${played} / 1000. View your result or play unlimited.`
+      : claimed ? "You've started today's daily. Come back tomorrow, or play unlimited."
       : 'One try. Everyone gets the same puzzle today, on normal difficulty.')
     : 'Fresh random rounds, as many as you like.';
 }
@@ -1636,7 +1665,7 @@ async function loadCampusPack() {
 
 // ---------- start ----------
 async function startRound() {
-  if (game.phase !== 'title') return;
+  if (game.phase !== 'title' || $('startBtn').disabled) return;
   game.phase = 'starting';
   const r = await api('start', { campus: pack.id, mode: chosenMode, difficulty: $('difficulty').dataset.value || 'normal' });
   if (r.status !== 200) { game.phase = 'title'; $('loading').textContent = r.body.error || 'Could not start. Retry.'; return; }
@@ -1806,6 +1835,13 @@ $('startBtn').addEventListener('click', startRound);
 $('toGuess').addEventListener('click', startGuessing);
 $('replayBtn').addEventListener('click', replay);
 $('againBtn').addEventListener('click', resetRound);
+$('viewDailyResult').addEventListener('click', () => {
+  const result = storedDailyResult();
+  if (!result || game.phase !== 'title') return;
+  game.mode = 'daily'; game.date = campusDate();
+  hide('title');
+  finish(result, null);
+});
 $('mapBtn').addEventListener('click', () => toggleMapView(true));
 // A spoiler-free summary to compare with friends (no building name, no route).
 $('shareBtn').addEventListener('click', async () => {

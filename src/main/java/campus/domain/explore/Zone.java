@@ -14,4 +14,12 @@ public record Zone(GeoPoint centre, double radiusMetres) {
     public boolean contains(GeoPoint point) {
         return centre.distanceTo(point) <= radiusMetres;
     }
+
+    /** Whether a circular player footprint reaches any part of this zone. */
+    public boolean overlaps(GeoPoint playerCentre, double playerRadiusMetres) {
+        if (!Double.isFinite(playerRadiusMetres) || playerRadiusMetres < 0) {
+            throw new IllegalArgumentException("A player radius must be non-negative.");
+        }
+        return centre.distanceTo(playerCentre) <= radiusMetres + playerRadiusMetres;
+    }
 }

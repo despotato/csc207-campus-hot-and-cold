@@ -11,5 +11,10 @@ import java.util.List;
 public interface LandmarkFactsGateway {
     List<String> facts(String wikipediaTitle, String landmarkName);
 
+    /** Campus-aware lookup; existing gateways may ignore the context. */
+    default List<String> facts(String wikipediaTitle, String landmarkName, String campusName) {
+        return facts(wikipediaTitle, landmarkName);
+    }
+
     LandmarkFactsGateway NONE = (title, name) -> List.of();
 }
