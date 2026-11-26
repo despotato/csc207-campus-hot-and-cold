@@ -1,0 +1,518 @@
+{
+  "id": "queens",
+  "name": "Queen's University",
+  "timezone": "America/Toronto",
+  "bounds": {
+    "south": 44.21796,
+    "west": -76.51906,
+    "north": 44.23234,
+    "east": -76.48894
+  },
+  "mascot": {
+    "name": "Boo Hoo the Bear",
+    "species": "bear",
+    "colors": {
+      "fur": "#3B2A1E",
+      "belly": "#6B4A33",
+      "dark": "#140c06",
+      "primary": "#B90E31",
+      "secondary": "#FABD0F"
+    },
+    "school": "Queen's University"
+  },
+  "flat": [],
+  "dailyFrom": "2026-11-01",
+  "landmarks": [
+    {
+      "osm": "w5144799",
+      "name": "Stauffer Library",
+      "category": "Library",
+      "wikipedia": null
+    },
+    {
+      "osm": "w5145336",
+      "name": "Agnes Queen’s Art Gallery",
+      "category": "Campus life",
+      "wikipedia": "Agnes Etherington Art Centre",
+      "facts": [
+        "It is the university's public art centre, which grew out of a Kingston art and music club founded in 1926.",
+        "Its original building has been extended in 1962, 1975, 1978 and 2000."
+      ]
+    },
+    {
+      "osm": "r14040741",
+      "name": "Goodes Hall",
+      "category": "Teaching",
+      "wikipedia": "Smith School of Business",
+      "facts": [
+        "It is the business school's building.",
+        "It opened in 2002, named after the family of a 1957 commerce graduate who led Warner–Lambert."
+      ]
+    },
+    {
+      "osm": "w5144995",
+      "name": "The Law Building",
+      "category": "Teaching",
+      "wikipedia": "Queen's University Faculty of Law",
+      "facts": [
+        "Its law school was officially established in 1957.",
+        "The university's first law faculty began in 1861 and gave an honorary degree to John A. Macdonald two years later."
+      ]
+    },
+    {
+      "osm": "w5145351",
+      "name": "Louise D. Acton Building",
+      "category": "Campus life",
+      "wikipedia": "Museum of Health Care",
+      "facts": [
+        "It holds a museum of health care history, in a building that celebrates nursing education in Canada.",
+        "It is a 1904 Beaux-Arts limestone building and a National Historic Site of Canada."
+      ]
+    },
+    {
+      "osm": "w5150001",
+      "name": "Theological Hall",
+      "category": "College",
+      "wikipedia": "Queen's Theological College",
+      "facts": [
+        "People still call it the Old Arts and Science Building, and its ornate Convocation Hall hosted graduations until Grant Hall was built.",
+        "It was built in 1879, designed by Gordon & Helliwell."
+      ]
+    },
+    {
+      "osm": "w5145338",
+      "name": "Grant Hall",
+      "category": "Campus life",
+      "wikipedia": null,
+      "facts": [
+        "Its clock tower is the university's most famous landmark, used for convocations and exams.",
+        "It was built between 1902 and 1905."
+      ]
+    },
+    {
+      "osm": "r13218813",
+      "name": "Mitchell Hall",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It is the newest building on campus, opened in 2018."
+      ]
+    },
+    {
+      "osm": "r13418739",
+      "name": "Duncan McArthur Hall",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It is home to the Faculty of Education on West Campus.",
+        "The education faculty moved here by 1971."
+      ]
+    },
+    {
+      "osm": "w54588718",
+      "name": "Isabel Bader Centre for Performing Arts",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "r36847",
+      "name": "Victoria Hall",
+      "category": "Residence",
+      "wikipedia": null,
+      "facts": [
+        "It is the largest residence, housing nearly 900 students.",
+        "It was built in 1965."
+      ]
+    },
+    {
+      "osm": "r10955250",
+      "name": "Leggett Hall",
+      "category": "Residence",
+      "wikipedia": null,
+      "facts": [
+        "It is a residence that opened in 2003; it was originally known by its address, 194 Stuart Street."
+      ]
+    },
+    {
+      "osm": "w5145395",
+      "name": "Stirling Hall",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It is the circular physics building.",
+        "It was built in 1962 and named after a former head of the physics department."
+      ]
+    },
+    {
+      "osm": "r13353344",
+      "name": "Queen's Athletics Recreation Centre",
+      "category": "Athletics",
+      "wikipedia": null
+    },
+    {
+      "osm": "r15590957",
+      "name": "Endaayaan – Tkanónsote",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w990627020",
+      "name": "Earl Hall",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "r286935",
+      "name": "Biosciences Complex",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w143778637",
+      "name": "Beamish-Munro Hall",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It was designed as a living lab of sustainable building, with high fly-ash concrete, triple-glazed windows and solar panels.",
+        "It opened in June 2004 as the engineering faculty's newest building."
+      ]
+    },
+    {
+      "osm": "r13668799",
+      "name": "Integrated Learning Centre",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "The student-run Tea Room café opened here in the fall of 2006."
+      ]
+    },
+    {
+      "osm": "w158304865",
+      "name": "Ban Righ Hall",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w42392538",
+      "name": "Botterell Hall",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "The health sciences library takes up two floors of it."
+      ]
+    },
+    {
+      "osm": "w5145136",
+      "name": "Chernoff Hall",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w5145132",
+      "name": "Ellis Hall",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "r13824546",
+      "name": "Gordon-Brockington House",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w5145372",
+      "name": "Dupuis Hall",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w5144761",
+      "name": "Douglas Library",
+      "category": "Library",
+      "wikipedia": null,
+      "facts": [
+        "It is the oldest library building on campus, with Gothic reading rooms."
+      ]
+    },
+    {
+      "osm": "w321302031",
+      "name": "David C. Smith House",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "r13283959",
+      "name": "Mackintosh-Corry Hall",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It is a large social sciences complex.",
+        "It stands on the site of the original football stadium, which was torn down and moved to West Campus in 1971."
+      ]
+    },
+    {
+      "osm": "w27797339",
+      "name": "Kingston Hall",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "r13824547",
+      "name": "Leonard Hall",
+      "category": "Residence",
+      "wikipedia": null,
+      "facts": [
+        "It is a residence named after a benefactor who donated land to the university in 1923."
+      ]
+    },
+    {
+      "osm": "w5145117",
+      "name": "Ontario Hall",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w5145348",
+      "name": "Humphrey Hall",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w5145394",
+      "name": "Walter Light Hall",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w5145330",
+      "name": "McLaughlin Hall",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It houses the mechanical engineering department.",
+        "It was a 1948 donation from the founder of General Motors of Canada."
+      ]
+    },
+    {
+      "osm": "w5145141",
+      "name": "Watts Hall",
+      "category": "Residence",
+      "wikipedia": null,
+      "facts": [
+        "It is a residence that opened in 2003; it was originally known by its address, 23 Albert Street."
+      ]
+    },
+    {
+      "osm": "w143778687",
+      "name": "Gordon Hall",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w51049173",
+      "name": "Kinesiology Building",
+      "category": "Athletics",
+      "wikipedia": null
+    },
+    {
+      "osm": "w5144959",
+      "name": "Robert Sutherland Hall",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It is named after the university's first Black graduate and major benefactor.",
+        "Its dedication ceremony took place on October 3, 2009."
+      ]
+    },
+    {
+      "osm": "w5145295",
+      "name": "Morris Hall",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "r13373378",
+      "name": "Dunning Hall",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It was built during the 1950s expansion, at the same time as Richardson Hall."
+      ]
+    },
+    {
+      "osm": "w5145186",
+      "name": "Chown Hall",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w995441672",
+      "name": "Queen's Centre",
+      "category": "Athletics",
+      "wikipedia": null
+    },
+    {
+      "osm": "w5145105",
+      "name": "Richardson Hall",
+      "category": "Campus life",
+      "wikipedia": null,
+      "facts": [
+        "It was built in the 1950s to house the university's administrative offices."
+      ]
+    },
+    {
+      "osm": "w5145332",
+      "name": "Watson Hall",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w160034445",
+      "name": "Miller Hall",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w321302032",
+      "name": "Brant House",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w5145393",
+      "name": "Goodwin Hall",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "r13824545",
+      "name": "McNeill House",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "r10955586",
+      "name": "Rideau Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "r13938689",
+      "name": "John Deutsch University Centre",
+      "category": "Campus life",
+      "wikipedia": null,
+      "facts": [
+        "Students call it the JDUC; it is the student union building, named after a former principal and economist."
+      ]
+    },
+    {
+      "osm": "w5145344",
+      "name": "Nicol Hall",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "r13284009",
+      "name": "Fleming Hall",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It was the electrical engineering building, and it housed a campus radio station.",
+        "It was built in 1901 to honour the engineer who proposed standard time zones, and rebuilt after a fire in 1933."
+      ]
+    },
+    {
+      "osm": "w5149945",
+      "name": "LaSalle Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w5145334",
+      "name": "Harrison-LeCaine Hall",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It houses the School of Music.",
+        "It opened in 1974."
+      ]
+    },
+    {
+      "osm": "w141901025",
+      "name": "Summerhill",
+      "category": "Campus life",
+      "wikipedia": null,
+      "facts": [
+        "It is the oldest building on campus, opened in 1839."
+      ]
+    },
+    {
+      "osm": "w5145398",
+      "name": "Harkness Hall",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w787675324",
+      "name": "Adelaide Hall",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w5145366",
+      "name": "Cataraqui Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w5145358",
+      "name": "Clark Hall",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "Its engineering students' pub, opened in 1971, is the oldest pub on campus."
+      ]
+    },
+    {
+      "osm": "w42392573",
+      "name": "University Club",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w5145133",
+      "name": "Jeffery Hall",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "r13419127",
+      "name": "Waldron Tower",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w5145349",
+      "name": "Kathleen Ryan Hall",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It houses both the university archives and the City of Kingston's archives.",
+        "The university archives have been here since 1981."
+      ]
+    },
+    {
+      "osm": "w5145346",
+      "name": "Jackson Hall",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w5145347",
+      "name": "Old Medical Building",
+      "category": "Teaching",
+      "wikipedia": null
+    }
+  ],
+  "dailyStartInsideBounds": true
+}
