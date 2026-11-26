@@ -7,6 +7,7 @@ import campus.application.explore.ResumeDailyInputBoundary;
 import campus.application.explore.ChooseHintInputBoundary;
 import campus.application.explore.GuessBuildingInputBoundary;
 import campus.application.explore.MoveInputBoundary;
+import campus.application.explore.ReviewExploreHistoryInputBoundary;
 import campus.application.explore.StartExpeditionInputBoundary;
 import campus.application.explore.StartRequest;
 import campus.application.explore.TravelInputBoundary;
@@ -38,6 +39,7 @@ public final class ExploreController {
     private DailyStatusInputBoundary dailyStatus;
     private CampusTrafficInputBoundary traffic;
     private ResumeDailyInputBoundary resumeDaily;
+    private ReviewExploreHistoryInputBoundary history;
 
     public ExploreController(StartExpeditionInputBoundary start, MoveInputBoundary move, TravelInputBoundary travel,
                              CheckTemperatureInputBoundary check, ChooseHintInputBoundary hint,
@@ -71,6 +73,8 @@ public final class ExploreController {
                     requireDaily();
                     resumeDaily.resume(campus(fields));
                 }
+                case "history" -> requireHistory().history(campus(fields));
+                case "recap" -> requireHistory().recap(round(fields));
                 default -> {
                     return new ExploreViewModel(404, Map.of("type", "error", "error", "Unknown action."));
                 }
@@ -94,11 +98,24 @@ public final class ExploreController {
         return this;
     }
 
+    /** Adds saved Explore history actions (optional for simpler setups and tests). */
+    public ExploreController withHistory(ReviewExploreHistoryInputBoundary reviewHistory) {
+        this.history = Objects.requireNonNull(reviewHistory);
+        return this;
+    }
+
     private DailyStatusInputBoundary requireDaily() {
         if (dailyStatus == null) {
             throw new IllegalArgumentException("Daily runs aren't available here.");
         }
         return dailyStatus;
+    }
+
+    private ReviewExploreHistoryInputBoundary requireHistory() {
+        if (history == null) {
+            throw new IllegalArgumentException("Explore history isn't available here.");
+        }
+        return history;
     }
 
     private static String campus(Map<String, Object> fields) {

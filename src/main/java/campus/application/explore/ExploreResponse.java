@@ -59,6 +59,14 @@ public sealed interface ExploreResponse {
         }
     }
 
+    record History(List<SavedExpedition> rounds) implements ExploreResponse {
+        public History {
+            rounds = List.copyOf(rounds);
+        }
+    }
+
+    record Recap(SavedExpedition round) implements ExploreResponse { }
+
     /** A daily round picked up where it was left, with everything the page needs to redraw it. */
     record Resumed(UUID roundId, String campusId, String campus, String date, String stage, GeoPoint position,
                    double metresWalked, long elapsedSeconds, Long zoneElapsedSeconds, int checksRemaining,

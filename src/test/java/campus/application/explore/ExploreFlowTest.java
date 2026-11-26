@@ -27,7 +27,7 @@ class ExploreFlowTest {
     private final MutableClock clock = new MutableClock();
     private final List<String> summaries = new java.util.ArrayList<>();
     private ExploreController controller;
-    private final List<String> saved = new java.util.ArrayList<>();
+    private final List<SavedExpedition> saved = new java.util.ArrayList<>();
     private boolean failSave;
 
     static final class MutableClock extends Clock {
@@ -71,12 +71,21 @@ class ExploreFlowTest {
     private RoundFinisher finisher(LandmarkInfoGateway info) {
         return new RoundFinisher(info, new ExpeditionResultRepository() {
             @Override
-            public void save(java.util.UUID id, String campus, Instant at, String difficulty,
-                             ExploreResponse.Result result) throws java.io.IOException {
+            public void save(SavedExpedition round) throws java.io.IOException {
                 if (failSave) {
                     throw new java.io.IOException("disk full");
                 }
-                saved.add(campus + "|" + difficulty + "|" + result.targetName() + "|" + result.score());
+                saved.add(round);
+            }
+
+            @Override
+            public Optional<SavedExpedition> find(java.util.UUID id) {
+                return saved.stream().filter(round -> round.id().equals(id)).findFirst();
+            }
+
+            @Override
+            public List<SavedExpedition> all() {
+                return List.copyOf(saved);
             }
         }, clock, trailStore);
     }
@@ -167,7 +176,9 @@ class ExploreFlowTest {
         assertFalse(((List<?>) result.get("shortestRoute")).isEmpty());
         assertEquals(List.of("Target Hall"), summaries, "Wikipedia looked up once, at the end");
         assertEquals(1, saved.size(), "saved exactly once when finished");
-        assertTrue(saved.getFirst().startsWith("Test campus|normal|Target Hall|"));
+        assertEquals("test", saved.getFirst().campusId());
+        assertEquals("normal", saved.getFirst().difficulty());
+        assertEquals("Target Hall", saved.getFirst().result().targetName());
         assertNull(right.body().get("saveError"));
         assertEquals("A test building.", map(result.get("summary")).get("extract"));
     }

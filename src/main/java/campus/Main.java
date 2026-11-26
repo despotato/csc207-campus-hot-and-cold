@@ -16,10 +16,10 @@ import campus.application.explore.CampusTrafficInteractor;
 import campus.application.explore.CheckTemperatureInteractor;
 import campus.application.explore.ChooseHintInteractor;
 import campus.application.explore.DailyRunInteractor;
-import campus.application.explore.ExpeditionResultRepository;
 import campus.application.explore.ExpeditionSession;
 import campus.application.explore.GuessBuildingInteractor;
 import campus.application.explore.MoveInteractor;
+import campus.application.explore.ReviewExploreHistoryInteractor;
 import campus.application.explore.RoundFinisher;
 import campus.application.explore.StartExpeditionInteractor;
 import campus.application.explore.TravelInteractor;
@@ -29,6 +29,7 @@ import campus.infrastructure.BrowserLandmarkMapGateway;
 import campus.infrastructure.FileDailyAttempts;
 import campus.infrastructure.FileDailyRunStore;
 import campus.infrastructure.FileFootTrailRepository;
+import campus.infrastructure.FileExpeditionResultRepository;
 import campus.infrastructure.PackCatalog;
 import campus.infrastructure.ExploreWebServer;
 import campus.infrastructure.FileRoundRepository;
@@ -96,12 +97,13 @@ public final class Main {
         var dailyRuns = new FileDailyRunStore(daily);
         var session = new ExpeditionSession(dailyRuns, clock);
         var presenter = new ExplorePresenter();
-        // Team task: replace DISABLED with a file-backed result repository.
+        var results = new FileExpeditionResultRepository(Path.of(System.getProperty("user.home"),
+                ".campus-hot-and-cold", "explore"));
         // Anonymous foot trails for the walking students (shared online later: docs/SHARED_PATHS.md).
         var trails = new FileFootTrailRepository(Path.of(System.getProperty("user.home"), ".campus-hot-and-cold",
                 "trails"));
         var finisher = new RoundFinisher(new WikipediaSummaryGateway(client),
-                ExpeditionResultRepository.DISABLED, clock, trails);
+                results, clock, trails, session::dailyDate);
         var controller = new ExploreController(
                 new StartExpeditionInteractor(campuses, dailyAttempts, RandomGenerator.getDefault(), clock, session,
                         presenter),
@@ -111,6 +113,7 @@ public final class Main {
                 new ChooseHintInteractor(session, new WikipediaFactsGateway(client), presenter),
                 new GuessBuildingInteractor(session, finisher, presenter),
                 presenter);
+        controller.withHistory(new ReviewExploreHistoryInteractor(campuses, results, presenter));
         var dailyRun = new DailyRunInteractor(campuses, dailyAttempts, dailyRuns, session, finisher, clock, presenter);
         controller.withDailyRuns(dailyRun, dailyRun);
         controller.withTraffic(new CampusTrafficInteractor(trails, presenter));

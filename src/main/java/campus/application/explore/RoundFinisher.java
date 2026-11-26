@@ -6,7 +6,11 @@ import campus.domain.explore.FootTrail;
 
 import java.io.IOException;
 import java.time.Clock;
+import java.time.LocalDate;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.function.Function;
 
 /**
  * Builds the end-of-round reveal (looking up the target's summary) and saves the result. Shared by the
@@ -17,18 +21,26 @@ public final class RoundFinisher {
     private final ExpeditionResultRepository results;
     private final Clock clock;
     private final FootTrailRepository trails;
+    private final Function<UUID, Optional<LocalDate>> dailyDate;
 
     public RoundFinisher(LandmarkInfoGateway info, ExpeditionResultRepository results, Clock clock) {
-        this(info, results, clock, FootTrailRepository.NONE);
+        this(info, results, clock, FootTrailRepository.NONE, ignored -> Optional.empty());
     }
 
     /** Also records each finished round's path, anonymously, for other players to see as a walking student. */
     public RoundFinisher(LandmarkInfoGateway info, ExpeditionResultRepository results, Clock clock,
                          FootTrailRepository trails) {
+        this(info, results, clock, trails, ignored -> Optional.empty());
+    }
+
+    /** Also tags saved results with the campus-local date of a daily round. */
+    public RoundFinisher(LandmarkInfoGateway info, ExpeditionResultRepository results, Clock clock,
+                         FootTrailRepository trails, Function<UUID, Optional<LocalDate>> dailyDate) {
         this.info = Objects.requireNonNull(info);
         this.results = Objects.requireNonNull(results);
         this.clock = Objects.requireNonNull(clock);
         this.trails = Objects.requireNonNull(trails);
+        this.dailyDate = Objects.requireNonNull(dailyDate);
     }
 
     /** The reveal for a finished round, without saving it again (e.g. showing today's daily after a restart). */
@@ -46,8 +58,9 @@ public final class RoundFinisher {
         String saveError = null;
         if (results.enabled()) {
             try {
-                results.save(expedition.id(), expedition.map().name(), clock.instant(),
-                        expedition.difficulty().name(), result);
+                LocalDate date = dailyDate.apply(expedition.id()).orElse(null);
+                results.save(new SavedExpedition(expedition.id(), expedition.map().id(), clock.instant(),
+                        expedition.difficulty().name(), date == null ? "unlimited" : "daily", date, result));
             } catch (IOException exception) {
                 saveError = "Your result could not be saved.";
             }
