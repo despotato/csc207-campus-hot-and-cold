@@ -79,6 +79,6 @@ public final class StartExpeditionInteractor implements StartExpeditionInputBoun
         output.present(new ExploreResponse.Started(expedition.id(), map.id(), map.name(), expedition.start(),
                 expedition.checksRemaining(), Expedition.GUESS_LIMIT, difficulty.name(),
                 daily ? "daily" : "unlimited", daily ? today.toString() : null,
-                expedition.clueBuildings()));
+                expedition.clueBuilding().orElse(null)));
     }
 }

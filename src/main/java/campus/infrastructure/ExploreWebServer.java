@@ -25,6 +25,9 @@ public final class ExploreWebServer implements AutoCloseable {
     static final String PAGE = "/campus/explore/index.html";
     private static final int MAX_BODY = 16 * 1024;
     private static final String JSON_TYPE = "application/json; charset=utf-8";
+    /** Start-of-round clue photos stored with the packs: /packs/clues/<campus>/<building>.jpg, nothing else. */
+    private static final java.util.regex.Pattern CLUE_PHOTO =
+            java.util.regex.Pattern.compile("/packs/clues/[a-z0-9-]{1,40}/\\d{1,12}\\.jpg");
 
     private final HttpServer server;
     private final ExecutorService executor = Executors.newFixedThreadPool(4, runnable -> {
@@ -67,15 +70,8 @@ public final class ExploreWebServer implements AutoCloseable {
             String method = exchange.getRequestMethod();
             if ("GET".equals(method) && ("/".equals(path) || "/index.html".equals(path))) {
                 send(exchange, 200, "text/html; charset=utf-8", page());
-            } else if ("GET".equals(method) && "/packs/index.json".equals(path)) {
-                send(exchange, 200, JSON_TYPE, packs.rawIndex().getBytes(StandardCharsets.UTF_8));
             } else if ("GET".equals(method) && path.startsWith("/packs/")) {
-                var pack = packs.rawPack(path.substring("/packs/".length()));
-                if (pack.isPresent()) {
-                    send(exchange, 200, JSON_TYPE, pack.get().getBytes(StandardCharsets.UTF_8));
-                } else {
-                    send(exchange, 404, "text/plain", "Not found".getBytes(StandardCharsets.UTF_8));
-                }
+                packFile(exchange, path);
             } else if ("GET".equals(method) && "/api/debug".equals(path) && debug != null) {
                 json(exchange, 200, debug.get());
             } else if (path.startsWith("/api/")) {
@@ -83,6 +79,28 @@ public final class ExploreWebServer implements AutoCloseable {
             } else {
                 send(exchange, 404, "text/plain", "Not found".getBytes(StandardCharsets.UTF_8));
             }
+        }
+    }
+
+    /** The pack index, a listed pack, or a stored clue photo; anything else under /packs/ is not found. */
+    private void packFile(HttpExchange exchange, String path) throws IOException {
+        if ("/packs/index.json".equals(path)) {
+            send(exchange, 200, JSON_TYPE, packs.rawIndex().getBytes(StandardCharsets.UTF_8));
+            return;
+        }
+        if (CLUE_PHOTO.matcher(path).matches()) {
+            try (InputStream photo = ExploreWebServer.class.getResourceAsStream("/campus" + path)) {
+                if (photo != null) {
+                    send(exchange, 200, "image/jpeg", photo.readAllBytes());
+                    return;
+                }
+            }
+        }
+        var pack = packs.rawPack(path.substring("/packs/".length()));
+        if (pack.isPresent()) {
+            send(exchange, 200, JSON_TYPE, pack.get().getBytes(StandardCharsets.UTF_8));
+        } else {
+            send(exchange, 404, "text/plain", "Not found".getBytes(StandardCharsets.UTF_8));
         }
     }
 

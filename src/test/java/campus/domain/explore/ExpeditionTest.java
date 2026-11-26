@@ -34,6 +34,11 @@ class ExpeditionTest {
      * so walking east means going around its north end. Target Hall stands at (1000, 75).
      */
     static CampusMap campus() {
+        return campus(Set.of());
+    }
+
+    /** The same campus, with stored clue photos of {@code cluePhotos}. */
+    static CampusMap campus(Set<Integer> cluePhotos) {
         List<List<List<GeoPoint>>> solid = new ArrayList<>(List.of(
                 square(1000, 75, 10), square(1010, 130, 10), square(1060, 75, 10), square(950, 75, 10),
                 square(100, 140, 10), square(1000, 20, 10)));
@@ -46,7 +51,8 @@ class ExpeditionTest {
         List<CampusLandmark> landmarks = List.of(
                 new CampusLandmark(1, 1, "Target Hall", "Library", "Target Hall"),
                 new CampusLandmark(2, 5, "Far Hall", "Residence", null));
-        return new CampusMap("Test campus", buildings, landmarks, ground);
+        return new CampusMap("campus", "Test campus", java.time.ZoneOffset.UTC, java.util.Map.of(), buildings, landmarks,
+                ground, cluePhotos);
     }
 
     static Expedition round() {
@@ -384,17 +390,21 @@ class ExpeditionTest {
         assertEquals(0, found.score().nearMissPoints());
     }
 
-    @Test void clueBuildingsAreOrdinaryBuildingsInsideTheZone() {
-        // In the zone: Target Hall (the target, a landmark), North/East/West Hall (11 m) and an unnamed 5 m shed.
-        List<Integer> clues = round().clueBuildings();
-        assertEquals(Set.of(2, 3, 4), Set.copyOf(clues), "not the target, not the shed");
-        assertEquals(clues, round().clueBuildings(), "the same zone always gives the same order");
+    @Test void theClueIsAPhotographedOrdinaryBuildingInsideTheZone() {
+        // In the zone: Target Hall (target, landmark), North/East/West Hall and an unnamed shed. Far Hall is outside.
+        CampusMap map = campus(Set.of(1, 2, 3, 5));
+        Expedition round = new Expedition(map, map.landmarks().getFirst(), new Zone(at(1000, 75), 90), START, T0);
+        int clue = round.clueBuilding().orElseThrow();
+        assertTrue(clue == 2 || clue == 3, "photographed, in the zone and not a landmark: " + clue);
+        Expedition again = new Expedition(map, map.landmarks().getFirst(), new Zone(at(1000, 75), 90), START, T0);
+        assertEquals(clue, again.clueBuilding().orElseThrow(), "the same zone always shows the same photo");
     }
 
-    @Test void aZoneWithOnlyLandmarksHasNoClue() {
-        CampusMap map = campus();
-        Expedition round = new Expedition(map, map.landmarks().get(1), new Zone(at(100, 140), 30), START, T0);
-        assertTrue(round.clueBuildings().isEmpty(), "Far Hall is a landmark");
+    @Test void noPhotoNoClue() {
+        assertTrue(round().clueBuilding().isEmpty(), "no stored photos");
+        CampusMap map = campus(Set.of(1, 5));
+        Expedition round = new Expedition(map, map.landmarks().getFirst(), new Zone(at(1000, 75), 90), START, T0);
+        assertTrue(round.clueBuilding().isEmpty(), "only landmarks are photographed");
     }
 
     @Test void betaPlayerOnlyBeforeLaunch() {

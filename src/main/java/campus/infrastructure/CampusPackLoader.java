@@ -14,8 +14,10 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Reads a campus pack (see tools/build_pack.py) from the classpath. The raw pack is also served to
@@ -90,7 +92,13 @@ public final class CampusPackLoader {
                 new GeoPoint(Json.number(bounds.get("north")), Json.number(bounds.get("east"))), CELL_METRES, solid);
         String id = pack.get("id") instanceof String text ? text : "campus";
         ZoneId zone = pack.get("timezone") instanceof String tz ? ZoneId.of(tz) : ZoneOffset.UTC;
-        return new CampusMap(id, (String) pack.get("campus"), zone, daily, buildings, landmarks, ground);
+        Set<Integer> cluePhotos = new HashSet<>();
+        if (pack.get("cluePhotos") instanceof List<?> photos) {
+            for (Object photo : photos) {
+                cluePhotos.add((int) Json.number(Json.object(photo).get("building")));
+            }
+        }
+        return new CampusMap(id, (String) pack.get("campus"), zone, daily, buildings, landmarks, ground, cluePhotos);
     }
 
     private static GeoPoint point(Object lonLat) {
