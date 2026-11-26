@@ -598,7 +598,7 @@ function facadeFor(b) {
       return h < 0.4 ? 'stone' : h < 0.75 ? 'sandstone' : 'gothic';
     default:
       if (b.category === 'Residence') return b.height >= 14 ? 'residence' : h < 0.5 ? 'brick' : 'brickTan';
-      if (!b.category && b.height < 9) return h < 0.5 ? 'siding' : h < 0.6 ? 'timber' : h < 0.8 ? 'brickDark' : 'brick';
+      if (!b.category && b.height < 9 && footprintArea(b) < 450) return h < 0.5 ? 'siding' : h < 0.6 ? 'timber' : h < 0.8 ? 'brickDark' : 'brick';
       if (old) return h < 0.7 ? 'brickDark' : 'brick';
       return h < 0.42 ? 'brick' : h < 0.68 ? 'brickDark' : h < 0.88 ? 'brickTan' : 'timber';
   }
@@ -621,18 +621,93 @@ const ROOF = px => {
   for (let i = 0; i < 26; i++) px((i * 7) % 16, (i * 11) % 16, 1, 1, i % 2 ? '#6b6862' : '#8c8983');
   px(0, 0, 16, 1, '#6b6862'); px(0, 0, 1, 16, '#6b6862');
 };
+/**
+ * Roof styles: [pixel tile, metres per tile, relief depth in metres, raised = dark lines stick up]. Each roof is
+ * parallax-mapped like the facades, so seams, tiles and rooftop units have depth.
+ */
+const ROOFS = {
+  gravel: [ROOF, 8, 0.12, false],
+  // White membrane with rooftop units (dark boxes stick up) and a parapet line.
+  membrane: [px => {
+    px(0, 0, 16, 16, '#d9d8d2');
+    for (let i = 0; i < 14; i++) px((i * 5 + 2) % 16, (i * 9) % 16, 1, 1, '#c6c5be');
+    px(0, 0, 16, 1, '#a8a7a0');
+    px(3, 4, 4, 3, '#8a8f98'); px(3, 4, 4, 1, '#b4b9c1'); px(11, 10, 3, 3, '#8a8f98'); px(11, 10, 3, 1, '#b4b9c1');
+  }, 10, 0.5, false],
+  // Green copper patina with standing seams.
+  copper: [px => {
+    px(0, 0, 16, 16, '#6fae96');
+    for (let x = 0; x < 16; x += 4) px(x, 0, 1, 16, '#4f8a74');
+    for (let i = 0; i < 12; i++) px((i * 7 + 1) % 16, (i * 5) % 16, 1, 1, i % 2 ? '#86c2aa' : '#5e9b84');
+  }, 8, 0.08, false],
+  // Dark slate tiles in staggered rows.
+  slate: [px => {
+    px(0, 0, 16, 16, '#4f5560');
+    for (let y = 0; y < 16; y += 4) { px(0, y, 16, 1, '#3a3f48'); for (let x = (y / 4) % 2 ? 2 : 0; x < 16; x += 4) px(x, y, 1, 4, '#3a3f48'); }
+    for (let i = 0; i < 8; i++) px((i * 5) % 16, (i * 7 + 1) % 16, 1, 1, '#6a717d');
+  }, 6, 0.06, false],
+  // Asphalt shingles for houses.
+  shingles: [px => {
+    px(0, 0, 16, 16, '#6e5446');
+    for (let y = 0; y < 16; y += 3) { px(0, y, 16, 1, '#54403a'); for (let x = (y / 3) % 2 ? 3 : 0; x < 16; x += 6) px(x, y, 1, 3, '#54403a'); }
+    for (let i = 0; i < 10; i++) px((i * 7) % 16, (i * 11 + 1) % 16, 1, 1, i % 2 ? '#7f6455' : '#5f4a3f');
+  }, 6, 0.05, false],
+  // Green (sedum) roof: planted beds between paths.
+  green: [px => {
+    px(0, 0, 16, 16, '#6f9a45');
+    for (let i = 0; i < 40; i++) px((i * 7 + 3) % 16, (i * 5) % 16, 1, 1, ['#88b35a', '#5c8638', '#a2b860', '#c9a6c9'][i % 4]);
+    px(0, 7, 16, 2, '#b7b2a6'); px(7, 0, 2, 16, '#b7b2a6');
+  }, 8, 0.15, false],
+  // Standing-seam metal.
+  seam: [px => {
+    px(0, 0, 16, 16, '#9aa3ab');
+    for (let x = 0; x < 16; x += 3) px(x, 0, 1, 16, '#c0c7cd');
+    px(0, 15, 16, 1, '#7d868f');
+  }, 6, 0.06, true],
+};
+/** Footprint area in square metres (outer rings minus courtyards), cached on the building. */
+function footprintArea(b) {
+  if (b.area != null) return b.area;
+  let area = 0;
+  for (const polygon of b.outline) polygon.forEach((ring, i) => {
+    const pts = ring.map(toLocal);
+    let a = 0;
+    for (let k = 0; k < pts.length - 1; k++) a += pts[k][0] * pts[k + 1][1] - pts[k + 1][0] * pts[k][1];
+    area += (i === 0 ? 1 : -1) * Math.abs(a) / 2;
+  });
+  return (b.area = area);
+}
+const ROOF_TYPES = Object.keys(ROOFS);
+/** The roof that goes with a facade style (with some variety for plain brick). */
+function roofFor(facade, b) {
+  const r = (Math.sin(b.id * 78.233) * 43758.5453) % 1, h = r < 0 ? r + 1 : r;
+  switch (facade) {
+    case 'gothic': return h < 0.75 ? 'copper' : 'slate';
+    case 'stone': return h < 0.4 ? 'copper' : h < 0.7 ? 'slate' : 'gravel';
+    case 'brickDark': case 'sandstone': return h < 0.6 ? 'slate' : 'gravel';
+    case 'siding': return footprintArea(b) < 450 ? 'shingles' : 'gravel';
+    case 'timber': return 'green';
+    case 'metal': return h < 0.6 ? 'seam' : 'membrane';
+    case 'glass': case 'glassGreen': case 'tower': return h < 0.8 ? 'membrane' : 'green';
+    case 'residence': return h < 0.6 ? 'membrane' : 'gravel';
+    case 'brutalist': case 'concrete': return 'gravel';
+    default:
+      if (b.height < 9 && footprintArea(b) < 450) return h < 0.6 ? 'shingles' : 'gravel';
+      return h < 0.55 ? 'gravel' : h < 0.85 ? 'membrane' : 'green';
+  }
+}
 
-const scene3d = { ranges: new Map(), geometries: {}, roofs: null };
+const scene3d = { ranges: new Map(), geometries: {}, roofGeometries: {} };
 let ORIGIN = [-79.3955, 43.6629];
 const toLocal = ([lon, lat]) => [(lon - ORIGIN[0]) * M_LON, (lat - ORIGIN[1]) * M_LAT];
 
 /** Builds one merged mesh per facade material plus one for roofs; remembers each building's vertex range. */
 function buildMeshes() {
   const walls = Object.fromEntries(FACADE_TYPES.map(m => [m, { pos: [], uv: [], shade: [], tan: [], bit: [] }]));
-  const roofs = { pos: [], uv: [], shade: [], tan: [], bit: [] };
+  const roofSets = Object.fromEntries(ROOF_TYPES.map(r => [r, { pos: [], uv: [], shade: [], tan: [], bit: [] }]));
   for (const b of pack.buildings) {
     if (b.flat) continue;
-    const m = facadeFor(b);
+    const m = facadeFor(b), roofType = roofFor(m, b), roofs = roofSets[roofType], tile = ROOFS[roofType][1];
     const w = walls[m], wallStart = w.pos.length / 3, roofStart = roofs.pos.length / 3;
     // Overlapping OSM building parts often share a height; a few centimetres' stagger stops their roofs z-fighting.
     const base = b.minHeight, top = Math.max(b.height, base + 1) + (b.id % 5) * 0.04;
@@ -663,12 +738,13 @@ function buildMeshes() {
       const rp = roof.attributes.position.array;
       for (let i = 0; i < rp.length; i += 3) {
         roofs.pos.push(rp[i], rp[i + 1], top);
-        roofs.uv.push(rp[i] / ROOF_TILE, rp[i + 1] / ROOF_TILE);
+        roofs.uv.push(rp[i] / tile, rp[i + 1] / tile);
         roofs.shade.push(1); roofs.tan.push(1, 0, 0); roofs.bit.push(0, 1, 0);
       }
       roof.dispose();
     }
-    scene3d.ranges.set(b.id, { material: m, wallStart, wallEnd: w.pos.length / 3, roofStart, roofEnd: roofs.pos.length / 3 });
+    scene3d.ranges.set(b.id, { material: m, roofType, wallStart, wallEnd: w.pos.length / 3, roofStart,
+      roofEnd: roofs.pos.length / 3 });
   }
   const toGeometry = data => {
     const geometry = new THREE.BufferGeometry();
@@ -689,9 +765,13 @@ function buildMeshes() {
     group.add(new THREE.Mesh(geometry, withParallax(new THREE.MeshBasicMaterial({ map: pixelTexture(FACADES[m]), vertexColors: true,
       side: THREE.DoubleSide }), heightTexture(FACADES[m], RAISED_FRAMES.has(m)), [FACADE_RELIEF[m] / BAY, FACADE_RELIEF[m] / FLOOR])));
   }
-  scene3d.roofs = toGeometry(roofs);
-  group.add(new THREE.Mesh(scene3d.roofs, withParallax(new THREE.MeshBasicMaterial({ map: pixelTexture(ROOF), vertexColors: true,
-    side: THREE.DoubleSide }), heightTexture(ROOF), [0.12 / ROOF_TILE, 0.12 / ROOF_TILE])));
+  for (const r of ROOF_TYPES) {
+    if (!roofSets[r].pos.length) continue;
+    const [draw, tile, relief, raised] = ROOFS[r];
+    const geometry = scene3d.roofGeometries[r] = toGeometry(roofSets[r]);
+    group.add(new THREE.Mesh(geometry, withParallax(new THREE.MeshBasicMaterial({ map: pixelTexture(draw), vertexColors: true,
+      side: THREE.DoubleSide }), heightTexture(draw, raised), [relief / tile, relief / tile])));
+  }
   return group;
 }
 
@@ -789,7 +869,7 @@ function tintBuilding(id, hex) {
     geometry.attributes.color.needsUpdate = true;
   };
   apply(scene3d.geometries[range.material], range.wallStart, range.wallEnd, 0.75);
-  apply(scene3d.roofs, range.roofStart, range.roofEnd, 0.9);
+  apply(scene3d.roofGeometries[range.roofType], range.roofStart, range.roofEnd, 0.9);
 }
 
 // ---------- walking students: other players' recorded paths ----------
@@ -888,10 +968,13 @@ function buildingLayer() {
       sheet.position.set((x0 + x1) / 2, (y0 + y1) / 2, 0.05);
       sheet.receiveShadow = true;
       this.scene.add(sheet);
-      const roofShadows = new THREE.Mesh(scene3d.roofs, new THREE.ShadowMaterial({ opacity: 0.32, depthWrite: false,
-        polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }));
-      roofShadows.receiveShadow = true;
-      this.scene.add(roofShadows);
+      const roofShadow = new THREE.ShadowMaterial({ opacity: 0.32, depthWrite: false,
+        polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+      for (const geometry of Object.values(scene3d.roofGeometries)) {
+        const roofShadows = new THREE.Mesh(geometry, roofShadow);
+        roofShadows.receiveShadow = true;
+        this.scene.add(roofShadows);
+      }
       this.sun = new THREE.DirectionalLight(0xffffff, 1);
       this.sun.castShadow = true;
       this.sun.shadow.mapSize.set(4096, 4096);
