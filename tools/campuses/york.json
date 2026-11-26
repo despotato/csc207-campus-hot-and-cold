@@ -1,0 +1,383 @@
+{
+  "id": "york",
+  "name": "York University — Keele campus",
+  "timezone": "America/Toronto",
+  "bounds": {
+    "south": 43.76665,
+    "west": -79.51387,
+    "north": 43.78235,
+    "east": -79.49113
+  },
+  "mascot": {
+    "name": "Yeo the Lion",
+    "species": "lion",
+    "colors": {
+      "fur": "#D9A441",
+      "belly": "#F0D08A",
+      "dark": "#5b3a1a",
+      "primary": "#E31837",
+      "secondary": "#FFFFFF"
+    },
+    "school": "York University"
+  },
+  "flat": [],
+  "dailyFrom": "2026-11-01",
+  "landmarks": [
+    {
+      "osm": "w157967627",
+      "name": "Accolade East",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w29004211",
+      "name": "Tait McKenzie Centre",
+      "category": "Athletics",
+      "wikipedia": "Tait McKenzie Centre",
+      "facts": [
+        "It hosted basketball and volleyball at the 2017 North American Indigenous Games.",
+        "It is named after a renowned sculptor, doctor, soldier and physical educator."
+      ]
+    },
+    {
+      "osm": "w15398936",
+      "name": "Ignat Kaneff Building - Osgoode Hall Law School",
+      "category": "Teaching",
+      "wikipedia": "Osgoode Hall Law School",
+      "facts": [
+        "It is home to the Law Commission of Ontario.",
+        "It was designed by architect Jack Diamond; construction began in the summer of 2009."
+      ]
+    },
+    {
+      "osm": "w560851645",
+      "name": "Vanier College",
+      "category": "College",
+      "wikipedia": null,
+      "facts": [
+        "It is self-governed day to day by a master, the master's office and students.",
+        "Founded in 1966, it is the second-oldest residential college on the Keele campus."
+      ]
+    },
+    {
+      "osm": "r9095761",
+      "name": "Sobeys Stadium",
+      "category": "Athletics",
+      "wikipedia": null,
+      "facts": [
+        "It is a tennis stadium that hosts the Canadian Open, alternating men's and women's events with Montreal."
+      ]
+    },
+    {
+      "osm": "w839466831",
+      "name": "Ross Building",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It is named after the university's first president, like a parkway and a valedictorian award.",
+        "A ramp leading up to it was demolished when Vari Hall was built, by 1989."
+      ]
+    },
+    {
+      "osm": "w29003554",
+      "name": "Victor Phillip Dahdaleh Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w144346950",
+      "name": "York Lanes",
+      "category": "Campus life",
+      "wikipedia": null,
+      "facts": [
+        "It is a two-storey indoor mall on the Keele campus."
+      ]
+    },
+    {
+      "osm": "r8975902",
+      "name": "Winters College",
+      "category": "College",
+      "wikipedia": null
+    },
+    {
+      "osm": "w534798733",
+      "name": "Seymour Schulich Building",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "The subway station opened directly across from its main entrance in December 2017.",
+        "It opened in August 2003 at a cost of $102 million."
+      ]
+    },
+    {
+      "osm": "r11530290",
+      "name": "Central Square",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "r11524916",
+      "name": "Vari Hall",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It is mostly lecture halls, designed by Raymond Moriyama to give the campus a new face.",
+        "It was built in the early 1990s."
+      ]
+    },
+    {
+      "osm": "w29003851",
+      "name": "Scott Library",
+      "category": "Library",
+      "wikipedia": null,
+      "facts": [
+        "The Sound and Moving Images Library, with the audiovisual collection, is on its first floor."
+      ]
+    },
+    {
+      "osm": "w29003113",
+      "name": "Centre for Film and Theatre",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w29003925",
+      "name": "Steacie Science & Engineering Library",
+      "category": "Library",
+      "wikipedia": null
+    },
+    {
+      "osm": "w170051140",
+      "name": "Kaneff Tower",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w611977369",
+      "name": "Second Student Centre",
+      "category": "Campus life",
+      "wikipedia": null,
+      "facts": [
+        "It was purpose-built after students voted for it in an October 2013 referendum."
+      ]
+    },
+    {
+      "osm": "w29004532",
+      "name": "Health, Nursing and Environmental Studies",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It was built as a joint venture between two faculties and is known as HNE."
+      ]
+    },
+    {
+      "osm": "w839196648",
+      "name": "Atkinson",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w29003909",
+      "name": "Lassonde Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w96005349",
+      "name": "Life Sciences Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w29003897",
+      "name": "Farquharson Life Sciences",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w29003993",
+      "name": "Petrie Science & Engineering",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w239605501",
+      "name": "Bergeron Centre for Engineering Excellence",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It officially opened on April 8, 2016, after a $10 million gift, then the largest ever from an alumnus."
+      ]
+    },
+    {
+      "osm": "w29003162",
+      "name": "Goldfarb Centre for Fine Arts",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w29003481",
+      "name": "Bennett Centre for Student Services",
+      "category": "Campus life",
+      "wikipedia": null,
+      "facts": [
+        "It was renamed in 2006 to recognise a supporter of the university."
+      ]
+    },
+    {
+      "osm": "w839369194",
+      "name": "Rob and Cheryl McEwen Graduate Study and Research Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w29003786",
+      "name": "Curtis Lecture Halls",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w182217475",
+      "name": "William Small Centre",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w29003676",
+      "name": "First Student Centre",
+      "category": "Campus life",
+      "wikipedia": null,
+      "facts": [
+        "It is the original of the two student centre buildings."
+      ]
+    },
+    {
+      "osm": "w182214986",
+      "name": "Stong College",
+      "category": "College",
+      "wikipedia": null
+    },
+    {
+      "osm": "w29003236",
+      "name": "Behavioural Sciences",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w839196649",
+      "name": "The Pond Road Residence",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w239783177",
+      "name": "Stedman Lecture Halls",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w1444061802",
+      "name": "Calumet College",
+      "category": "College",
+      "wikipedia": null
+    },
+    {
+      "osm": "w560851647",
+      "name": "McLaughlin College",
+      "category": "College",
+      "wikipedia": null,
+      "facts": [
+        "It is a residential college named after an automaker.",
+        "It opened in 1968."
+      ]
+    },
+    {
+      "osm": "w33075236",
+      "name": "Lumbers Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w29004010",
+      "name": "Chemistry Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w182211062",
+      "name": "Norman Bethune College",
+      "category": "College",
+      "wikipedia": null
+    },
+    {
+      "osm": "w560851644",
+      "name": "Founders College",
+      "category": "College",
+      "wikipedia": null
+    },
+    {
+      "osm": "w96021083",
+      "name": "Winters Residence",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w29004077",
+      "name": "Calumet Residence",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w29003117",
+      "name": "Burton Auditorium",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w29003611",
+      "name": "Atkinson Residence",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w1334369898",
+      "name": "The Joan and Martin Goldfarb Gallery of York University",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w218792506",
+      "name": "Stong Barn",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w448830311",
+      "name": "Tatham Hall Residence",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w96004207",
+      "name": "Norman Bethune Residence",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w96020547",
+      "name": "Stong Residence",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w32518699",
+      "name": "Vanier Residence",
+      "category": "Residence",
+      "wikipedia": null,
+      "facts": [
+        "Its residence life team of dons, porters and programmers is all upper-year students."
+      ]
+    }
+  ],
+  "dailyStartInsideBounds": true
+}

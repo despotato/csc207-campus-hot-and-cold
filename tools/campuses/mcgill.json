@@ -1,0 +1,371 @@
+{
+  "id": "mcgill",
+  "name": "McGill University — Downtown campus",
+  "timezone": "America/Toronto",
+  "bounds": {
+    "south": 45.49881,
+    "west": -73.58727,
+    "north": 45.51319,
+    "east": -73.56673
+  },
+  "mascot": {
+    "name": "Marty the Martlet",
+    "species": "martlet",
+    "colors": {
+      "fur": "#ED1B2F",
+      "belly": "#FFFFFF",
+      "dark": "#111111",
+      "primary": "#ED1B2F",
+      "secondary": "#FFFFFF"
+    },
+    "school": "McGill University"
+  },
+  "flat": [],
+  "dailyFrom": "2026-11-01",
+  "landmarks": [
+    {
+      "osm": "r15982217",
+      "name": "Institut-Hôpital neurologique de Montréal",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w30176590",
+      "name": "McConnell Winter Stadium",
+      "category": "Athletics",
+      "wikipedia": "McConnell Arena"
+    },
+    {
+      "osm": "w19912993",
+      "name": "McLennan Library Building",
+      "category": "Library",
+      "wikipedia": "McLennan Library Building"
+    },
+    {
+      "osm": "w1434436103",
+      "name": "McIntyre Medical Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w19913855",
+      "name": "Stewart Biology Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w20168923",
+      "name": "Redpath Library Building",
+      "category": "Library",
+      "wikipedia": null
+    },
+    {
+      "osm": "w80263149",
+      "name": "New Music Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w20168831",
+      "name": "Redpath Museum",
+      "category": "Campus life",
+      "wikipedia": null,
+      "facts": [
+        "It shows natural history collections, from dinosaur skeletons to Egyptian mummies.",
+        "It opened in 1882 and is one of the oldest buildings in Canada built for public exhibits."
+      ]
+    },
+    {
+      "osm": "w28994383",
+      "name": "McGill Sports Complex",
+      "category": "Athletics",
+      "wikipedia": null
+    },
+    {
+      "osm": "w80263147",
+      "name": "Strathcona Music Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w20168784",
+      "name": "Macdonald Engineering Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w23815120",
+      "name": "Duff Medical Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w21340757",
+      "name": "Ferrier Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w21341172",
+      "name": "Strathcona Anatomy & Dentistry Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w21340756",
+      "name": "Arts Building",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It is the oldest building on campus, at the top of the main drive.",
+        "It was restored by EVOQ Architecture in 2016 to preserve its heritage."
+      ]
+    },
+    {
+      "osm": "w21340760",
+      "name": "Wong Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w112977926",
+      "name": "McConnell Engineering Building",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It houses the School of Computer Science.",
+        "It was donated in 1959 by a major benefactor who sat on the Board of Governors."
+      ]
+    },
+    {
+      "osm": "w20168778",
+      "name": "Otto Maass Chemistry Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w30176594",
+      "name": "Douglas Hall",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w112976640",
+      "name": "Adams Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w20169169",
+      "name": "Bronfman Building",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It houses the management faculty; its second floor reopened in 2012 as a Business Intelligence Centre with a trading room.",
+        "It opened in 1971 with the support of a Montreal whisky-distilling family."
+      ]
+    },
+    {
+      "osm": "w19912994",
+      "name": "Leacock Building",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It was meant to have two towers, but the second was never built.",
+        "It was built between 1962 and 1965 by the Montreal firm Arcop."
+      ]
+    },
+    {
+      "osm": "w46867133",
+      "name": "Royal Victoria College",
+      "category": "Residence",
+      "wikipedia": null,
+      "facts": [
+        "Its tower became mixed-gender in 2010, while its west wing is still for women only.",
+        "It opened in 1899 as a residential college for women."
+      ]
+    },
+    {
+      "osm": "w21341559",
+      "name": "Rutherford Physics Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w20168782",
+      "name": "Macdonald-Harrington Building",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It is home to the Schools of Architecture and Urban Planning.",
+        "It was built between 1896 and 1897 as the chemistry building."
+      ]
+    },
+    {
+      "osm": "w340258402",
+      "name": "Chancellor Day Hall",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It is home to the Faculty of Law.",
+        "Its newer section was completed in 1967, designed by Bland, Lemoyne, Edwards and Shine."
+      ]
+    },
+    {
+      "osm": "w30176564",
+      "name": "University Centre",
+      "category": "Campus life",
+      "wikipedia": null,
+      "facts": [
+        "It is the student union building.",
+        "In 1992 students voted in a referendum to rename it after actor and alumnus William Shatner."
+      ]
+    },
+    {
+      "osm": "w21341557",
+      "name": "Trottier Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w21341171",
+      "name": "Genome Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w28326202",
+      "name": "Bishop Mountain Hall",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w21340759",
+      "name": "James Administration Building",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w20168777",
+      "name": "Burnside Hall",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It is a Brutalist building completed in 1970 by Marshall, Merrett and Associates."
+      ]
+    },
+    {
+      "osm": "w21341788",
+      "name": "Wilson Hall",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w30176570",
+      "name": "Donald E. Armstrong Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w20168781",
+      "name": "Macdonald Stewart Library",
+      "category": "Library",
+      "wikipedia": null
+    },
+    {
+      "osm": "w21341787",
+      "name": "Birks Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w28994376",
+      "name": "Gardner Hall",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w28994377",
+      "name": "Molson Hall",
+      "category": "Residence",
+      "wikipedia": null,
+      "facts": [
+        "The library was in this west wing of the Arts Building from 1862 to 1893."
+      ]
+    },
+    {
+      "osm": "w28994378",
+      "name": "McConnell Hall",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w21342090",
+      "name": "Peterson Hall",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w20168924",
+      "name": "Redpath Hall",
+      "category": "Campus life",
+      "wikipedia": null,
+      "facts": [
+        "It is a concert hall that was once the main library's reading room.",
+        "The library opened here in 1893."
+      ]
+    },
+    {
+      "osm": "w20168954",
+      "name": "Morrice Hall (Islamic Studies Library)",
+      "category": "Library",
+      "wikipedia": null
+    },
+    {
+      "osm": "w46867135",
+      "name": "Hosmer House",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w21342091",
+      "name": "Faculty Club",
+      "category": "Campus life",
+      "wikipedia": null,
+      "facts": [
+        "It was built in 1912 as a residence and is now a gathering place for professors."
+      ]
+    },
+    {
+      "osm": "w340262486",
+      "name": "Purvis Hall",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It is a Golden Square Mile mansion now owned by the university."
+      ]
+    },
+    {
+      "osm": "w340259593",
+      "name": "Davis House",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w340263720",
+      "name": "Duggan House",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It is a mansion built in 1861 that the university now owns."
+      ]
+    },
+    {
+      "osm": "w165265063",
+      "name": "Thomson House",
+      "category": "Campus life",
+      "wikipedia": null
+    }
+  ],
+  "dailyStartInsideBounds": true
+}

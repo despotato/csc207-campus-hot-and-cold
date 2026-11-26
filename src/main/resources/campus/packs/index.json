@@ -119,6 +119,38 @@
       "file": "carleton.json",
       "timezone": "America/Toronto",
       "region": "Ontario"
+    },
+    {
+      "id": "york",
+      "name": "York University — Keele campus",
+      "short": "York",
+      "file": "york.json",
+      "timezone": "America/Toronto",
+      "region": "Ontario"
+    },
+    {
+      "id": "tmu",
+      "name": "Toronto Metropolitan University",
+      "short": "TMU",
+      "file": "tmu.json",
+      "timezone": "America/Toronto",
+      "region": "Ontario"
+    },
+    {
+      "id": "mcgill",
+      "name": "McGill University — Downtown campus",
+      "short": "McGill",
+      "file": "mcgill.json",
+      "timezone": "America/Toronto",
+      "region": "Quebec"
+    },
+    {
+      "id": "concordia",
+      "name": "Concordia University — Sir George Williams campus",
+      "short": "Concordia",
+      "file": "concordia.json",
+      "timezone": "America/Toronto",
+      "region": "Quebec"
     }
   ]
 }
