@@ -495,6 +495,9 @@ public final class Expedition {
     public List<Achievement> achievements() {
         Score score = score();
         List<Achievement> earned = new ArrayList<>();
+        if (startedAt.isBefore(Achievement.BETA_ENDS)) {
+            earned.add(Achievement.BETA_PLAYER);
+        }
         if (score.nearMissPoints() > 0) {
             earned.add(Achievement.ALMOST_ALMOST);
         }

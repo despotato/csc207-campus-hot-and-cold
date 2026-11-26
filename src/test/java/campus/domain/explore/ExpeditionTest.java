@@ -338,7 +338,8 @@ class ExpeditionTest {
         assertEquals(250, best.hintBonus(), "hard doubles it");
         assertEquals(100, best.checkBonus(), "only the finding check used");
         assertEquals(Expedition.MAX_SCORE, best.total(), "a perfect round scores exactly 1000");
-        assertEquals(List.of(Achievement.ABSOLUTE_ZERO, Achievement.SUPERNOVA), direct.achievements());
+        assertEquals(List.of(Achievement.BETA_PLAYER, Achievement.ABSOLUTE_ZERO, Achievement.SUPERNOVA),
+                direct.achievements());
 
         Expedition detour = round();
         Instant time = walk(detour, List.of(at(200, 75), at(0, 75)), T0); // 400 m wasted
@@ -355,7 +356,7 @@ class ExpeditionTest {
         assertEquals(200, worse.guessPoints(), "second guess");
         assertEquals(100, worse.hintBonus(), "normal adds half");
         assertEquals(60, worse.checkBonus(), "3 of 5 saveable checks saved");
-        assertEquals(List.of(), detour.achievements(), "checks spent searching, and short of 1000");
+        assertEquals(List.of(Achievement.BETA_PLAYER), detour.achievements(), "checks spent, short of 1000");
     }
 
     @Test void missingTheZoneNarrowlyEarnsNearMissPoints() {
@@ -369,17 +370,26 @@ class ExpeditionTest {
         Expedition.Score score = close.score();
         assertEquals(67, score.nearMissPoints(), "two thirds of the way inside the 150 m near-miss band");
         assertEquals(67, score.total(), "nothing else is earned without the zone");
-        assertEquals(List.of(Achievement.ALMOST_ALMOST), close.achievements());
+        assertEquals(List.of(Achievement.BETA_PLAYER, Achievement.ALMOST_ALMOST), close.achievements());
 
         Expedition far = round();
         far.check(T0);
         assertEquals(0, far.score().nearMissPoints(), "checking 1 km away is no near miss");
-        assertEquals(List.of(), far.achievements());
+        assertEquals(List.of(Achievement.BETA_PLAYER), far.achievements());
 
         Expedition found = round();
         reachZone(found);
         assertTrue(found.metresShortOfZone().isEmpty());
         assertEquals(0, found.score().nearMissPoints());
+    }
+
+    @Test void betaPlayerOnlyBeforeLaunch() {
+        CampusMap map = campus();
+        Expedition later = new Expedition(map, map.landmarks().getFirst(), new Zone(at(1000, 75), 90), START,
+                Achievement.BETA_ENDS);
+        later.check(Achievement.BETA_ENDS);
+        assertFalse(later.achievements().contains(Achievement.BETA_PLAYER));
+        assertTrue(round().achievements().contains(Achievement.BETA_PLAYER));
     }
 
     @Test void spendingTheOnlyCheckToFindTheZoneEarnsNoCheckBonus() {

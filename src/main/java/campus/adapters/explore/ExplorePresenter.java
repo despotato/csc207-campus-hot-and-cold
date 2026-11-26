@@ -187,7 +187,7 @@ public final class ExplorePresenter implements ExploreOutputBoundary {
         body.put("shortestMetres", round(result.shortestMetres()));
         body.put("secondsToZone", result.secondsToZone());
         body.put("achievements", result.achievements().stream().map(a -> Map.of("id", a.name().toLowerCase(Locale.ROOT),
-                "title", a.title(), "subtitle", a.subtitle())).toList());
+                "title", a.title(), "subtitle", a.subtitle(), "description", a.description())).toList());
         body.put("metresShort", result.metresShort() == null ? null : round(result.metresShort()));
         body.put("zone", Map.of("centre", point(result.zone().centre()), "radius", result.zone().radiusMetres()));
         body.put("checksUsed", result.checksUsed());
