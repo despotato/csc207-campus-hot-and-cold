@@ -491,6 +491,22 @@ public final class Expedition {
                 routePoints + guessPoints + hintBonus + checkBonus + nearMiss);
     }
 
+    /** The badges this round has earned so far, in {@link Achievement} order. */
+    public List<Achievement> achievements() {
+        Score score = score();
+        List<Achievement> earned = new ArrayList<>();
+        if (score.nearMissPoints() > 0) {
+            earned.add(Achievement.ALMOST_ALMOST);
+        }
+        if (zoneReachedAt != null && checks.size() == 1) {
+            earned.add(Achievement.ABSOLUTE_ZERO);
+        }
+        if (score.total() == MAX_SCORE) {
+            earned.add(Achievement.SUPERNOVA);
+        }
+        return earned;
+    }
+
     /**
      * When the zone was never found: how far beyond a check's reach the zone was at the closest check (or the
      * final search). Empty once the zone is found, or before anything has been checked.

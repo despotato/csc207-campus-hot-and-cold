@@ -86,6 +86,7 @@ public final class RoundFinisher {
                 expedition.metresWalked(), expedition.shortestToZone(), secondsToZone, expedition.checksUsed(),
                 expedition.guesses().size(), expedition.hintLevel().orElse(null),
                 new ExploreResponse.ZoneView(zone.centre(), zone.radiusMetres()), expedition.track(),
-                expedition.revealedShortestRoute().orElseThrow(), expedition.checks(), summary);
+                expedition.revealedShortestRoute().orElseThrow(), expedition.checks(), expedition.achievements(),
+                summary);
     }
 }

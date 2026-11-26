@@ -1,5 +1,6 @@
 package campus.application.explore;
 
+import campus.domain.explore.Achievement;
 import campus.domain.explore.Expedition;
 import campus.domain.explore.GeoPoint;
 
@@ -91,7 +92,8 @@ public sealed interface ExploreResponse {
                   int nearMissPoints, Double metresShort, double multiplier, int score,
                   double metresWalked, double shortestMetres, Long secondsToZone, int checksUsed,
                   int guessesUsed, Expedition.HintLevel hintLevel, ZoneView zone, List<GeoPoint> route,
-                  List<GeoPoint> shortestRoute, List<Expedition.Check> checks, LandmarkSummary summary) { }
+                  List<GeoPoint> shortestRoute, List<Expedition.Check> checks, List<Achievement> achievements,
+                  LandmarkSummary summary) { }
 
     /** Optional extra information about the target from an external source. */
     record LandmarkSummary(String title, String extract, String imageUrl, String pageUrl) { }
