@@ -57,10 +57,12 @@ Add a new campus to **Campus Hot & Cold** (Java 21 / Maven, repository `csc207-c
    Wikipedia title if one exists (check that the article really is that building). Prefer buildings, not open
    fields; put open-air ones (stadium fields) in `flat`.
 3. Mascot: use the school's real mascot name and species, but an **original** blocky design in school colours. Don't
-   copy official artwork (it's trademarked). The page can currently draw `beaver`, `lion`, `marauder`, `gryphon`
-   and `hawk`; anything else falls back to a student. For a new species, add a body next to `beaverFeatures` in
-   `index.html` and a line in `avatarFeatures` (same box format: `[x0, x1, y0, y1, z0, z1, colour]`, metres
-   before scaling).
+   copy official artwork (it's trademarked). Look the mascot up (the athletics site or Wikipedia's
+   infobox); don't guess. `MASCOT_BODIES` in `index.html` maps species to bodies: beaver, lion/tiger,
+   marauder/viking/carabin (a person), gryphon, birds (hawk, falcon, eagle, raven, martlet, thunderbird, seahawk),
+   bear, dog/husky, horse/mustang, bison, dinosaur, bee; anything else falls back to a student. For a new species,
+   add a body next to `beaverFeatures` and an entry in `MASCOT_BODIES` (box format `[x0, x1, y0, y1, z0, z1,
+   colour]`, body units before scaling).
 
 ## Step 2: fetch OpenStreetMap data (Overpass)
 

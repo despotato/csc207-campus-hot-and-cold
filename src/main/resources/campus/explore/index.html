@@ -769,15 +769,19 @@ function buildStyle() {
       attribution: '<a href="https://openfreemap.org">OpenFreeMap</a> © <a href="https://www.openmaptiles.org/">OpenMapTiles</a> Data © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' } },
     sky: { 'sky-color': '#7ec8f0', 'horizon-color': '#d9e7ee', 'fog-color': '#b9c4c9', 'sky-horizon-blend': 0.5, 'horizon-fog-blend': 0.6, 'fog-ground-blend': 0.85 },
     layers: [
-      { id: 'bg', type: 'background', paint: { 'background-color': ['interpolate', ['linear'], ['zoom'], 7, '#8fb46a', 12, '#b4b1aa'] } },
+      // Ground is always textured: meadow at country scale, paving on campus.
+      { id: 'bg', type: 'background', paint: { 'background-color': '#b4b1aa' } },
+      { id: 'meadow', type: 'background', paint: { 'background-pattern': 'meadow',
+        'background-opacity': ['interpolate', ['linear'], ['zoom'], 10, 1, 12, 0] } },
       { id: 'paving', type: 'background', paint: { 'background-pattern': 'paving',
         'background-opacity': ['interpolate', ['linear'], ['zoom'], 11, 0, 13, 0.9] } },
-      { id: 'landcover', type: 'fill', source: 'omt', 'source-layer': 'landcover', paint: { 'fill-color': '#79a955' } },
+      { id: 'landcover', type: 'fill', source: 'omt', 'source-layer': 'landcover',
+        paint: { 'fill-pattern': ['match', ['get', 'class'], 'wood', 'wood', 'grass'] } },
       { id: 'landuse-grass', type: 'fill', source: 'omt', 'source-layer': 'landuse',
         filter: ['in', ['get', 'class'], ['literal', ['residential', 'grass', 'cemetery', 'pitch', 'playground']]],
-        paint: { 'fill-color': ['match', ['get', 'class'], 'residential', '#a9aea0', '#79a955'] } },
-      { id: 'park', type: 'fill', source: 'omt', 'source-layer': 'park', paint: { 'fill-color': '#6fae4f' } },
-      { id: 'water', type: 'fill', source: 'omt', 'source-layer': 'water', paint: { 'fill-color': '#3f7fd1' } },
+        paint: { 'fill-pattern': ['match', ['get', 'class'], 'residential', 'residential', 'grass'] } },
+      { id: 'park', type: 'fill', source: 'omt', 'source-layer': 'park', paint: { 'fill-pattern': 'grass' } },
+      { id: 'water', type: 'fill', source: 'omt', 'source-layer': 'water', paint: { 'fill-pattern': 'water' } },
       { id: 'road', type: 'line', source: 'omt', 'source-layer': 'transportation', minzoom: 10,
         filter: ['!', ['in', ['get', 'class'], ['literal', ['path', 'track']]]],
         paint: { 'line-color': '#55545a', 'line-width': ['interpolate', ['exponential', 2], ['zoom'], 14, 2, 19, 26] } },
@@ -798,7 +802,7 @@ function initMap() {
   Object.defineProperty(transform, 'farZ', { configurable: true,
     get() { return Math.max(rawFar || 0, 3000 * (this._pixelPerMeter || 0)); },
     set(v) { rawFar = v; } });
-  map.on('styleimagemissing', e => { if (e.id === 'paving') map.addImage('paving', pavingImage(), { pixelRatio: 1 }); });
+  map.on('styleimagemissing', e => { if (GROUND_PATTERNS[e.id]) map.addImage(e.id, GROUND_PATTERNS[e.id](), { pixelRatio: 1 }); });
   return new Promise(resolve => map.on('load', resolve));
 }
 
@@ -806,6 +810,37 @@ const lineWidth = (low, high) => ['interpolate', ['exponential', 2], ['zoom'],
   15, ['*', low, ['coalesce', ['get', 'scale'], 1]], 19, ['*', high, ['coalesce', ['get', 'scale'], 1]]];
 
 /** A paving-stone tile for open ground; 2D ground patterns stay put as the camera moves. */
+/** A 16x16 pixel pattern: a base colour plus deterministic speckles from a small palette (never one flat colour). */
+function speckleImage(base, palette, density, seed, extra) {
+  const size = 16, c = document.createElement('canvas');
+  c.width = c.height = size;
+  const g = c.getContext('2d');
+  g.fillStyle = base; g.fillRect(0, 0, size, size);
+  let h = seed;
+  const rand = () => { h = (h * 1103515245 + 12345) & 0x7fffffff; return h / 0x7fffffff; };
+  for (let i = 0; i < density; i++) {
+    g.fillStyle = palette[Math.floor(rand() * palette.length)];
+    g.fillRect(Math.floor(rand() * size), Math.floor(rand() * size), 1, rand() < 0.3 ? 2 : 1);
+  }
+  if (extra) extra(g);
+  return g.getImageData(0, 0, size, size);
+}
+const GROUND_PATTERNS = {
+  paving: () => pavingImage(),
+  grass: () => speckleImage('#79a955', ['#6c9c4a', '#86b65f', '#5f8f40', '#8fc068'], 70, 7),
+  wood: () => speckleImage('#4f7f3a', ['#3f6c2e', '#5e9044', '#36602a', '#6a9b4c'], 90, 11, g => {
+    g.fillStyle = '#3a6a2b'; g.fillRect(2, 3, 3, 3); g.fillRect(10, 9, 4, 3); g.fillRect(7, 1, 2, 2);
+  }),
+  residential: () => speckleImage('#a3aa96', ['#94a088', '#b4b8a6', '#7f9a62', '#8c8a86'], 60, 5, g => {
+    g.fillStyle = '#8f8b86'; g.fillRect(2, 2, 4, 3); g.fillRect(10, 9, 4, 4);   // little roofs
+    g.fillStyle = '#7f9a62'; g.fillRect(9, 2, 3, 2);
+  }),
+  water: () => speckleImage('#3f7fd1', ['#3673c2', '#4a8ad9'], 24, 3, g => {
+    g.fillStyle = '#5b97e0'; g.fillRect(2, 4, 4, 1); g.fillRect(9, 11, 5, 1); g.fillRect(12, 3, 3, 1);
+  }),
+  meadow: () => speckleImage('#8fb46a', ['#84a960', '#9bbf76', '#7a9f58', '#a5c77f'], 60, 13),
+};
+
 function pavingImage() {
   const size = 16, c = document.createElement('canvas');
   c.width = c.height = size;
@@ -955,6 +990,7 @@ const MASCOT_BODIES = {
   carabin: (p, h, c) => marauderFeatures(p, h, c), gryphon: (p, h, c) => gryphonFeatures(p, h, c),
   hawk: (p, h, c) => hawkFeatures(p, h, c), seahawk: (p, h, c) => hawkFeatures(p, h, c), raven: (p, h, c) => hawkFeatures(p, h, c),
   martlet: (p, h, c) => hawkFeatures(p, h, c), thunderbird: (p, h, c) => hawkFeatures(p, h, c),
+  falcon: (p, h, c) => hawkFeatures(p, h, c), eagle: (p, h, c) => hawkFeatures(p, h, c),
   bear: (p, h, c) => bearFeatures(p, h, c), dog: (p, h, c) => dogFeatures(p, h, c), husky: (p, h, c) => dogFeatures(p, h, c),
   horse: (p, h, c) => horseFeatures(p, h, c), mustang: (p, h, c) => horseFeatures(p, h, c),
   bison: (p, h, c) => bisonFeatures(p, h, c), dinosaur: (p, h, c) => dinosaurFeatures(p, h, c), bee: (p, h, c) => beeFeatures(p, h, c),
@@ -1798,10 +1834,12 @@ const LocalRules = (() => {
   function start(body = {}) {
     if (body.mode === 'daily') return startDaily();
     const open = cells();
-    for (let attempt = 0; attempt < 200; attempt++) {
-      // Only buildings with a real fact or recorded history, so the hard hint is always history (mirrors CampusMap.targets).
-      const good = pack.landmarks.filter(l => (l.facts || []).length || hasHistory(buildings.get(l.building)));
-      const pool = good.length ? good : pack.landmarks;
+    // Prefer buildings with a real fact or recorded history (the hard hint is then history; mirrors CampusMap.targets).
+    // On sparse campuses those may never fit a valid zone, so later attempts fall back to every landmark.
+    const good = pack.landmarks.filter(l => (l.facts || []).length || hasHistory(buildings.get(l.building)));
+    // Valid zones are rare on sparse campuses (e.g. Laval), but the zone check is cheap, so try many.
+    for (let attempt = 0; attempt < 5000; attempt++) {
+      const pool = good.length && attempt < 3500 ? good : pack.landmarks;
       const target = pool[Math.floor(Math.random() * pool.length)];
       const building = buildings.get(target.building);
       const zone = { centre: offsetPt(building.center, Math.random() * 360, Math.random() * 50), radius: RADIUS };

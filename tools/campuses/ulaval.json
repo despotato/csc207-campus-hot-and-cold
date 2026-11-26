@@ -9,11 +9,11 @@
     "east": -71.26103
   },
   "mascot": {
-    "name": "Rouge et Or student",
-    "species": "student",
+    "name": "Victor",
+    "species": "eagle",
     "colors": {
-      "fur": "#E0B38A",
-      "belly": "#E30513",
+      "fur": "#6b4a2f",
+      "belly": "#f4f1ea",
       "dark": "#2b1a0e",
       "primary": "#E30513",
       "secondary": "#FFC103"

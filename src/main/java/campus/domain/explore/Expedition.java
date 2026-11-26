@@ -209,8 +209,12 @@ public final class Expedition {
 
     public static Expedition begin(Difficulty difficulty, CampusMap map, RandomGenerator random, Instant now) {
         List<GeoPoint> open = map.openSpace().openCells(3);
-        for (int attempt = 0; attempt < 200; attempt++) {
-            List<CampusLandmark> targets = map.targets();
+        // Prefer targets with a reviewed fact or recorded history; on sparse campuses those may never fit a valid
+        // zone, so the last attempts fall back to every landmark (a round beats an error).
+        List<CampusLandmark> preferred = map.targets();
+        // Valid zones are rare on sparse campuses, but the zone check is cheap, so try many.
+        for (int attempt = 0; attempt < 5000; attempt++) {
+            List<CampusLandmark> targets = attempt < 3500 ? preferred : map.landmarks();
             CampusLandmark target = targets.get(random.nextInt(targets.size()));
             GeoPoint targetCentre = map.buildingOf(target).centre();
             Zone zone = new Zone(targetCentre.offset(random.nextDouble(360),

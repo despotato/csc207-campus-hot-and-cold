@@ -9,12 +9,12 @@
     "east": -79.36946
   },
   "mascot": {
-    "name": "Bold student",
-    "species": "student",
+    "name": "Frankie the Falcon",
+    "species": "falcon",
     "colors": {
-      "fur": "#E0B38A",
-      "belly": "#004C9B",
-      "dark": "#2b1a0e",
+      "fur": "#5b4636",
+      "belly": "#f2e8d5",
+      "dark": "#1b1f3a",
       "primary": "#004C9B",
       "secondary": "#FFDC00"
     },
