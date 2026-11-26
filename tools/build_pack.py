@@ -164,6 +164,17 @@ def history(tags):
     return result
 
 
+def appearance(tags):
+    """Wall and roof material and colour, where OpenStreetMap records them (the page prefers these to guesses)."""
+    result = {}
+    for field, key in (("wallMaterial", "building:material"), ("roofMaterial", "roof:material"),
+                       ("wallColour", "building:colour"), ("roofColour", "roof:colour")):
+        value = str(tags.get(key, "")).strip().lower()
+        if value and len(value) <= 40:
+            result[field] = value
+    return result
+
+
 def footprint(e, flat):
     shapes = polygons(e)
     return {
@@ -313,6 +324,7 @@ def main(config_src, src, dst, green_src=None):
         tags = building.pop("osmTags")
         building["material"] = material(tags, building["id"], building["height"], building.pop("category", None))
         building.update(history(tags))
+        building.update(appearance(tags))
 
     nodes = {}
     coords = []
