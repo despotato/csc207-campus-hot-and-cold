@@ -29,19 +29,29 @@
       "osm": "w136469097",
       "name": "McLaughlin Library",
       "category": "Library",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It is the main library, named after the founder of General Motors of Canada."
+      ]
     },
     {
       "osm": "w136469992",
       "name": "Johnston Hall",
       "category": "Residence",
-      "wikipedia": "Johnston Hall (University of Guelph)"
+      "wikipedia": "Johnston Hall (University of Guelph)",
+      "facts": [
+        "It is named after the founder and first principal of the Ontario Agricultural College.",
+        "It was built in 1931 as a student residence and home for administrative offices."
+      ]
     },
     {
       "osm": "w161122676",
       "name": "Lambton Hall",
       "category": "Residence",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It is a co-ed residence in the north area of campus, home to over 380 students."
+      ]
     },
     {
       "osm": "w259232883",
@@ -65,7 +75,10 @@
       "osm": "w161122672",
       "name": "Watson Hall",
       "category": "Residence",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It is the only women-only residence, home to 50 students."
+      ]
     },
     {
       "osm": "w161122682",
@@ -101,7 +114,10 @@
       "osm": "w161132806",
       "name": "South Residence",
       "category": "Residence",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It is the largest residence on campus, home to about 1,800 students."
+      ]
     },
     {
       "osm": "r10716740",
@@ -137,13 +153,20 @@
       "osm": "w136467970",
       "name": "Rozanski Hall",
       "category": "Teaching",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "Its lecture halls can hold more than 1,500 students at once.",
+        "Completed in 2003, it is named after a former university president, Mordechai ____."
+      ]
     },
     {
       "osm": "w136546715",
       "name": "Summerlee Science Complex",
       "category": "Teaching",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It was completed in 2007 with help from Ontario's SuperBuild program, for science teaching and research."
+      ]
     },
     {
       "osm": "w136547109",
@@ -203,13 +226,21 @@
       "osm": "w161133731",
       "name": "Ontario Veterinary College",
       "category": "Teaching",
-      "wikipedia": "Ontario Veterinary College"
+      "wikipedia": "Ontario Veterinary College",
+      "facts": [
+        "It is one of Canada's oldest schools for animal doctors, with first classes in Toronto in 1862.",
+        "It moved to Guelph in 1922 and became a founding college of the University of Guelph in 1964."
+      ]
     },
     {
       "osm": "w237589010",
       "name": "Centre for Biodiversity Genomics",
       "category": "Teaching",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It is home to the International Barcode of Life project, which identifies species by DNA.",
+        "Founded in 2007 under another name, it took its current name in 2012 after its second stage was built."
+      ]
     },
     {
       "osm": "w136549177",
@@ -233,7 +264,10 @@
       "osm": "w161123001",
       "name": "Macdonald Institute",
       "category": "Teaching",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It was established in 1903 to house women's home economics and nature study programs."
+      ]
     },
     {
       "osm": "w711504139",
@@ -245,13 +279,20 @@
       "osm": "w136472535",
       "name": "University Centre",
       "category": "Campus life",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "The campus radio station CFRU has broadcast from studios here since 1974.",
+        "A dispute over plans for it led the university to dissolve the student government, Union Council, in 1970."
+      ]
     },
     {
       "osm": "w161118801",
       "name": "War Memorial Hall",
       "category": "Campus life",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It is one of the buildings students reach by cutting across Johnston Green."
+      ]
     },
     {
       "osm": "w161123311",
@@ -263,7 +304,11 @@
       "osm": "w161109531",
       "name": "Art Gallery of Guelph",
       "category": "Campus life",
-      "wikipedia": "Art Gallery of Guelph"
+      "wikipedia": "Art Gallery of Guelph",
+      "facts": [
+        "It was called the Macdonald Stewart Art Centre from 1978 to 2014.",
+        "Its collection started in 1926 when the Ontario Agricultural College bought Tom Thomson's painting The Drive."
+      ]
     },
     {
       "osm": "w136467969",
@@ -275,7 +320,10 @@
       "osm": "w161119744",
       "name": "Creelman Hall",
       "category": "Campus life",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It is one of the main dining halls on campus."
+      ]
     },
     {
       "osm": "w136468152",
@@ -293,13 +341,20 @@
       "osm": "w208501832",
       "name": "Gryphon Field House",
       "category": "Athletics",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It has an indoor 200 m track on artificial turf."
+      ]
     },
     {
       "osm": "w427653708",
       "name": "Alumni Stadium",
       "category": "Athletics",
-      "wikipedia": "Alumni Stadium (Guelph)"
+      "wikipedia": "Alumni Stadium (Guelph)",
+      "facts": [
+        "It is home to the university's varsity football team.",
+        "It was built in 1970; an $18 million expansion and renovation was announced in 2011."
+      ]
     }
   ],
   "dailyStartInsideBounds": true

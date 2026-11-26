@@ -27,7 +27,10 @@
       "osm": "w43250600",
       "name": "Laurier Library",
       "category": "Library",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It holds about a million print volumes."
+      ]
     },
     {
       "osm": "w113045569",
@@ -51,7 +54,10 @@
       "osm": "r5228258",
       "name": "Dag Hammarskjold Residence",
       "category": "Residence",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It is named after a UN Secretary-General who was awarded the Nobel Peace Prize after his death."
+      ]
     },
     {
       "osm": "w113045575",
@@ -99,13 +105,21 @@
       "osm": "w43250655",
       "name": "Martin Luther University College",
       "category": "College",
-      "wikipedia": "Martin Luther University College"
+      "wikipedia": "Martin Luther University College",
+      "facts": [
+        "It is the university's Lutheran-affiliated college and seminary.",
+        "It began in 1911 as the Evangelical Lutheran Theological Seminary of Eastern Canada, the root of the university itself."
+      ]
     },
     {
       "osm": "w267589632",
       "name": "Lazaridis Hall",
       "category": "Teaching",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It is named after the co-founder of BlackBerry.",
+        "The business school moved into it in 2016."
+      ]
     },
     {
       "osm": "w113042945",
@@ -123,7 +137,10 @@
       "osm": "w113010274",
       "name": "Frank C. Peters Building",
       "category": "Teaching",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It is named after a former president of the university."
+      ]
     },
     {
       "osm": "w104690857",
@@ -147,13 +164,19 @@
       "osm": "w113021038",
       "name": "John Aird Centre",
       "category": "Teaching",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It is home to the Faculty of Music and the Maureen Forrester Recital Hall."
+      ]
     },
     {
       "osm": "w628586186",
       "name": "Arts Building",
       "category": "Teaching",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "Ontario Premier Leslie Frost attended its opening on September 7, 1953."
+      ]
     },
     {
       "osm": "w221152637",
@@ -165,13 +188,19 @@
       "osm": "w113021799",
       "name": "Theatre Auditorium",
       "category": "Campus life",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It is one of the Faculty of Music's two performance spaces, alongside the Maureen Forrester Recital Hall."
+      ]
     },
     {
       "osm": "w43250661",
       "name": "Fred Nichols Campus Centre",
       "category": "Campus life",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It is run by the students' union and is home to the Turret nightclub."
+      ]
     },
     {
       "osm": "w1022988079",
@@ -207,7 +236,10 @@
       "osm": "w113040012",
       "name": "Athletic Complex",
       "category": "Athletics",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It has three gyms, two squash courts, an Olympic-size swimming pool and a climbing wall."
+      ]
     }
   ],
   "dailyStartInsideBounds": true

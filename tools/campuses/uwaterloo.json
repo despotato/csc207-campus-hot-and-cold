@@ -27,7 +27,11 @@
       "osm": "w43250626",
       "name": "Dana Porter Library",
       "category": "Library",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It is the main library for the arts, humanities and social sciences.",
+        "It is named after a Chief Justice of Ontario who served as the university's chancellor in the 1960s."
+      ]
     },
     {
       "osm": "w43250609",
@@ -51,7 +55,10 @@
       "osm": "w382872689",
       "name": "Claudette Millar Hall",
       "category": "Residence",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "The university named this residence in November 2017, shortly after it opened."
+      ]
     },
     {
       "osm": "w143668848",
@@ -81,13 +88,21 @@
       "osm": "w43250608",
       "name": "United College",
       "category": "College",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It hosts the Waterloo Indigenous Student Centre.",
+        "Founded in 1962 by a Protestant church as St. Paul's University College, it took its current name in 2022."
+      ]
     },
     {
       "osm": "w1246717243",
       "name": "Renison University College",
       "category": "College",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "Its English Language Institute has taught English as a second language since 1970.",
+        "It is an Anglican college; Ontario issued Letters Patent in 2010 confirming its current official name."
+      ]
     },
     {
       "osm": "w43250604",
@@ -117,19 +132,29 @@
       "osm": "w43250620",
       "name": "Ira G. Needles Hall",
       "category": "Teaching",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It houses the Registrar's Office.",
+        "It is named after the tire-company president who championed the university's co-op model in the 1950s."
+      ]
     },
     {
       "osm": "w43250621",
       "name": "Modern Languages",
       "category": "Teaching",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It houses the Theatre of the Arts."
+      ]
     },
     {
       "osm": "w43250624",
       "name": "J. G. Hagey Hall of the Humanities",
       "category": "Teaching",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It is named after the university's first president."
+      ]
     },
     {
       "osm": "w43250628",
@@ -141,25 +166,37 @@
       "osm": "w43250629",
       "name": "Earth Sciences & Chemistry",
       "category": "Teaching",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It is joined to Biology 1 by The Link, whose third floor once held a student lounge and exam bank."
+      ]
     },
     {
       "osm": "w43250630",
       "name": "Mathematics & Computer",
       "category": "Teaching",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It is home to the MathSoc C&D coffee shop and the Comfy Lounge."
+      ]
     },
     {
       "osm": "w43250631",
       "name": "Physics",
       "category": "Teaching",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "Its department includes Donna Strickland, who won the 2018 Nobel Prize for chirped pulse amplification."
+      ]
     },
     {
       "osm": "w43250632",
       "name": "Biology 1",
       "category": "Teaching",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "The Science Society's student coffee shop, C&D, runs out of it."
+      ]
     },
     {
       "osm": "w43250634",
@@ -177,13 +214,19 @@
       "osm": "w43250638",
       "name": "School of Optometry & Vision Science",
       "category": "Teaching",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It is home to Canada's only English-language school for training eye doctors."
+      ]
     },
     {
       "osm": "w43250643",
       "name": "B.C. Matthews Hall",
       "category": "Teaching",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It is named after the university's third president."
+      ]
     },
     {
       "osm": "w48359806",
@@ -201,19 +244,29 @@
       "osm": "w51125806",
       "name": "Engineering 5",
       "category": "Teaching",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "Its 20,000-square-foot student design centre was named the Sedra Student Design Centre in 2013."
+      ]
     },
     {
       "osm": "w130348900",
       "name": "Tatham Centre",
       "category": "Teaching",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It is the hub for co-operative education and career services."
+      ]
     },
     {
       "osm": "w147379102",
       "name": "Douglas Wright Engineering Building",
       "category": "Teaching",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It is the oldest building erected for the university, put up in 1958.",
+        "It used to be known as Engineering 1."
+      ]
     },
     {
       "osm": "w154056255",
@@ -237,7 +290,11 @@
       "osm": "w182091547",
       "name": "Mike & Ophelia Lazaridis Quantum-Nano Centre",
       "category": "Teaching",
-      "wikipedia": "Mike & Ophelia Lazaridis Quantum-Nano Centre"
+      "wikipedia": "Mike & Ophelia Lazaridis Quantum-Nano Centre",
+      "facts": [
+        "One wing's windows vary in reflectivity to symbolise superposition; the other has a honeycomb pattern inspired by carbon.",
+        "Construction began on June 9, 2008, and it officially opened on September 21, 2012."
+      ]
     },
     {
       "osm": "w188703119",
@@ -255,7 +312,11 @@
       "osm": "w382735686",
       "name": "Pearl Sullivan Engineering Building",
       "category": "Teaching",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It is named after a former dean of the faculty.",
+        "It used to be known as Engineering 7."
+      ]
     },
     {
       "osm": "w382726586",
@@ -267,31 +328,47 @@
       "osm": "w1342934521",
       "name": "Mathematics 3",
       "category": "Teaching",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "A giant pink tie was draped over it in 2011."
+      ]
     },
     {
       "osm": "r8765264",
       "name": "William G. Davis Computer Research Centre",
       "category": "Teaching",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It is a main building of the Cheriton School, named after a former Premier of Ontario."
+      ]
     },
     {
       "osm": "w43250627",
       "name": "Student Life Centre",
       "category": "Campus life",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It is open around the clock and houses the Turnkey Desk.",
+        "In 2017, ground broke on a joint 63,000-square-foot expansion of it and the Physical Activities Complex."
+      ]
     },
     {
       "osm": "w43250637",
       "name": "South Campus Hall",
       "category": "Campus life",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It houses the campus bookstore and the W Store."
+      ]
     },
     {
       "osm": "w43250640",
       "name": "Federation Hall",
       "category": "Campus life",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It was built as a student-run pub and events venue."
+      ]
     },
     {
       "osm": "w43250611",
@@ -321,13 +398,20 @@
       "osm": "w145890265",
       "name": "Graduate House",
       "category": "Campus life",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It is the oldest building on campus, a farmhouse from the 19th century."
+      ]
     },
     {
       "osm": "w43250596",
       "name": "Physical Activities Complex",
       "category": "Athletics",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "Its gyms double as the big exam halls at the end of each term.",
+        "In 2017, ground broke on a joint 63,000-square-foot expansion of it and the Student Life Centre."
+      ]
     },
     {
       "osm": "w43250639",
@@ -339,7 +423,11 @@
       "osm": "w692358718",
       "name": "Feridun Hamdullahpur Field House",
       "category": "Athletics",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It is named after a former president of the university.",
+        "It hosted the CFL Invitational Combine every year from 2023 to 2026."
+      ]
     }
   ],
   "dailyStartInsideBounds": true

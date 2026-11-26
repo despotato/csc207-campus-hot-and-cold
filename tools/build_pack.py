@@ -303,8 +303,11 @@ def main(config_src, src, dst, green_src=None):
         building = buildings[building_ids[k] - 1]
         building["name"] = name
         building["category"] = category
-        landmarks.append({"id": next_id, "building": building["id"], "osm": k, "name": name,
-                          "category": category, "wikipedia": wiki})
+        landmark = {"id": next_id, "building": building["id"], "osm": k, "name": name,
+                    "category": category, "wikipedia": wiki}
+        if item.get("facts"):
+            landmark["facts"] = item["facts"]
+        landmarks.append(landmark)
 
     for building in buildings:
         tags = building.pop("osmTags")

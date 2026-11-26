@@ -29,19 +29,30 @@
       "osm": "w34879765",
       "name": "Mills Memorial Library",
       "category": "Library",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It is the main library for the humanities and social sciences.",
+        "The library moved into it in May 1951, paid for by a foundation set up by David Bloss ____."
+      ]
     },
     {
       "osm": "w172996332",
       "name": "H.G. Thode Library of Science & Engineering",
       "category": "Library",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It is named after a nuclear chemist who was the university's president.",
+        "It opened in 1978, replacing the first science library, a room in the Burke Science Building."
+      ]
     },
     {
       "osm": "w43940683",
       "name": "Brandon Hall",
       "category": "Residence",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It houses the university's substance-free residence floors."
+      ]
     },
     {
       "osm": "w43939432",
@@ -59,7 +70,10 @@
       "osm": "w183246588",
       "name": "Les Prince Hall",
       "category": "Residence",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It is a large co-ed residence that opened in 2006."
+      ]
     },
     {
       "osm": "w183246592",
@@ -95,7 +109,10 @@
       "osm": "w43938264",
       "name": "Whidden Hall",
       "category": "Residence",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It is named after a former chancellor of the university."
+      ]
     },
     {
       "osm": "w43939953",
@@ -113,31 +130,48 @@
       "osm": "w1549176958",
       "name": "Lincoln Alexander Hall",
       "category": "Residence",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It is named after the first Black member of Canada's House of Commons."
+      ]
     },
     {
       "osm": "w698951797",
       "name": "Peter George Centre for Living and Learning",
       "category": "Residence",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It is named after a former president of the university.",
+        "It was completed in fall 2019."
+      ]
     },
     {
       "osm": "r3418622",
       "name": "McMaster Divinity College",
       "category": "College",
-      "wikipedia": "McMaster Divinity College"
+      "wikipedia": "McMaster Divinity College",
+      "facts": [
+        "It traces its origins to the Toronto Baptist College.",
+        "In 1957 the university became a secular public institution, and its theology program became this separately chartered college."
+      ]
     },
     {
       "osm": "r3387776",
       "name": "Arthur Bourns Building",
       "category": "Teaching",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It is named after a former president of the university who was a chemist."
+      ]
     },
     {
       "osm": "w149066633",
       "name": "Burke Science Building",
       "category": "Teaching",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "The university's first science library opened in a room here in 1954 and stayed until 1978."
+      ]
     },
     {
       "osm": "w157967533",
@@ -149,7 +183,10 @@
       "osm": "w32611695",
       "name": "Life Sciences Building",
       "category": "Teaching",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "A new greenhouse was built in front of it in 2025."
+      ]
     },
     {
       "osm": "w43937996",
@@ -161,13 +198,19 @@
       "osm": "w149066642",
       "name": "John Hodgins Engineering Building",
       "category": "Teaching",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It is named after the university's first dean of engineering."
+      ]
     },
     {
       "osm": "w43940355",
       "name": "Information Technology Building",
       "category": "Teaching",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It is home to the Department of Computing and Software and to Electrical and Computer Engineering."
+      ]
     },
     {
       "osm": "w183801474",
@@ -185,7 +228,10 @@
       "osm": "w316466800",
       "name": "Togo Salmon Hall",
       "category": "Teaching",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "In 1967, the university's art gallery was given a purpose-built space in its east wing."
+      ]
     },
     {
       "osm": "w183932631",
@@ -197,19 +243,28 @@
       "osm": "w259698121",
       "name": "Gilmour Hall",
       "category": "Teaching",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It houses the offices of the president and the registrar."
+      ]
     },
     {
       "osm": "w183932632",
       "name": "DeGroote School of Business",
       "category": "Teaching",
-      "wikipedia": "DeGroote School of Business"
+      "wikipedia": "DeGroote School of Business",
+      "facts": [
+        "Its MBA program began in 1962, and a co-op option was added in 1973."
+      ]
     },
     {
       "osm": "w141427545",
       "name": "Michael G. DeGroote Centre for Learning and Discovery",
       "category": "Teaching",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It was built in 2004 and houses the medical school together with the adjacent Health Sciences Centre."
+      ]
     },
     {
       "osm": "w182622110",
@@ -227,19 +282,29 @@
       "osm": "w953104821",
       "name": "Gerald Hatch Centre",
       "category": "Teaching",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It was built for hands-on, experiential engineering learning and opened in 2017."
+      ]
     },
     {
       "osm": "w1110665634",
       "name": "McLean Centre for Collaborative Discovery",
       "category": "Teaching",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It opened for occupancy in fall 2025."
+      ]
     },
     {
       "osm": "w252564348",
       "name": "McMaster Nuclear Reactor",
       "category": "Teaching",
-      "wikipedia": "McMaster Nuclear Reactor"
+      "wikipedia": "McMaster Nuclear Reactor",
+      "facts": [
+        "It produces medical isotopes such as iodine-125.",
+        "When it started up in 1959, it was the first research facility of its kind at a university in the Commonwealth."
+      ]
     },
     {
       "osm": "w252564347",
@@ -263,13 +328,21 @@
       "osm": "w183932635",
       "name": "University Hall",
       "category": "Campus life",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It is one of the university's five original buildings in Hamilton.",
+        "When the university moved to Hamilton in 1930, the library was housed here."
+      ]
     },
     {
       "osm": "w43938260",
       "name": "Hamilton Hall",
       "category": "Campus life",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It is one of the original Collegiate Gothic buildings designed by William Lyon Somerville.",
+        "It opened in 1926 and is one of the oldest buildings on campus."
+      ]
     },
     {
       "osm": "w259698144",
@@ -293,13 +366,20 @@
       "osm": "w183246595",
       "name": "Refectory",
       "category": "Campus life",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "Like University Hall and Hamilton Hall, it was designed by William Lyon Somerville in the Collegiate Gothic style."
+      ]
     },
     {
       "osm": "w183246593",
       "name": "McMaster Museum of Art",
       "category": "Campus life",
-      "wikipedia": "McMaster Museum of Art"
+      "wikipedia": "McMaster Museum of Art",
+      "facts": [
+        "Its collection began with portraits of the university's presidents and faculty.",
+        "It opened to the public in its present location on June 11, 1994."
+      ]
     },
     {
       "osm": "w183246568",
@@ -323,13 +403,21 @@
       "osm": "w836123010",
       "name": "Bertrand Russell Archives and Research Centre",
       "category": "Campus life",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It holds the papers of a famous British philosopher.",
+        "It opened on June 25, 2018."
+      ]
     },
     {
       "osm": "w183246580",
       "name": "David Braley Athletic Centre",
       "category": "Athletics",
-      "wikipedia": "David Braley Athletic Centre"
+      "wikipedia": "David Braley Athletic Centre",
+      "facts": [
+        "Students support it through a membership fee included in their student union fees.",
+        "Named after a former Canadian senator, it opened in 2007."
+      ]
     },
     {
       "osm": "w259698129",
@@ -341,7 +429,11 @@
       "osm": "w183639540",
       "name": "Ron Joyce Stadium",
       "category": "Athletics",
-      "wikipedia": "Ron Joyce Stadium"
+      "wikipedia": "Ron Joyce Stadium",
+      "facts": [
+        "The Hamilton Tiger-Cats began their 2014 season here while Tim Hortons Field was being finished.",
+        "The 6,000-seat stadium opened in 2007."
+      ]
     }
   ],
   "dailyStartInsideBounds": true
