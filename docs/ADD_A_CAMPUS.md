@@ -57,9 +57,10 @@ Add a new campus to **Campus Hot & Cold** (Java 21 / Maven, repository `csc207-c
    Wikipedia title if one exists (check that the article really is that building). Prefer buildings, not open
    fields; put open-air ones (stadium fields) in `flat`.
 3. Mascot: use the school's real mascot name and species, but an **original** blocky design in school colours. Don't
-   copy official artwork (it's trademarked). The page can currently draw `beaver`; anything else falls back to a
-   student. If the mascot isn't a beaver, either accept the student fallback or add a new body next to
-   `beaverFeatures` in `index.html` (same box format: `[x0, x1, y0, y1, z0, z1, colour]`, metres before scaling).
+   copy official artwork (it's trademarked). The page can currently draw `beaver`, `lion`, `marauder`, `gryphon`
+   and `hawk`; anything else falls back to a student. For a new species, add a body next to `beaverFeatures` in
+   `index.html` and a line in `avatarFeatures` (same box format: `[x0, x1, y0, y1, z0, z1, colour]`, metres
+   before scaling).
 
 ## Step 2: fetch OpenStreetMap data (Overpass)
 
@@ -108,9 +109,20 @@ out geom;
    It re-picks any daily start that falls outside the map or hugs a building (the walkability grid treats outside
    the bounds as blocked, so such a daily can't be set up). It should normally report `0 daily starts repaired`.
    Also set `"dailyStartInsideBounds": true` in the config so new packs avoid the problem.
-4. Add the campus to `src/main/resources/campus/packs/index.json` (`file` must match `[a-z0-9-]+\.json`). Order
+4. **Hint facts (required for good hints).** Hard hints must be campus history and normal hints what students
+   know, never a size or location clue. For each landmark, add `"facts": [...]` in the config: up to two
+   sentences, the well-known one first (normal hint), then a historical one (hard hint). With one fact, hard uses
+   it and normal falls back to the first letter. Draw them from the building's Wikipedia article or articles that
+   mention it by its full name; rewrite them to stand alone; never include the building's name or a distinctive
+   word from it (write `____` instead); check every claim. Leave a landmark without facts rather than guess.
+   Apply them with `python3 -I tools/apply_facts.py tools/campuses/<id>.json src/main/resources/campus/packs/<id>.json`.
+   Random rounds only target landmarks with facts or OSM history (former name, year built, architect).
+   Then run `python3 -I tools/retarget_dailies.py tools/campuses/<id>.json src/main/resources/campus/packs/<id>.json
+   <tomorrow>` so future dailies only target those landmarks too (past and today's puzzles never change), and
+   run the repair step again.
+5. Add the campus to `src/main/resources/campus/packs/index.json` (`file` must match `[a-z0-9-]+\.json`). Order
    matters: the first entry is the default campus.
-5. Keep the pack around 1 MB or less (St. George is about 1 MB). If it's much bigger, shrink the bounds.
+6. Keep the pack around 1 MB or less (St. George is about 1 MB). If it's much bigger, shrink the bounds.
 
 ## Step 4: tests
 
@@ -132,9 +144,10 @@ then read the PNG).
    `mvn -q -DskipTests package && java -Djava.awt.headless=true -Dcampus.explore.port=8797 -Dcampus.explore.debug=true
    -Dcampus.explore.pageFile=src/main/resources/campus/explore/index.html -jar target/campus-hot-and-cold-0.2.0.jar`
 2. Open `http://127.0.0.1:8797/?debug=1&campus=<id>`. Check that the title shows the campus and mascot and the
-   selector lists both campuses. Pick Unlimited, press Enter, walk a little (hold W), screenshot. Buildings, trees and
-   labels should sit where they belong.
-3. Call `game.debugWalkToZone()` (it walks the shortest route), wait until `game.autopilot` is null, press Space
+   selector lists every campus. Pick Unlimited and press Enter. Players don't walk: they look around (drag or arrow
+   keys) and travel with the map (M, then click). Screenshot; buildings, trees and labels should sit where they
+   belong.
+3. Call `await game.debugWalkToZone()` (it travels to the end of the shortest route, inside the zone), press Space
    (the check should find the zone), pick a hint card, guess, and screenshot the results panel. Facts must not name
    the building.
 4. Overhead border check (recommended): for several landmarks, confirm each OSM outline matches the building drawn

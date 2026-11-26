@@ -7,7 +7,7 @@ Java 21 / Swing geography game.
 - Start a round and Submit a guess use Clean Architecture input/output boundaries, controllers, interactors, presenters, and immutable view models.
 - The core game supports six distinct guesses, written heat/trend feedback, wins/losses, answer reveal, and scoring. The UI does not receive the hidden target or exact distances during play.
 - Finished rounds save locally. Open **History** to reopen a recap and view its answer or guesses on a browser map.
-- **Explore mode** adds a two-stage 3D game in the browser: walk the real campus paths to find a hidden zone with limited hot/cold checks, then identify the building with a blind hint. See [Explore mode (3D)](#explore-mode-3d).
+- **Explore mode** adds a two-stage 3D game in the browser: look around the 3D campus and travel with the map to find a hidden zone with limited hot/cold checks, then identify the building with a blind hint. See [Explore mode (3D)](#explore-mode-3d).
 
 ## Project domain
 
@@ -135,13 +135,13 @@ Explore is the two-stage version of the game, played in a pixel-art 3D model of 
 ### What the player sees and does
 
 **Stage 1: find the zone**
-- You start somewhere on campus, 450–900 m from a hidden 90 m zone. You walk a third-person avatar along real campus paths: <kbd>W</kbd>/<kbd>↑</kbd> walks, <kbd>A</kbd>/<kbd>D</kbd> turns at path junctions (yellow arrows show where you'll go), <kbd>S</kbd> turns around, and <kbd>Shift</kbd> runs.
-- Press <kbd>Space</kbd> to spend one of 6 temperature checks. You see **hot** (<150 m from the zone), **warm** (<300 m), **cool** (<500 m) or **cold**, and whether you're warmer or colder than at your last check. Each check leaves a coloured flag. The avatar has a 3 m radius: touching the zone edge counts, and a check there ends stage 1. With no checks left, your next check is a final search: touching the zone continues, anywhere else the round ends.
-- <kbd>M</kbd> opens the campus map with your checks and trail; clicking a spot travels there, charged as the shortest walk (distance and time).
-- Distance walked (including backtracking) and time are shown at all times.
+- You start somewhere on campus, 450–900 m from a hidden 90 m zone, as your school's mascot. You don't walk: drag (or use the arrow keys) to look around where you stand, and pinch or scroll to zoom.
+- Press <kbd>Space</kbd> to spend one of 6 temperature checks. You see a temperature (hotter means closer) and whether you're warmer or colder than at your last check. Each check is numbered, in the list and on the map. The avatar has a 3 m radius: touching the zone edge counts, and a check there ends stage 1. With no checks left, your next check is a final search: touching the zone continues, anywhere else the round ends.
+- To move, press <kbd>M</kbd> (or the Travel button) to open the campus map with your checks and trail, then click where to go. Each trip is charged as the shortest walk there (distance and time).
+- Distance travelled and time are shown at all times.
 
 **Stage 2: guess the building**
-- The camera rises over the zone and its buildings light up; drag or use the arrow keys to look around. You pick one of three face-down hint cards: **easy ×1** (what anyone can see: height rank, storeys, facade, courtyard), **normal ×1.5** (what students know: its category and best-known fact) or **hard ×2** (campus history: an obscure historical fact). You only see the hint after choosing. Facts come from Wikipedia with the building's name blanked out.
+- The camera rises over the zone and its buildings light up; drag or use the arrow keys to look around. You pick one of three face-down hint cards: **easy ×1** (what anyone can see: height rank, storeys, facade, courtyard), **normal ×1.5** (what students know: its category and best-known fact) or **hard ×2** (campus history: a historical fact). Easy also says where it sits among the zone's named buildings; normal and hard never give location or size. You only see the hint after choosing. Facts are reviewed sentences stored in each campus pack (drawn from Wikipedia, name blanked out); the live Wikipedia lookup is only a fallback.
 - Hover a highlighted building to see its name, and click it to guess. You get 3 guesses.
 
 **Results**
