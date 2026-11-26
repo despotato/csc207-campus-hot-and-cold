@@ -129,7 +129,7 @@ Explore is the two-stage version of the game, played in a pixel-art 3D model of 
 ### Campuses and modes
 
 - **University:** the start screen lists the campuses in `src/main/resources/campus/packs/index.json` (U of T St. George and UWaterloo). Each campus is a data pack; see *Development* below.
-- **Daily:** everyone gets the same puzzle each day (same target, zone and start, in the Java app and on the website), always on normal difficulty, with **one try**. The day changes at midnight campus time. The puzzles are generated ahead in the campus pack. The one-try rule is per player device: the Java app keeps a marker in `~/.campus-hot-and-cold/daily/`, the website uses browser storage. After a round, **Share** copies a spoiler-free result (score, check colours, guesses).
+- **Daily:** everyone gets the same puzzle each day (same target, zone and start, in the Java app and on the website), always on normal difficulty, with **one try**. The day changes at midnight campus time. The puzzles are generated ahead in the campus pack. The one-try rule is per player device: the Java app keeps a marker in `~/.campus-hot-and-cold/daily/`, the website uses browser storage. Refreshing the page offers **Resume daily** for an unfinished run on that device. After a round, **Share** copies a spoiler-free result (score, check colours, guesses).
 - **Unlimited:** a fresh random round every time.
 
 ### What the player sees and does

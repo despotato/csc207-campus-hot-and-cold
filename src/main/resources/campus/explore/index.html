@@ -346,7 +346,7 @@ let pack, map, buildings = new Map(), named = [], landmarkBuildings = [];
 const game = {
   phase: 'loading', pos: null, heading: 0, camBearing: 0, keys: {}, walked: 0, startedAt: 0, zoneAt: 0,
   checksLeft: 0, checkCount: 0, zone: null, zoneBuildings: new Set(), guessed: new Set(), hover: null, target: null,
-  result: null, sending: false, pending: [], lastPushed: null, trail: [], walkPhase: 0, autopilot: null,
+  result: null, sending: false, pending: [], lastPushed: null, trail: [], checkHistory: [], walkPhase: 0, autopilot: null,
   followZoom: 18.8, mapView: false, dragX: null, orbiting: false, travelling: false,
 };
 window.game = game;
@@ -915,9 +915,13 @@ async function syncPosition() {
       console.warn('Move refused:', r.body.error, 'batch', batch.length);
       game.pos = r.body.point; game.pending = []; game.lastPushed = game.pos; game.prevPos = game.pos; game.autopilot = null;
       game.walked = r.body.metresWalked;
+      game.confirmedPos = game.pos;
+      saveDailyRun();
       toast('Whoa!', 'cold', 'Too fast or through a wall.');
     } else if (r.status === 200) {
       game.walked = r.body.metresWalked;
+      game.confirmedPos = batch.at(-1);
+      saveDailyRun();
     } else if (r.body.error) {
       toast('Hmm', 'cold', r.body.error);
     }
@@ -943,6 +947,7 @@ async function doCheck() {
     const r = await api('check');
     if (r.status !== 200) { toast('Hmm', 'cold', r.body.error || 'Could not check.'); return; }
     const b = r.body;
+    game.checkHistory.push(b);
     if (!b.finalSearch) { game.checksLeft = b.checksRemaining; game.checkCount++; }
     const li = document.createElement('li');
     if (b.zoneFound) {
@@ -964,6 +969,7 @@ async function doCheck() {
     }
     $('checks').append(li); $('nochecks').classList.add('hidden');
     renderHud();
+    saveDailyRun();
   } finally { game.checking = false; }
 }
 
@@ -1032,6 +1038,8 @@ async function travelTo(lngLat) {
     game.walked = r.body.metresWalked;
     game.heading = r.body.path.length ? bearingOf(r.body.path.at(-1), game.pos) || game.heading : game.heading;
     game.camBearing = game.heading;
+    game.confirmedPos = game.pos;
+    saveDailyRun();
     hide('travelling');
     toggleMapView(false);
   } finally {
@@ -1074,6 +1082,7 @@ async function chooseHint(level, card) {
   card.querySelector('.text').textContent = r.body.hint;
   $('toGuess').classList.remove('hidden');
   $('toGuess').focus();
+  saveDailyRun();
 }
 
 function startGuessing() {
@@ -1082,6 +1091,7 @@ function startGuessing() {
   $('bannerText').textContent = `Click the building · ${pack.guessLimit || 3} guesses · drag or A/D to look around`;
   $('bannerHint').textContent = game.hint.hint;
   show('banner');
+  saveDailyRun();
 }
 
 function setHover(id) {
@@ -1117,7 +1127,10 @@ async function onBuildingClick(e) {
     refreshHighlights();
     if (!r.body.correct) toast('NOPE', 'cold', r.body.message);
     if (r.body.result) finish(r.body.result, r.body.saveError);
-    else $('bannerText').textContent = `Not that one. ${r.body.guessesRemaining} guesses left.`;
+    else {
+      $('bannerText').textContent = `Not that one. ${r.body.guessesRemaining} guesses left.`;
+      saveDailyRun();
+    }
   } finally { game.busy = false; }
 }
 
@@ -1128,6 +1141,7 @@ async function finish(result, saveError) {
     const date = game.date || campusDate();
     store.set(dailyKey(date), String(result.score.total));
     store.set(dailyResultKey(date), JSON.stringify(result));
+    store.remove(dailyRunKey(date));
   }
   hide('banner'); hide('log'); hide('help');
   const t = result.target;
@@ -1537,7 +1551,7 @@ const LocalRules = (() => {
       const fact = list.length ? (level === 'normal' || list.length === 1 ? list[0] : list[1]) : null;
       text = level === 'normal' ? `It's ${article}${category} building. `
         + (fact || `Its name starts with "${t.name[0].toUpperCase()}".`) + ' ' + positionClue()
-        : (fact || history()) + ' ' + positionClue();
+        : (fact || history());
     }
     round.hint = level;
     return ok({ type: 'hint', level, multiplier: MULT[level], hint: text, zoneBuildings: zoneBuildings(round.zone).map(b => b.id) });
@@ -1590,6 +1604,23 @@ const LocalRules = (() => {
   }
 
   return {
+    snapshot: () => {
+      if (!round) return null;
+      const { target, building, ...state } = round;
+      return { ...state, targetId: target.id };
+    },
+    restore: state => {
+      const puzzle = pack.daily?.[campusDate()];
+      const target = pack.landmarks.find(l => l.id === state?.targetId);
+      if (!puzzle || !target || target.id !== puzzle.landmark || !state?.id
+          || !['find', 'identify'].includes(state.stage) || !Array.isArray(state.track)
+          || !Array.isArray(state.checks) || !Array.isArray(state.guesses)
+          || !state.zone?.centre || distOf(state.zone.centre, puzzle.zone) > 1) return false;
+      const building = buildings.get(target.building);
+      if (!building) return false;
+      round = { ...state, target, building };
+      return true;
+    },
     /** Debug only: the shortest route from where you stand into the zone. */
     /** Debug only: the hidden zone and target, to verify the daily matches the Java app. */
     debugInfo: () => DEBUG && round ? { zone: round.zone, target: round.target.name } : null,
@@ -1612,12 +1643,39 @@ const LocalRules = (() => {
 
 // ---------- campus & mode selection ----------
 const store = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } },
-  set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) { /* private mode: fine */ } } };
+  set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) { /* private mode: fine */ } },
+  remove: k => { try { localStorage.removeItem(k); } catch (e) { /* private mode: fine */ } } };
 let campusIndex = [], chosenMode = store.get('mode') || 'daily';
 /** Today's date on the campus clock (the daily changes at local midnight). */
 const campusDate = () => new Intl.DateTimeFormat('en-CA', { timeZone: pack.timezone || 'UTC' }).format(new Date());
 const dailyKey = (date = campusDate()) => `daily:${pack.id}:${date}`;
 const dailyResultKey = (date = campusDate()) => `dailyResult:${pack.id}:${date}`;
+const dailyRunKey = (date = campusDate()) => `dailyRun:${pack.id}:${date}`;
+function storedDailyRun() {
+  try {
+    const run = JSON.parse(store.get(dailyRunKey()));
+    return run?.version === 1 && run.campus === pack.id && run.date === campusDate()
+      && run.roundId && ['walk', 'zone', 'hint', 'guess'].includes(run.phase)
+      && Array.isArray(run.point) && Array.isArray(run.trail) && Number.isFinite(run.elapsed)
+      && (run.phase === 'walk' || run.zone?.centre)
+      && (!['hint', 'guess'].includes(run.phase) || run.hint?.level) ? run : null;
+  } catch (e) { return null; }
+}
+function legacyDailyRestart() {
+  return STATIC && store.get(dailyKey()) === 'unfinished' && store.get('claimed:' + dailyKey())
+    && !storedDailyRun() && !store.get('legacyRestarted:' + dailyKey());
+}
+function saveDailyRun() {
+  if (game.mode !== 'daily' || !game.roundId || game.phase === 'done') return;
+  const run = { version: 1, campus: pack.id, date: game.date, roundId: game.roundId,
+    phase: game.phase, point: game.confirmedPos || game.pos, heading: game.heading, camBearing: game.camBearing,
+    walked: game.walked, elapsed: performance.now() - game.startedAt,
+    zoneElapsed: game.zoneAt ? performance.now() - game.zoneAt : null,
+    checksLeft: game.checksLeft, checkCount: game.checkCount, checks: game.checkHistory,
+    trail: game.trail, zone: game.zone, hint: game.hint, guessed: [...game.guessed],
+    zoneBuildings: [...game.zoneBuildings], rules: STATIC ? LocalRules.snapshot() : null };
+  store.set(dailyRunKey(game.date), JSON.stringify(run));
+}
 function storedDailyResult() {
   try {
     const result = JSON.parse(store.get(dailyResultKey()));
@@ -1649,10 +1707,16 @@ function renderChoices() {
   const played = store.get(dailyKey());
   const claimed = Boolean(store.get('claimed:' + dailyKey()));
   const saved = storedDailyResult();
+  const resumable = storedDailyRun();
+  const restartable = legacyDailyRestart();
   $('viewDailyResult').classList.toggle('hidden', !saved);
-  $('startBtn').disabled = chosenMode === 'daily' && (Boolean(played) || claimed);
+  $('startBtn').disabled = chosenMode === 'daily' && !resumable && !restartable && (Boolean(played) || claimed);
+  $('startBtn').innerHTML = chosenMode === 'daily' && resumable ? 'Resume daily'
+    : chosenMode === 'daily' && restartable ? 'Restart daily' : 'Start <kbd>Enter</kbd>';
   $('modeNote').textContent = chosenMode === 'daily'
-    ? (played === 'unfinished' ? "You started today's daily without finishing it. Come back tomorrow, or play unlimited."
+    ? (resumable ? "Continue today's daily from where you left off."
+      : restartable ? "Your earlier run couldn't be restored. You can restart today's puzzle once."
+      : played === 'unfinished' ? "You started today's daily without finishing it. Come back tomorrow, or play unlimited."
       : played ? `You've played today's daily: ${played} / 1000. View your result or play unlimited.`
       : claimed ? "You've started today's daily. Come back tomorrow, or play unlimited."
       : 'One try. Everyone gets the same puzzle today, on normal difficulty.')
@@ -1671,8 +1735,77 @@ async function loadCampusPack() {
 }
 
 // ---------- start ----------
+function restoreDailyRun(run) {
+  if (STATIC && !LocalRules.restore(run.rules)) return false;
+  game.orbiting = false;
+  game.phase = run.phase; game.mode = 'daily'; game.date = run.date; game.roundId = run.roundId;
+  game.pos = run.point; game.confirmedPos = run.point; game.lastPushed = run.point; game.prevPos = run.point;
+  game.heading = run.heading; game.camBearing = run.camBearing;
+  game.walked = run.walked; game.trail = run.trail || [run.point];
+  game.startedAt = performance.now() - run.elapsed;
+  game.zoneAt = run.zoneElapsed == null ? 0 : performance.now() - run.zoneElapsed;
+  game.checksLeft = run.checksLeft; game.checkCount = run.checkCount;
+  game.checkHistory = run.checks || [];
+  game.zone = run.zone; game.hint = run.hint;
+  game.guessed = new Set(run.guessed || []); game.zoneBuildings = new Set(run.zoneBuildings || []);
+  pack.guessLimit = 3;
+  hide('title');
+  for (const c of game.checkHistory) {
+    if (c.finalSearch && !c.zoneFound) continue;
+    addCheckMarker(c.point, c.zoneFound ? 'zone' : c.heat, c.number,
+      c.zoneFound ? 'ZONE' : `${c.temperature}°`);
+    const li = document.createElement('li');
+    li.textContent = c.zoneFound ? `#${c.number} IN THE ZONE!`
+      : `#${c.number}  ${c.temperature}°C ${c.heat.toUpperCase()}`;
+    $('checks').append(li);
+  }
+  if (game.checkHistory.length) $('nochecks').classList.add('hidden');
+  renderHud();
+  if (run.phase === 'walk') {
+    for (const id of ['hud', 'log', 'compass', 'help', 'mapBtn', 'checkBtn']) show(id);
+    map.jumpTo({ center: offsetPt(game.pos, game.camBearing, 6), zoom: game.followZoom,
+      pitch: pitchFor(game.followZoom), bearing: game.camBearing });
+  } else {
+    map.getSource('zone').setData(fc([{ type: 'Feature', properties: {},
+      geometry: { type: 'Polygon', coordinates: [circle(game.zone.centre, game.zone.radius, 64)] } }]));
+    map.jumpTo({ center: game.zone.centre, zoom: 17.5, pitch: 55, bearing: game.camBearing });
+    refreshHighlights();
+    lookAroundMode();
+    if (run.phase === 'guess') {
+      $('bannerText').textContent = `Click the building · ${3 - game.guessed.size} guesses left · drag or A/D to look around`;
+      $('bannerHint').textContent = game.hint.hint;
+      show('banner');
+    } else {
+      show('hintScreen');
+      if (run.phase === 'hint') {
+        const card = document.querySelector(`.hintcard[data-level="${game.hint.level}"]`);
+        for (const c of document.querySelectorAll('.hintcard')) c.classList.add(c === card ? 'flipped' : 'faded');
+        card.innerHTML = `<div><div class="lvl">${game.hint.level.toUpperCase()} ×${game.hint.multiplier}</div><p class="text"></p></div>`;
+        card.querySelector('.text').textContent = game.hint.hint;
+        show('toGuess');
+      }
+    }
+  }
+  return true;
+}
+
 async function startRound() {
   if (game.phase !== 'title' || $('startBtn').disabled) return;
+  if (chosenMode === 'daily') {
+    const saved = storedDailyRun();
+    if (saved) {
+      if (restoreDailyRun(saved)) return;
+      store.remove(dailyRunKey());
+      renderChoices();
+      $('loading').textContent = 'This saved run could not be restored.';
+      return;
+    }
+    if (legacyDailyRestart()) {
+      store.set('legacyRestarted:' + dailyKey(), '1');
+      store.remove('claimed:' + dailyKey());
+      store.remove(dailyKey());
+    }
+  }
   game.phase = 'starting';
   const r = await api('start', { campus: pack.id, mode: chosenMode, difficulty: $('difficulty').dataset.value || 'normal' });
   if (r.status !== 200) { game.phase = 'title'; $('loading').textContent = r.body.error || 'Could not start. Retry.'; return; }
@@ -1681,7 +1814,7 @@ async function startRound() {
   game.roundId = r.body.roundId;
   game.mode = r.body.mode; game.date = r.body.date;
   if (game.mode === 'daily') store.set(dailyKey(), 'unfinished');
-  game.pos = r.body.point;
+  game.pos = r.body.point; game.confirmedPos = game.pos;
   game.lastPushed = game.pos;
   game.trail = [game.pos];
   game.checksLeft = r.body.checksRemaining;
@@ -1689,11 +1822,12 @@ async function startRound() {
   game.heading = openestHeading(game.pos);
   game.camBearing = game.heading;
   game.startedAt = performance.now();
+  game.phase = 'walk';
+  saveDailyRun();
   renderHud();
   for (const id of ['hud', 'log', 'compass', 'help', 'mapBtn', 'checkBtn']) show(id);
   $('mapBtn').classList.add('pulse');
   await flyTo({ center: offsetPt(game.pos, game.heading, 6), zoom: game.followZoom, pitch: pitchFor(game.followZoom), bearing: game.heading, duration: 3200 });
-  game.phase = 'walk';
   toast('FIND THE ZONE', 'warm', 'Tip: press M (or the Map button) and click anywhere to travel fast.');
   // Nudge towards the map if someone keeps walking without it.
   setTimeout(() => { if (game.phase === 'walk' && !game.usedMap) toast('LONG WAY?', 'warm', 'Press M and click a spot to travel there.'); }, 40000);

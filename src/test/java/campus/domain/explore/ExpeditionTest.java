@@ -241,15 +241,11 @@ class ExpeditionTest {
                 normal.chooseHint(HintLevel.NORMAL, target -> facts), "normal: category plus best-known fact");
         Expedition hard = round();
         reachZone(hard);
-        assertEquals("A film crew used its roof in 2009. "
-                        + "Among named buildings, count from west to east: it's #2 of 4.",
-                hard.chooseHint(HintLevel.HARD, target -> facts),
+        assertEquals("A film crew used its roof in 2009.", hard.chooseHint(HintLevel.HARD, target -> facts),
                 "hard: an obscure fact only");
         Expedition none = round();
         reachZone(none);
-        assertEquals("It stands about 6 storeys tall. "
-                        + "Among named buildings, count from west to east: it's #2 of 4.",
-                none.chooseHint(HintLevel.HARD, target -> List.of()));
+        assertEquals("It stands about 6 storeys tall.", none.chooseHint(HintLevel.HARD, target -> List.of()));
         Expedition student = round();
         reachZone(student);
         assertEquals("It's a library building. Its name starts with \"T\". "
@@ -268,9 +264,7 @@ class ExpeditionTest {
         CampusMap map = new CampusMap("Test campus", buildings, base.landmarks(), base.openSpace());
         Expedition round = new Expedition(map, map.landmarks().getFirst(), new Zone(at(1000, 75), 90), START, T0);
         reachZone(round);
-        assertEquals("It used to be known as the Old Library. "
-                        + "Among named buildings, count from west to east: it's #2 of 4.",
-                round.chooseHint(HintLevel.HARD, target -> List.of()));
+        assertEquals("It used to be known as the Old Library.", round.chooseHint(HintLevel.HARD, target -> List.of()));
         Expedition easy = new Expedition(map, map.landmarks().getFirst(), new Zone(at(1000, 75), 90), START, T0);
         reachZone(easy);
         assertEquals("It's the tallest of the 5 buildings in the zone: a 6-storey stone building with a courtyard. "
@@ -281,8 +275,7 @@ class ExpeditionTest {
     @Test void factsThatGiveAwayTheNameAreIgnored() {
         Expedition leaky = round();
         reachZone(leaky);
-        assertEquals("It stands about 6 storeys tall. "
-                        + "Among named buildings, count from west to east: it's #2 of 4.", leaky.chooseHint(HintLevel.HARD,
+        assertEquals("It stands about 6 storeys tall.", leaky.chooseHint(HintLevel.HARD,
                 target -> List.of("Target Hall opened in 1900.", "The target building of 1900.")),
                 "the full name, or its distinctive word 'target', gives it away");
         Expedition easy = round();

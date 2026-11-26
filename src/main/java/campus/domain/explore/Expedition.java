@@ -350,11 +350,11 @@ public final class Expedition {
             case NORMAL -> "It's " + article + category + " building. " + (outsideClue != null ? outsideClue
                     : "Its name starts with \"" + Character.toUpperCase(target.name().charAt(0)) + "\".")
                     + " " + positionClue();
-            case HARD -> (outsideClue != null ? outsideClue : recordedHistory()) + " " + positionClue();
+            case HARD -> outsideClue != null ? outsideClue : recordedHistory();
         });
     }
 
-    /** A distinct spatial clue for every hint, including when an encyclopedia fact is vague. */
+    /** A spatial clue for the easier hints, including when an encyclopedia fact is vague. */
     private String positionClue() {
         List<Building> named = map.buildingsIn(zone).stream().filter(building -> building.name() != null)
                 .sorted(java.util.Comparator.comparingDouble((Building building) -> building.centre().longitude())
