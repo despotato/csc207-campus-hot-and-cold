@@ -182,7 +182,18 @@
   #tutArt { font-size: 15px; line-height: 1.6; margin: 10px 0; padding: 12px; background: #fff8e714; border: 2px dashed #fff8e744; min-height: 92px; }
   #tutArt kbd { margin: 2px; }
   #legend { position: fixed; left: 12px; bottom: 44px; font-size: 12px; }
-  #legend span { display: inline-block; width: 18px; height: 6px; margin-right: 6px; vertical-align: middle; }
+  #legend { display: grid; gap: 4px; padding: 8px 10px; }
+  #legend span { display: inline-block; width: 26px; height: 6px; margin-right: 8px; vertical-align: middle;
+    outline: 2px solid #1b1f3a; }
+  #legend span.you { background: #ff5fa2; }
+  #legend span.short { background: repeating-linear-gradient(90deg, #4cf0d4 0 7px, transparent 7px 12px); }
+  #legend b { color: var(--gold); font-weight: normal; margin-left: 4px; }
+  #legend small { font-size: 9px; opacity: .7; }
+  .routeTag { padding: 2px 6px; font: 11px var(--font); color: #1b1f3a; border: 2px solid #1b1f3a; white-space: nowrap;
+    box-shadow: 2px 2px 0 #1b1f3a; pointer-events: none; }
+  .routeTag.you { background: #ff5fa2; } .routeTag.short { background: #4cf0d4; }
+  .routeTag.start { background: var(--paper); } .routeTag.zone { background: var(--gold); }
+  .routeHead { width: 14px; height: 14px; border-radius: 50%; background: #ff5fa2; border: 3px solid #1b1f3a; }
   #wiki:has(#wikiImg.hidden) { grid-template-columns: 1fr; }   /* no photo: the text takes the full width */
   #resultsHead { display: contents; }
   @media (max-width: 640px) {
@@ -234,6 +245,8 @@
     #mapBtn kbd, #mapBtn small { display: none; }
     #compass { bottom: calc(max(16px, env(safe-area-inset-bottom)) + 64px); right: 14px; width: 48px; height: 48px; }
     #clueThumb { width: 112px; left: 8px; bottom: calc(max(16px, env(safe-area-inset-bottom)) + 66px); }
+    #legend { left: 8px; right: 8px; bottom: max(12px, env(safe-area-inset-bottom)); }
+    #legendBack { margin-top: 4px; }
     #clueThumb small { font-size: 8px; padding: 1px 4px; }
     #needle { font-size: 14px; }
     #banner { top: auto; bottom: calc(max(16px, env(safe-area-inset-bottom)) + 64px); max-width: min(560px, calc(100vw - 90px));
@@ -297,8 +310,10 @@
 <div id="banner" class="panel hidden"><div id="bannerText"></div><div class="hint" id="bannerHint"></div></div>
 <div id="tip" class="panel hidden"></div>
 <div id="legend" class="panel hidden">
-  <div><span style="background:#ff5fa2"></span>Your route</div>
-  <div><span style="background:#4cf0d4"></span>Shortest route</div>
+  <div><span class="you"></span>Your route <b id="legendYou"></b></div>
+  <div><span class="short"></span>Shortest route <b id="legendShort"></b></div>
+  <small>Shortest = straight to the zone, if you'd known where it was</small>
+  <button id="legendBack" class="secondary hidden">Back to results</button>
 </div>
 
 <div id="pickerBar" class="panel hidden">
@@ -1396,8 +1411,15 @@ function addGameLayers() {
     paint: { 'line-color': '#d6d1c4', 'line-width': ['interpolate', ['exponential', 2], ['zoom'], 15, 1.5, 19, 12], 'line-opacity': 0.95 } });
 
   map.addSource('routes', { type: 'geojson', data: fc([]) });
+  // Your route: solid. Shortest route (kind 'shortest'): dashed, on top, so both show where they overlap.
+  // Both get a dark outline so they stand out from paving and grass.
+  map.addLayer({ id: 'routes-casing', type: 'line', source: 'routes', layout: { 'line-cap': 'round', 'line-join': 'round' },
+    paint: { 'line-color': '#1b1f3a', 'line-width': lineWidth(6, 22) } });
   map.addLayer({ id: 'routes', type: 'line', source: 'routes', layout: { 'line-cap': 'round', 'line-join': 'round' },
-    paint: { 'line-color': ['get', 'color'], 'line-width': lineWidth(3, 14) } });
+    filter: ['!=', ['get', 'kind'], 'shortest'], paint: { 'line-color': ['get', 'color'], 'line-width': lineWidth(3, 14) } });
+  map.addLayer({ id: 'routes-shortest', type: 'line', source: 'routes', layout: { 'line-cap': 'butt', 'line-join': 'round' },
+    filter: ['==', ['get', 'kind'], 'shortest'],
+    paint: { 'line-color': ['get', 'color'], 'line-width': lineWidth(2.5, 10), 'line-dasharray': [1.4, 1.1] } });
 
   map.addSource('zone', { type: 'geojson', data: fc([]) });
   map.addLayer({ id: 'zone-floor', type: 'fill', source: 'zone', paint: { 'fill-color': '#ffd23f', 'fill-opacity': 0.18 } });
@@ -2399,25 +2421,70 @@ function countUp(el, target) {
   requestAnimationFrame(tick);
 }
 
+/** The point `share` (0-1) of the way along a line, by distance. */
+function alongLine(points, share) {
+  const legs = points.slice(1).map((p, i) => distOf(points[i], p)), total = legs.reduce((a, b) => a + b, 0);
+  let left = total * share;
+  for (let i = 0; i < legs.length; i++) {
+    if (left <= legs[i] && legs[i] > 0) {
+      const k = left / legs[i];
+      return [points[i][0] + (points[i + 1][0] - points[i][0]) * k, points[i][1] + (points[i + 1][1] - points[i][1]) * k];
+    }
+    left -= legs[i];
+  }
+  return points[points.length - 1];
+}
+const fmtDistance = m => m >= 1000 ? (m / 1000).toFixed(2) + ' km' : Math.round(m) + ' m';
+let replayMarkers = [];
+$('legendBack').addEventListener('click', () => { hide('legend'); show('results'); });
+/**
+ * Replays the round from above: your route (solid pink, traced by a moving dot) against the shortest route (dashed
+ * cyan), labelled on the map with their lengths, from START to the ZONE. Drawn above the 3D buildings.
+ */
 async function replay() {
   const r = game.result;
   if (!r) return;
   game.orbiting = false;
+  for (const m of replayMarkers) m.remove();
+  replayMarkers = [];
   const z = game.zone;
   const all = [...r.route, ...r.shortestRoute, ...(z ? [0, 90, 180, 270].map(b => offsetPt(z.centre, b, z.radius)) : [])];
   const lons = all.map(p => p[0]), lats = all.map(p => p[1]);
+  const phone = matchMedia('(max-width: 640px)').matches;
+  // Phones: the results sheet would cover the map, so it steps aside until "Back to results".
+  $('legendBack').classList.toggle('hidden', !phone);
+  if (phone) hide('results');
   await fitBounds([[Math.min(...lons), Math.min(...lats)], [Math.max(...lons), Math.max(...lats)]],
-    () => ({ padding: { top: 60, bottom: 90, left: 60, right: Math.min(420, innerWidth / 2) }, pitch: 35, bearing: 0, duration: 1800 }));
+    () => ({ padding: phone ? { top: 70, bottom: 170, left: 40, right: 40 }
+      : { top: 70, bottom: 170, left: 70, right: Math.min(430, innerWidth / 2) }, pitch: 0, bearing: 0, duration: 1800 }));
+  if (z) map.getSource('zone').setData(fc([{ type: 'Feature', properties: {},
+    geometry: { type: 'Polygon', coordinates: [circle(z.centre, z.radius, 64)] } }]));
+  for (const id of ['zone-floor', 'zone-ring', 'routes-casing', 'routes', 'routes-shortest']) map.moveLayer(id);   // above the buildings
+  $('legendYou').textContent = fmtDistance(r.metresWalked);
+  $('legendShort').textContent = fmtDistance(r.shortestMetres);
   show('legend');
-  // Drawn wider underneath, so it shows as an outline where your route matches it.
-  const shortest = { type: 'Feature', properties: { color: '#4cf0d4', scale: 2.2 }, geometry: { type: 'LineString', coordinates: r.shortestRoute } };
+  const tag = (text, cls, at, anchor = 'bottom') => {
+    const el = document.createElement('div'); el.className = 'routeTag ' + cls; el.textContent = text;
+    const marker = new maplibregl.Marker({ element: el, anchor, offset: anchor === 'bottom' ? [0, -8] : [0, 8] }).setLngLat(at).addTo(map);
+    replayMarkers.push(marker);
+  };
+  tag('START', 'start', r.route[0]);
+  if (z) tag('ZONE', 'zone', offsetPt(z.centre, 0, z.radius));
+  tag('Shortest · ' + fmtDistance(r.shortestMetres), 'short', alongLine(r.shortestRoute, 0.5), 'top');
+  const head = document.createElement('div'); head.className = 'routeHead';
+  const headMarker = new maplibregl.Marker({ element: head }).setLngLat(r.route[0]).addTo(map);
+  replayMarkers.push(headMarker);
+  const shortest = { type: 'Feature', properties: { color: '#4cf0d4', kind: 'shortest', scale: 1.2 },
+    geometry: { type: 'LineString', coordinates: r.shortestRoute } };
   const t0 = performance.now(), duration = 4500;
   const draw = now => {
     const k = Math.min(1, (now - t0) / duration);
     const n = Math.max(2, Math.ceil(r.route.length * k));
-    map.getSource('routes').setData(fc([shortest, { type: 'Feature', properties: { color: '#ff5fa2' },
-      geometry: { type: 'LineString', coordinates: r.route.slice(0, n) } }]));
+    map.getSource('routes').setData(fc([{ type: 'Feature', properties: { color: '#ff5fa2' },
+      geometry: { type: 'LineString', coordinates: r.route.slice(0, n) } }, shortest]));
+    headMarker.setLngLat(r.route[n - 1]);
     if (k < 1) requestAnimationFrame(draw);
+    else tag('You · ' + fmtDistance(r.metresWalked), 'you', alongLine(r.route, 0.5));
   };
   requestAnimationFrame(draw);
 }
