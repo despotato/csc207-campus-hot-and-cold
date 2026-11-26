@@ -2132,6 +2132,7 @@ const CAMPUS_VIEW = { zoom: 15.6, pitch: 60 };
 function showCanada() {
   if (game.phase !== 'title' || game.picking) return;
   game.picking = true; game.orbiting = false;
+  if (!game.campusPins?.length) toast('MAP NOT READY', 'warm', 'Campus positions did not load. Reload the page (Ctrl/Cmd+Shift+R).');
   $('title').classList.add('hidden'); $('pickerBar').classList.remove('hidden');
   map.setLayoutProperty('campus-dots', 'visibility', 'visible');
   for (const pin of game.campusPins) pin.addTo(map);
@@ -2249,11 +2250,12 @@ function runFromServer(body) {
 }
 
 async function loadCampusPack() {
-  const index = await (await fetch('packs/index.json')).json();
+  // Revalidate (cheap 304s): a cached old index next to a new page left the campus map empty.
+  const index = await (await fetch('packs/index.json', { cache: 'no-cache' })).json();
   campusIndex = index.campuses;
   const wanted = params.get('campus') || store.get('campus');
   const campus = campusIndex.find(c => c.id === wanted) || campusIndex[0];
-  return (await fetch('packs/' + campus.file)).json();
+  return (await fetch('packs/' + campus.file, { cache: 'no-cache' })).json();
 }
 
 // ---------- start ----------
