@@ -4,7 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Campus Hot &amp; Cold — Explore</title>
-<link rel="icon" href="data:,">
+<!-- Favicon: a 16x16 pixel thermometer, cold blue on top, hot red at the bulb. -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22 shape-rendering=%22crispEdges%22%3E%3Crect x=%220%22 y=%220%22 width=%2216%22 height=%2216%22 fill=%22%231b1f3a%22/%3E%3Crect x=%226%22 y=%221%22 width=%224%22 height=%2211%22 fill=%22%23fff8e7%22/%3E%3Crect x=%225%22 y=%2211%22 width=%226%22 height=%224%22 fill=%22%23fff8e7%22/%3E%3Crect x=%226%22 y=%2210%22 width=%224%22 height=%226%22 fill=%22%23fff8e7%22/%3E%3Crect x=%227%22 y=%222%22 width=%222%22 height=%224%22 fill=%22%236f8cff%22/%3E%3Crect x=%227%22 y=%226%22 width=%222%22 height=%226%22 fill=%22%23ff4d2e%22/%3E%3Crect x=%226%22 y=%2211%22 width=%224%22 height=%223%22 fill=%22%23ff4d2e%22/%3E%3Crect x=%227%22 y=%2214%22 width=%222%22 height=%221%22 fill=%22%23ff4d2e%22/%3E%3Crect x=%2211%22 y=%223%22 width=%222%22 height=%221%22 fill=%22%23ffd23f%22/%3E%3Crect x=%2211%22 y=%226%22 width=%222%22 height=%221%22 fill=%22%23ffd23f%22/%3E%3Crect x=%2211%22 y=%229%22 width=%222%22 height=%221%22 fill=%22%23ffd23f%22/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Silkscreen&display=swap" rel="stylesheet">
 <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
@@ -135,6 +136,8 @@
 /* On short screens the map picker needs the room: the rules and key list live in "How to play" anyway. */
 .campusPin { font: 11px/1.2 var(--font); text-transform: uppercase; letter-spacing: 0.05em; color: var(--paper);
   background: #1b1f3aee; border: 2px solid var(--paper); box-shadow: 0 3px 0 #0008; padding: 3px 6px; cursor: pointer; white-space: nowrap; }
+.campusPin.home::before { content: '🏠 '; }
+.homeStatus { flex: 1 0 100%; margin: 0; }
 .campusPin.current { color: var(--ink); background: var(--gold); border-color: var(--ink); }
 .campusPin:hover { background: var(--hot); color: #fff; }
 #pickerBar { position: fixed; top: calc(12px + env(safe-area-inset-top, 0px)); left: 50%; transform: translateX(-50%);
@@ -175,7 +178,7 @@
 </div>
 
 <div id="pickerBar" class="panel hidden">
-  <b>Choose a university</b> <span class="note">Drag and scroll the map · click a campus to fly there</span>
+  <b id="pickerTitle">Choose a university</b> <span class="note" id="pickerNote">Drag and scroll the map · click a campus to fly there</span>
   <button class="secondary" id="pickerBack">Back <kbd>Esc</kbd></button>
 </div>
 <section id="title" class="screen">
@@ -2055,6 +2058,8 @@ const store = { get: k => { try { return localStorage.getItem(k); } catch (e) { 
   set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) { /* private mode: fine */ } },
   remove: k => { try { localStorage.removeItem(k); } catch (e) { /* private mode: fine */ } } };
 let campusIndex = [], chosenMode = store.get('mode') || 'daily';
+/** The player's home university: what the game opens on (and the daily they play) unless they visit another. */
+const homeCampus = () => store.get('home') || store.get('campus');   // 'campus' = the older single setting
 /** Today's date on the campus clock (the daily changes at local midnight). */
 const campusDate = () => new Intl.DateTimeFormat('en-CA', { timeZone: pack.timezone || 'UTC' }).format(new Date());
 const dailyKey = (date = campusDate()) => `daily:${pack.id}:${date}`;
@@ -2111,6 +2116,7 @@ function addCampusLayers() {
   game.campusPins = [...campusIndex].filter(c => c.center).sort((a, b) => (b.id === pack.id) - (a.id === pack.id)).map(c => {
     const el = document.createElement('button');
     el.className = 'campusPin' + (c.id === pack.id ? ' current' : ''); el.textContent = c.short || c.name; el.title = c.name;
+    el.dataset.id = c.id;
     el.addEventListener('click', e => { e.stopPropagation(); pickCampus(c.id); });
     return new maplibregl.Marker({ element: el, anchor: 'top', offset: [0, 12] }).setLngLat(c.center);
   });
@@ -2129,9 +2135,20 @@ function declutterPins() {
   }
 }
 const CAMPUS_VIEW = { zoom: 15.6, pitch: 60 };
-function showCanada() {
+/**
+ * mode 'home' picks the player's home university (saved; the default campus and daily from then on);
+ * mode 'visit' just flies to another campus for now. The first visit asks for a home and has no Back.
+ */
+function showCanada(mode = 'visit', firstVisit = false) {
   if (game.phase !== 'title' || game.picking) return;
-  game.picking = true; game.orbiting = false;
+  game.picking = true; game.orbiting = false; game.firstPick = firstVisit; game.pickMode = mode;
+  $('pickerTitle').textContent = mode === 'home' ? (firstVisit ? 'Welcome! Pick your home university' : 'Pick your home university')
+    : 'Visit another campus';
+  $('pickerNote').textContent = mode === 'home'
+    ? "It's where you'll start and your default daily. You can visit other campuses or change it any time."
+    : 'Drag and scroll the map · click a campus to fly there · your home stays the same';
+  $('pickerBack').classList.toggle('hidden', firstVisit);
+  for (const pin of game.campusPins || []) pin.getElement().classList.toggle('home', pin.getElement().dataset.id === homeCampus());
   if (!game.campusPins?.length) toast('MAP NOT READY', 'warm', 'Campus positions did not load. Reload the page (Ctrl/Cmd+Shift+R).');
   $('title').classList.add('hidden'); $('pickerBar').classList.remove('hidden');
   map.setLayoutProperty('campus-dots', 'visibility', 'visible');
@@ -2140,7 +2157,7 @@ function showCanada() {
   map.flyTo({ center: [-92, 52], zoom: 3.4, pitch: 0, bearing: 0, duration: 2600, essential: true });
 }
 function closeCanada() {
-  if (!game.picking) return;
+  if (!game.picking || game.firstPick) return;   // the first visit needs an answer
   game.picking = false;
   map.setLayoutProperty('campus-dots', 'visibility', 'none');
   for (const pin of game.campusPins) pin.remove();
@@ -2149,16 +2166,18 @@ function closeCanada() {
   map.once('moveend', () => { $('title').classList.remove('hidden'); game.orbiting = true; });
 }
 function pickCampus(id) {
-  if (id === pack.id) { closeCanada(); return; }
+  const settingHome = game.pickMode === 'home';
+  if (settingHome) store.set('home', id);
+  if (id === pack.id) { game.firstPick = false; closeCanada(); renderChoices(); return; }
   const campus = campusIndex.find(c => c.id === id);
   game.picking = false; setInteractive(false);
   $('pickerBar').classList.add('hidden');
   for (const pin of game.campusPins) pin.remove();
-  store.set('campus', id);
   // Fly all the way down, then load that campus at the same view so the switch is seamless.
   map.flyTo({ center: campus.center, ...CAMPUS_VIEW, bearing: -20, duration: 3200, essential: true });
   map.once('moveend', () => {
-    const url = new URL(location.href); url.searchParams.set('campus', id); url.searchParams.delete('v');
+    const url = new URL(location.href); url.searchParams.delete('v');
+    if (settingHome) url.searchParams.delete('campus'); else url.searchParams.set('campus', id);   // home needs no parameter
     location.href = url.toString();
   });
 }
@@ -2167,16 +2186,30 @@ function renderChoices() {
   const box = $('campusChoice');
   const go = id => {
     if (id === pack.id) return;
-    store.set('campus', id);
-    const url = new URL(location.href); url.searchParams.set('campus', id); location.href = url.toString();
+    const url = new URL(location.href); url.searchParams.set('campus', id); location.href = url.toString();   // a visit
   };
   box.innerHTML = '';
   if (campusIndex.length > 6) {
-    const b = document.createElement('button');
-    b.className = 'secondary'; b.id = 'changeCampus';
-    b.innerHTML = `🗺 Choose university <small>${campusIndex.length} campuses</small>`;
-    b.addEventListener('click', showCanada);
-    box.append(b);
+    const home = homeCampus(), homeName = (campusIndex.find(c => c.id === home) || {}).short;
+    const button = (id, html, onClick) => {
+      const b = document.createElement('button');
+      b.className = 'secondary'; b.id = id; b.innerHTML = html; b.addEventListener('click', onClick);
+      box.append(b);
+    };
+    const status = document.createElement('p');
+    status.className = 'note homeStatus';
+    if (!home || home === pack.id) {
+      status.textContent = '🏠 Your home university';
+      box.append(status);
+      button('changeCampus', `🗺 Visit another campus <small>${campusIndex.length}</small>`, () => showCanada('visit'));
+      button('changeHome', 'Change home', () => showCanada('home'));
+    } else {
+      status.textContent = `Visiting · your home is ${homeName || home}`;
+      box.append(status);
+      button('makeHome', '🏠 Make this my home', () => { store.set('home', pack.id); renderChoices(); });
+      button('goHome', `Back to ${homeName || 'home'}`, () => pickCampus(home));
+      button('changeCampus', '🗺 Visit another', () => showCanada('visit'));
+    }
   }
   for (const c of campusIndex.length > 6 ? [] : campusIndex) {
     const b = document.createElement('button');
@@ -2253,7 +2286,7 @@ async function loadCampusPack() {
   // Revalidate (cheap 304s): a cached old index next to a new page left the campus map empty.
   const index = await (await fetch('packs/index.json', { cache: 'no-cache' })).json();
   campusIndex = index.campuses;
-  const wanted = params.get('campus') || store.get('campus');
+  const wanted = params.get('campus') || homeCampus();
   const campus = campusIndex.find(c => c.id === wanted) || campusIndex[0];
   return (await fetch('packs/' + campus.file, { cache: 'no-cache' })).json();
 }
@@ -2557,7 +2590,7 @@ for (const card of document.querySelectorAll('.hintcard')) {
   game.orbiting = true;
   $('pickerBack').addEventListener('click', closeCanada);
   // First visit (no campus chosen yet): open on the map of Canada.
-  if (!params.get('campus') && !store.get('campus') && campusIndex.length > 6) showCanada();
+  if (!params.get('campus') && !homeCampus() && campusIndex.length > 6) showCanada('home', true);
   $('loading').textContent = '';
   setInterval(syncPosition, 150);
   requestAnimationFrame(frame);
