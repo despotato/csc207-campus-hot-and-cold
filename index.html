@@ -371,6 +371,7 @@ async function api(action, body = {}) {
 // with real floors and stay fixed as the camera moves.
 const BAY = 4, FLOOR = 3.66, ROOF_TILE = 8;
 const MATERIALS = ['brick', 'stone', 'glass', 'concrete'];
+const SUN_HEIGHT = 0.8;   // sun elevation ≈ 39°: long enough shadows to read the buildings' shapes
 const SUN = (() => { const x = -0.45, y = -0.89, l = Math.hypot(x, y); return [x / l, y / l]; })();
 
 function pixelTexture(draw, size = 16) {
@@ -385,6 +386,79 @@ function pixelTexture(draw, size = 16) {
   texture.colorSpace = THREE.SRGBColorSpace;
   return texture;
 }
+/** A height map from a pixel tile's brightness: dark pixels (windows, mortar, shade) sit deeper. */
+function heightTexture(draw, invert = false, size = 16) {
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  const g = canvas.getContext('2d');
+  draw((x, y, w, h, color) => { g.fillStyle = color; g.fillRect(x, y, w, h); });
+  const img = g.getImageData(0, 0, size, size), d = img.data;
+  let lo = 1, hi = 0;
+  const lum = [];
+  for (let i = 0; i < d.length; i += 4) { const l = (0.3 * d[i] + 0.59 * d[i + 1] + 0.11 * d[i + 2]) / 255; lum.push(l); lo = Math.min(lo, l); hi = Math.max(hi, l); }
+  lum.forEach((l, i) => {
+    let h = hi > lo ? (l - lo) / (hi - lo) : 1;
+    if (invert) h = 1 - h;
+    d[i * 4] = d[i * 4 + 1] = d[i * 4 + 2] = Math.round(h * 255); d[i * 4 + 3] = 255;
+  });
+  g.putImageData(img, 0, 0);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+  texture.magFilter = texture.minFilter = THREE.NearestFilter;
+  texture.generateMipmaps = false;
+  return texture;
+}
+
+/** The camera position in local metres, updated every frame (parallax needs the view direction). */
+const PARALLAX_EYE = { value: new THREE.Vector3() };
+
+/**
+ * Parallax occlusion mapping on a textured material: the texture is sampled along the view ray through a height
+ * field, so recessed windows, mortar joints and grass tufts shift with the camera like real relief. Geometry must
+ * carry 'ptan' (texture u direction) and 'pbit' (texture v direction) in local metres; depth is in texture units.
+ */
+function withParallax(material, height, depth) {
+  material.onBeforeCompile = shader => {
+    shader.uniforms.heightMap = { value: height };
+    shader.uniforms.parallaxDepth = { value: new THREE.Vector2(depth[0], depth[1]) };
+    shader.uniforms.eye = PARALLAX_EYE;
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', `#include <common>
+attribute vec3 ptan;
+attribute vec3 pbit;
+uniform vec3 eye;
+varying vec3 vViewTS;`)
+      .replace('#include <begin_vertex>', `#include <begin_vertex>
+vec3 toEye = eye - position;
+vViewTS = vec3(dot(toEye, ptan), dot(toEye, pbit), abs(dot(toEye, cross(ptan, pbit))));`);
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', `#include <common>
+uniform sampler2D heightMap;
+uniform vec2 parallaxDepth;
+varying vec3 vViewTS;`)
+      .replace('#include <map_fragment>', `
+vec3 viewTS = normalize(vViewTS);
+const int LAYERS = 14;
+vec2 stepUv = viewTS.xy / max(viewTS.z, 0.2) * parallaxDepth / float(LAYERS);
+vec2 puv = vMapUv;
+float layer = 0.0;
+float below = 1.0 - texture2D(heightMap, puv).r;
+for (int i = 0; i < LAYERS; i++) {
+  if (layer >= below) break;
+  puv -= stepUv;
+  layer += 1.0 / float(LAYERS);
+  below = 1.0 - texture2D(heightMap, puv).r;
+}
+diffuseColor *= texture2D(map, puv);
+diffuseColor.rgb *= 1.0 - 0.35 * layer;   // deeper relief is a little darker (ambient occlusion)
+`);
+  };
+  material.customProgramCacheKey = () => 'parallax';
+  return material;
+}
+/** Relief depth per facade, in metres. */
+const RELIEF = { brick: 0.32, stone: 0.4, glass: 0.12, concrete: 0.3 };
+
 // 16 x 16 pixel tiles; v runs from the floor (bottom row) to the ceiling (top row).
 const FACADES = {
   brick: px => {
@@ -435,13 +509,14 @@ const toLocal = ([lon, lat]) => [(lon - ORIGIN[0]) * M_LON, (lat - ORIGIN[1]) * 
 
 /** Builds one merged mesh per facade material plus one for roofs; remembers each building's vertex range. */
 function buildMeshes() {
-  const walls = Object.fromEntries(MATERIALS.map(m => [m, { pos: [], uv: [], shade: [] }]));
-  const roofs = { pos: [], uv: [], shade: [] };
+  const walls = Object.fromEntries(MATERIALS.map(m => [m, { pos: [], uv: [], shade: [], tan: [], bit: [] }]));
+  const roofs = { pos: [], uv: [], shade: [], tan: [], bit: [] };
   for (const b of pack.buildings) {
     if (b.flat) continue;
     const m = MATERIALS.includes(b.material) ? b.material : 'brick';
     const w = walls[m], wallStart = w.pos.length / 3, roofStart = roofs.pos.length / 3;
-    const base = b.minHeight, top = Math.max(b.height, base + 1);
+    // Overlapping OSM building parts often share a height; a few centimetres' stagger stops their roofs z-fighting.
+    const base = b.minHeight, top = Math.max(b.height, base + 1) + (b.id % 5) * 0.04;
     for (const polygon of b.outline) {
       polygon.forEach((ring, ringIndex) => {
         const pts = ring.map(toLocal);
@@ -459,7 +534,7 @@ function buildMeshes() {
           along += len;
           w.pos.push(ax, ay, base, bx, by, base, bx, by, top, ax, ay, base, bx, by, top, ax, ay, top);
           w.uv.push(u0, v0, u1, v0, u1, v1, u0, v0, u1, v1, u0, v1);
-          for (let k = 0; k < 6; k++) w.shade.push(light);
+          for (let k = 0; k < 6; k++) { w.shade.push(light); w.tan.push((bx - ax) / len, (by - ay) / len, 0); w.bit.push(0, 0, 1); }
         }
       });
       const outer = polygon[0].map(toLocal);
@@ -470,7 +545,7 @@ function buildMeshes() {
       for (let i = 0; i < rp.length; i += 3) {
         roofs.pos.push(rp[i], rp[i + 1], top);
         roofs.uv.push(rp[i] / ROOF_TILE, rp[i + 1] / ROOF_TILE);
-        roofs.shade.push(1);
+        roofs.shade.push(1); roofs.tan.push(1, 0, 0); roofs.bit.push(0, 1, 0);
       }
       roof.dispose();
     }
@@ -483,16 +558,20 @@ function buildMeshes() {
     const colors = new Float32Array(data.shade.length * 3);
     data.shade.forEach((v, i) => colors.fill(v, i * 3, i * 3 + 3));
     geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    geometry.setAttribute('ptan', new THREE.Float32BufferAttribute(data.tan, 3));
+    geometry.setAttribute('pbit', new THREE.Float32BufferAttribute(data.bit, 3));
     geometry.userData.shade = Float32Array.from(data.shade);
     return geometry;
   };
   const group = new THREE.Group();
   for (const m of MATERIALS) {
     const geometry = scene3d.geometries[m] = toGeometry(walls[m]);
-    group.add(new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ map: pixelTexture(FACADES[m]), vertexColors: true, side: THREE.DoubleSide })));
+    group.add(new THREE.Mesh(geometry, withParallax(new THREE.MeshBasicMaterial({ map: pixelTexture(FACADES[m]), vertexColors: true,
+      side: THREE.DoubleSide }), heightTexture(FACADES[m], m === 'glass'), [RELIEF[m] / BAY, RELIEF[m] / FLOOR])));
   }
   scene3d.roofs = toGeometry(roofs);
-  group.add(new THREE.Mesh(scene3d.roofs, new THREE.MeshBasicMaterial({ map: pixelTexture(ROOF), vertexColors: true, side: THREE.DoubleSide })));
+  group.add(new THREE.Mesh(scene3d.roofs, withParallax(new THREE.MeshBasicMaterial({ map: pixelTexture(ROOF), vertexColors: true,
+    side: THREE.DoubleSide }), heightTexture(ROOF), [0.12 / ROOF_TILE, 0.12 / ROOF_TILE])));
   return group;
 }
 
@@ -502,7 +581,7 @@ function buildGround() {
   const kinds = { lawn: GRASS, garden: GARDEN, pitch: PITCH, wood: GRASS };
   const tiles = { lawn: 6, garden: 6, pitch: 12, wood: 6 };
   for (const kind of Object.keys(kinds)) {
-    const pos = [], uv = [];
+    const pos = [], uv = [], tan = [], bit = [];
     for (const green of pack.greens || []) {
       if (green.kind !== kind) continue;
       const outer = green.outline[0].map(toLocal);
@@ -511,17 +590,27 @@ function buildGround() {
       for (const hole of green.outline.slice(1)) shape.holes.push(new THREE.Path(hole.map(toLocal).map(([x, y]) => new THREE.Vector2(x, y))));
       const geometry = new THREE.ShapeGeometry(shape).toNonIndexed();
       const p = geometry.attributes.position.array;
-      const z = kind === 'pitch' ? 0.12 : kind === 'garden' ? 0.1 : 0.08;
-      for (let i = 0; i < p.length; i += 3) { pos.push(p[i], p[i + 1], z); uv.push(p[i] / tiles[kind], p[i + 1] / tiles[kind]); }
+      const z = 0.05;   // every ground layer shares one plane; draw order (below) decides what's on top
+      for (let i = 0; i < p.length; i += 3) {
+        pos.push(p[i], p[i + 1], z); uv.push(p[i] / tiles[kind], p[i + 1] / tiles[kind]); tan.push(1, 0, 0); bit.push(0, 1, 0);
+      }
       geometry.dispose();
     }
     if (!pos.length) continue;
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
     geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
-    const material = new THREE.MeshBasicMaterial({ map: pixelTexture(kinds[kind]), side: THREE.DoubleSide,
-      color: kind === 'wood' ? 0x8fb07a : 0xffffff, polygonOffset: true, polygonOffsetFactor: -1 });
-    group.add(new THREE.Mesh(geometry, material));
+    geometry.setAttribute('ptan', new THREE.Float32BufferAttribute(tan, 3));
+    geometry.setAttribute('pbit', new THREE.Float32BufferAttribute(bit, 3));
+    const relief = (kind === 'pitch' ? 0.04 : 0.1) / tiles[kind];
+    const material = withParallax(new THREE.MeshBasicMaterial({ map: pixelTexture(kinds[kind]), side: THREE.DoubleSide,
+      color: kind === 'wood' ? 0x8fb07a : 0xffffff, depthWrite: false }),
+      heightTexture(kinds[kind]), [relief, relief]);
+    const lawn = new THREE.Mesh(geometry, material);
+    lawn.userData.flat = true;   // flat ground doesn't cast shadows
+    // Flat layers never write depth, so overlapping ones can't z-fight: they paint in a fixed order, before buildings.
+    lawn.renderOrder = { wood: -5, lawn: -4, garden: -3, pitch: -2 }[kind];
+    group.add(lawn);
   }
   const trees = pack.trees || [];
   if (trees.length) {
@@ -590,17 +679,70 @@ function buildingLayer() {
   return {
     id: 'buildings-3d', type: 'custom', renderingMode: '3d',
     onAdd(m, gl) {
+      this.map = m;
       this.camera = new THREE.Camera();
       this.scene = new THREE.Scene();
-      this.scene.add(buildGround());
-      this.scene.add(buildMeshes());
+      const ground = buildGround(), meshes = buildMeshes();
+      // Everything solid casts a shadow from the sun.
+      for (const group of [ground, meshes]) group.traverse(o => { if (o.isMesh && !o.userData.flat) o.castShadow = true; });
+      this.scene.add(ground, meshes);
+      // Shadows land on an invisible ground sheet (it only darkens where shadowed) and on rooftops.
+      const b = pack.bounds, [x0, y0] = toLocal([b.west, b.south]), [x1, y1] = toLocal([b.east, b.north]);
+      const sheet = new THREE.Mesh(new THREE.PlaneGeometry(x1 - x0 + 600, y1 - y0 + 600),
+        new THREE.ShadowMaterial({ opacity: 0.38, depthWrite: false }));
+      sheet.position.set((x0 + x1) / 2, (y0 + y1) / 2, 0.05);
+      sheet.receiveShadow = true;
+      this.scene.add(sheet);
+      const roofShadows = new THREE.Mesh(scene3d.roofs, new THREE.ShadowMaterial({ opacity: 0.32, depthWrite: false,
+        polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }));
+      roofShadows.receiveShadow = true;
+      this.scene.add(roofShadows);
+      this.sun = new THREE.DirectionalLight(0xffffff, 1);
+      this.sun.castShadow = true;
+      this.sun.shadow.mapSize.set(4096, 4096);
+      this.sun.shadow.bias = -0.0004;
+      this.sun.shadow.normalBias = 0.02;
+      this.sun.shadow.radius = 2;
+      this.scene.add(this.sun, this.sun.target);
+      this.avatarShadow = new THREE.Group();
+      this.scene.add(this.avatarShadow);
+      scene3d.layer = this;
       this.renderer = new THREE.WebGLRenderer({ canvas: m.getCanvas(), context: gl, antialias: false });
       this.renderer.autoClear = false;
+      this.renderer.shadowMap.enabled = true;
+      this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     },
     render(gl, matrix) {
       this.camera.projectionMatrix = new THREE.Matrix4().fromArray(matrix).multiply(model);
+      const canvas = this.map.getCanvas(), size = this.renderer.getSize(new THREE.Vector2());
+      if (size.x !== canvas.width || size.y !== canvas.height) {
+        this.renderer.setPixelRatio(1);
+        this.renderer.setSize(canvas.width, canvas.height, false);
+      }
+      this.aimSun();
+      // Camera position in local metres: the eye is where the projection sends w to 0 (clip-space direction 0,0,1,0).
+      const eye = new THREE.Vector4(0, 0, 1, 0).applyMatrix4(this.camera.projectionMatrix.clone().invert());
+      PARALLAX_EYE.value.set(eye.x / eye.w, eye.y / eye.w, eye.z / eye.w);
       this.renderer.resetState();
       this.renderer.render(this.scene, this.camera);
+    },
+    /** Keep the sun's shadow box around what the camera sees: crisp up close, wide when zoomed out. */
+    aimSun() {
+      const m = this.map, centre = m.getCenter(), zoom = m.getZoom();
+      const metresPerPixel = 40075016 * Math.cos(centre.lat * Math.PI / 180) / (512 * 2 ** zoom);
+      const view = metresPerPixel * Math.max(m.getContainer().clientWidth, m.getContainer().clientHeight);
+      const half = Math.min(1600, Math.max(160, view * (1 + m.getPitch() / 60)));
+      const texel = (2 * half) / 4096;
+      let [cx, cy] = toLocal([centre.lng, centre.lat]);
+      cx = Math.round(cx / texel) * texel; cy = Math.round(cy / texel) * texel;   // no shimmer while panning
+      const cam = this.sun.shadow.camera;
+      if (cam.right !== half) {
+        cam.left = -half; cam.right = half; cam.top = half; cam.bottom = -half;
+        cam.near = 1; cam.far = 4000; cam.updateProjectionMatrix();
+      }
+      this.sun.target.position.set(cx, cy, 0);
+      this.sun.position.set(cx + SUN[0] * 1000, cy + SUN[1] * 1000, SUN_HEIGHT * 1000);
+      this.sun.target.updateMatrixWorld();
     },
   };
 }
@@ -611,16 +753,19 @@ function buildStyle() {
     version: 8,
     sources: { omt: { type: 'vector', url: 'https://tiles.openfreemap.org/planet',
       attribution: '<a href="https://openfreemap.org">OpenFreeMap</a> © <a href="https://www.openmaptiles.org/">OpenMapTiles</a> Data © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' } },
-    sky: { 'sky-color': '#7ec8f0', 'horizon-color': '#f4d9a6', 'fog-color': '#c9b98f', 'sky-horizon-blend': 0.5, 'horizon-fog-blend': 0.6, 'fog-ground-blend': 0.85 },
+    sky: { 'sky-color': '#7ec8f0', 'horizon-color': '#d9e7ee', 'fog-color': '#b9c4c9', 'sky-horizon-blend': 0.5, 'horizon-fog-blend': 0.6, 'fog-ground-blend': 0.85 },
     layers: [
-      { id: 'bg', type: 'background', paint: { 'background-color': '#c9b98f' } },
+      { id: 'bg', type: 'background', paint: { 'background-color': '#b4b1aa' } },
       { id: 'paving', type: 'background', paint: { 'background-pattern': 'paving', 'background-opacity': 0.9 } },
-      { id: 'landcover', type: 'fill', source: 'omt', 'source-layer': 'landcover', paint: { 'fill-color': '#7dba58' } },
+      { id: 'landcover', type: 'fill', source: 'omt', 'source-layer': 'landcover', paint: { 'fill-color': '#79a955' } },
+      { id: 'landuse-grass', type: 'fill', source: 'omt', 'source-layer': 'landuse',
+        filter: ['in', ['get', 'class'], ['literal', ['residential', 'grass', 'cemetery', 'pitch', 'playground']]],
+        paint: { 'fill-color': ['match', ['get', 'class'], 'residential', '#a9aea0', '#79a955'] } },
       { id: 'park', type: 'fill', source: 'omt', 'source-layer': 'park', paint: { 'fill-color': '#6fae4f' } },
       { id: 'water', type: 'fill', source: 'omt', 'source-layer': 'water', paint: { 'fill-color': '#3f7fd1' } },
       { id: 'road', type: 'line', source: 'omt', 'source-layer': 'transportation',
         filter: ['!', ['in', ['get', 'class'], ['literal', ['path', 'track']]]],
-        paint: { 'line-color': '#5b5566', 'line-width': ['interpolate', ['exponential', 2], ['zoom'], 14, 2, 19, 26] } },
+        paint: { 'line-color': '#55545a', 'line-width': ['interpolate', ['exponential', 2], ['zoom'], 14, 2, 19, 26] } },
     ],
   };
 }
@@ -643,9 +788,11 @@ function pavingImage() {
   const size = 16, c = document.createElement('canvas');
   c.width = c.height = size;
   const g = c.getContext('2d');
-  g.fillStyle = '#cbbd96'; g.fillRect(0, 0, size, size);
-  g.fillStyle = '#b9ab84'; g.fillRect(0, 0, size, 1); g.fillRect(0, 8, size, 1); g.fillRect(0, 0, 1, 8); g.fillRect(8, 8, 1, 8);
-  g.fillStyle = '#d6c9a3'; g.fillRect(3, 3, 1, 1); g.fillRect(12, 11, 1, 1); g.fillRect(6, 13, 1, 1);
+  // Light concrete paving slabs with darker joints and a little grit.
+  g.fillStyle = '#b4b1aa'; g.fillRect(0, 0, size, size);
+  g.fillStyle = '#bab7b0'; g.fillRect(1, 1, 7, 7); g.fillRect(9, 9, 7, 7);
+  g.fillStyle = '#a19e97'; g.fillRect(0, 0, size, 1); g.fillRect(0, 8, size, 1); g.fillRect(0, 0, 1, 8); g.fillRect(8, 8, 1, 8);
+  g.fillStyle = '#a8a59e'; g.fillRect(3, 3, 1, 1); g.fillRect(12, 11, 1, 1); g.fillRect(6, 13, 1, 1); g.fillRect(13, 4, 1, 1);
   return g.getImageData(0, 0, size, size);
 }
 
@@ -653,7 +800,7 @@ function addGameLayers() {
   map.addSource('walkways', { type: 'geojson', data: fc(pack.walkways.edges.map(([a, b]) => ({ type: 'Feature', properties: {},
     geometry: { type: 'LineString', coordinates: [pack.walkways.nodes[a], pack.walkways.nodes[b]] } }))) });
   map.addLayer({ id: 'walkways', type: 'line', source: 'walkways', layout: { 'line-cap': 'round', 'line-join': 'round' },
-    paint: { 'line-color': '#f3e9c6', 'line-width': ['interpolate', ['exponential', 2], ['zoom'], 15, 1, 19, 6], 'line-opacity': 0.9 } });
+    paint: { 'line-color': '#dcd8cd', 'line-width': ['interpolate', ['exponential', 2], ['zoom'], 15, 1, 19, 6], 'line-opacity': 0.9 } });
 
   map.addSource('routes', { type: 'geojson', data: fc([]) });
   map.addLayer({ id: 'routes', type: 'line', source: 'routes', layout: { 'line-cap': 'round', 'line-join': 'round' },
@@ -801,11 +948,36 @@ function avatarFeatures(p, heading) {
   return body ? body(p, heading, mascot.colors) : studentFeatures(p, heading);
 }
 
+/**
+ * Pushes apart faces that would z-fight: when a later box (a detail such as a scarf, stripe or nose) has a face
+ * within 0.02 body units (~5 cm) of an overlapping earlier box's face on the same side, it moves out by 0.025
+ * (~6 cm). Coplanar faces otherwise flicker as the camera moves.
+ */
+function separate(parts) {
+  const E = 0.02, PUSH = 0.025, out = parts.map(p => p.slice());
+  const overlap = (a0, a1, b0, b1) => Math.min(a1, b1) - Math.max(a0, b0) > 1e-6;
+  for (let i = 1; i < out.length; i++) {
+    const q = out[i];
+    for (let j = 0; j < i; j++) {
+      const r = out[j];
+      const xy = overlap(q[0], q[1], r[0], r[1]) && overlap(q[2], q[3], r[2], r[3]);
+      const xz = overlap(q[0], q[1], r[0], r[1]) && overlap(q[4], q[5], r[4], r[5]);
+      const yz = overlap(q[2], q[3], r[2], r[3]) && overlap(q[4], q[5], r[4], r[5]);
+      if (xy && Math.abs(q[5] - r[5]) < E) q[5] = r[5] + PUSH;            // tops
+      if (yz && Math.abs(q[0] - r[0]) < E) q[0] = r[0] - PUSH;            // left sides
+      if (yz && Math.abs(q[1] - r[1]) < E) q[1] = r[1] + PUSH;            // right sides
+      if (xz && Math.abs(q[2] - r[2]) < E) q[2] = r[2] - PUSH;            // backs
+      if (xz && Math.abs(q[3] - r[3]) < E) q[3] = r[3] + PUSH;            // fronts
+    }
+  }
+  return out;
+}
+
 /** Boxes [x0, x1, y0, y1, z0, z1, colour] in body units (x right, y forward, z up), scaled by S, plus a shadow. */
 function blocky(p, heading, parts, shadow = [-0.9, 0.9, -1.2, 1.0]) {
   const S = 2.4;
   return [box(p, heading, shadow[0] * S, shadow[1] * S, shadow[2] * S, shadow[3] * S, 0, 0.05, '#00000055'),
-    ...parts.map(([x0, x1, y0, y1, z0, z1, col]) => box(p, heading, x0 * S, x1 * S, y0 * S, y1 * S, z0 * S, z1 * S, col))];
+    ...separate(parts).map(([x0, x1, y0, y1, z0, z1, col]) => box(p, heading, x0 * S, x1 * S, y0 * S, y1 * S, z0 * S, z1 * S, col))];
 }
 
 /** An original blocky bear standing upright in a school-colour jersey. */
@@ -922,7 +1094,7 @@ function studentFeatures(p, heading) {
     [-0.4, 0.4, -0.36, 0.55, 2.85, 3.08, '#1e3765'],
   ];
   const shadow = box(p, heading, -0.9 * S, 0.9 * S, -0.9 * S, 0.9 * S, 0, 0.05, '#00000055');
-  return [shadow, ...parts.map(([x0, x1, y0, y1, z0, z1, c]) => box(p, heading, x0 * S, x1 * S, y0 * S, y1 * S, z0 * S, z1 * S, c))];
+  return [shadow, ...separate(parts).map(([x0, x1, y0, y1, z0, z1, c]) => box(p, heading, x0 * S, x1 * S, y0 * S, y1 * S, z0 * S, z1 * S, c))];
 }
 
 /** An original blocky beaver in school colours: toque, scarf, buck teeth, and a wagging paddle tail. */
@@ -946,7 +1118,7 @@ function beaverFeatures(p, heading, c) {
     [-0.12, 0.12, 0.05, 0.25, 2.42, 2.6, c.secondary],                 // pom-pom
   ];
   const shadow = box(p, heading, -0.9 * S, 0.9 * S, -1.2 * S, 0.9 * S, 0, 0.05, '#00000055');
-  return [shadow, ...parts.map(([x0, x1, y0, y1, z0, z1, col]) => box(p, heading, x0 * S, x1 * S, y0 * S, y1 * S, z0 * S, z1 * S, col))];
+  return [shadow, ...separate(parts).map(([x0, x1, y0, y1, z0, z1, col]) => box(p, heading, x0 * S, x1 * S, y0 * S, y1 * S, z0 * S, z1 * S, col))];
 }
 
 /** An original blocky gold lion with a dark mane and a swaying tail. */
@@ -970,7 +1142,7 @@ function lionFeatures(p, heading, c) {
     [0.4, 0.55, -1.08, -0.87, 0.68 + swing, 0.98 + swing, c.dark],
   ];
   const shadow = box(p, heading, -0.9 * S, 0.9 * S, -1.2 * S, 0.9 * S, 0, 0.05, '#00000055');
-  return [shadow, ...parts.map(([x0, x1, y0, y1, z0, z1, col]) =>
+  return [shadow, ...separate(parts).map(([x0, x1, y0, y1, z0, z1, col]) =>
     box(p, heading, x0 * S, x1 * S, y0 * S, y1 * S, z0 * S, z1 * S, col))];
 }
 
@@ -997,7 +1169,7 @@ function gryphonFeatures(p, heading, c) {
     [-0.16, 0.16, -1.25, -1.0, 0.9, 1.2, c.dark],                        // tail tuft
   ];
   const shadow = box(p, heading, -1.0 * S, 1.0 * S, -1.2 * S, 1.0 * S, 0, 0.05, '#00000055');
-  return [shadow, ...parts.map(([x0, x1, y0, y1, z0, z1, col]) =>
+  return [shadow, ...separate(parts).map(([x0, x1, y0, y1, z0, z1, col]) =>
     box(p, heading, x0 * S, x1 * S, y0 * S, y1 * S, z0 * S, z1 * S, col))];
 }
 
@@ -1022,7 +1194,7 @@ function hawkFeatures(p, heading, c) {
     [-0.2, 0.2, -1.05, -0.9, 0.55, 0.68, c.fur],
   ];
   const shadow = box(p, heading, -0.9 * S, 0.9 * S, -1.1 * S, 0.9 * S, 0, 0.05, '#00000055');
-  return [shadow, ...parts.map(([x0, x1, y0, y1, z0, z1, col]) =>
+  return [shadow, ...separate(parts).map(([x0, x1, y0, y1, z0, z1, col]) =>
     box(p, heading, x0 * S, x1 * S, y0 * S, y1 * S, z0 * S, z1 * S, col))];
 }
 
@@ -1052,7 +1224,7 @@ function marauderFeatures(p, heading, c) {
     [0.56, 0.68, -0.05, 0.12, 2.92, 3.15, '#fff8e7'],
   ];
   const shadow = box(p, heading, -0.9 * S, 0.9 * S, -0.9 * S, 0.9 * S, 0, 0.05, '#00000055');
-  return [shadow, ...parts.map(([x0, x1, y0, y1, z0, z1, col]) =>
+  return [shadow, ...separate(parts).map(([x0, x1, y0, y1, z0, z1, col]) =>
     box(p, heading, x0 * S, x1 * S, y0 * S, y1 * S, z0 * S, z1 * S, col))];
 }
 
@@ -1209,7 +1381,23 @@ function toggleMapView(force) {
 /** Where you stand: the camera orbits this spot; you move only by travelling with the map. */
 const LOOK_ZOOM = 18;
 function drawAvatar() {
-  map.getSource('avatar').setData(fc(avatarFeatures(game.pos, game.heading)));
+  const parts = avatarFeatures(game.pos, game.heading).filter(f => f.properties.color !== '#00000055');
+  map.getSource('avatar').setData(fc(parts));
+  const layer = scene3d.layer;
+  if (!layer) return;
+  // An invisible copy of the mascot in the 3D scene, so the sun casts its shadow like the buildings'.
+  for (const old of [...layer.avatarShadow.children]) { old.geometry.dispose(); layer.avatarShadow.remove(old); }
+  const invisible = new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false });
+  for (const f of parts) {
+    const ring = f.geometry.coordinates[0].slice(0, -1).map(toLocal);
+    const shape = new THREE.Shape(ring.map(([x, y]) => new THREE.Vector2(x, y)));
+    const geometry = new THREE.ExtrudeGeometry(shape, { depth: f.properties.top - f.properties.base, bevelEnabled: false });
+    geometry.translate(0, 0, f.properties.base);
+    const mesh = new THREE.Mesh(geometry, invisible);
+    mesh.castShadow = true;
+    layer.avatarShadow.add(mesh);
+  }
+  map.triggerRepaint();
 }
 const pitchFor = zoom => 50 + (zoom - ZOOM_MIN) * 4;
 

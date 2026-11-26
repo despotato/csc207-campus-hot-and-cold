@@ -87,6 +87,38 @@
       "file": "usask.json",
       "timezone": "America/Regina",
       "region": "Saskatchewan"
+    },
+    {
+      "id": "western",
+      "name": "Western University",
+      "short": "Western",
+      "file": "western.json",
+      "timezone": "America/Toronto",
+      "region": "Ontario"
+    },
+    {
+      "id": "queens",
+      "name": "Queen's University",
+      "short": "Queen's",
+      "file": "queens.json",
+      "timezone": "America/Toronto",
+      "region": "Ontario"
+    },
+    {
+      "id": "uottawa",
+      "name": "University of Ottawa",
+      "short": "uOttawa",
+      "file": "uottawa.json",
+      "timezone": "America/Toronto",
+      "region": "Ontario"
+    },
+    {
+      "id": "carleton",
+      "name": "Carleton University",
+      "short": "Carleton",
+      "file": "carleton.json",
+      "timezone": "America/Toronto",
+      "region": "Ontario"
     }
   ]
 }
