@@ -431,8 +431,9 @@ const PARALLAX_EYE = { value: new THREE.Vector3() };
  * field, so recessed windows, mortar joints and grass tufts shift with the camera like real relief. Geometry must
  * carry 'ptan' (texture u direction) and 'pbit' (texture v direction) in local metres; depth is in texture units.
  */
-function withParallax(material, height, depth) {
+function withParallax(material, height, depth, windows = false) {
   material.onBeforeCompile = shader => {
+    shader.uniforms.windowVariety = { value: windows ? 1 : 0 };
     shader.uniforms.heightMap = { value: height };
     shader.uniforms.parallaxDepth = { value: new THREE.Vector2(depth[0], depth[1]) };
     shader.uniforms.eye = PARALLAX_EYE;
@@ -449,6 +450,7 @@ vViewTS = vec3(dot(toEye, ptan), dot(toEye, pbit), abs(dot(toEye, cross(ptan, pb
       .replace('#include <common>', `#include <common>
 uniform sampler2D heightMap;
 uniform vec2 parallaxDepth;
+uniform float windowVariety;
 varying vec3 vViewTS;`)
       .replace('#include <map_fragment>', `
 vec3 viewTS = normalize(vViewTS);
@@ -465,6 +467,13 @@ for (int i = 0; i < LAYERS; i++) {
 }
 diffuseColor *= texture2D(map, puv);
 diffuseColor.rgb *= 1.0 - 0.35 * layer;   // deeper relief is a little darker (ambient occlusion)
+if (windowVariety > 0.5 && below > 0.85) {
+  // Each window (one per bay and floor) differs: some lit, some with blinds drawn, some dark.
+  float cell = fract(sin(dot(floor(vMapUv), vec2(12.9898, 78.233))) * 43758.5453);
+  if (cell < 0.14) diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.86, 0.76, 0.52), 0.5);
+  else if (cell < 0.3) diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.72, 0.7, 0.64), 0.45);
+  else if (cell < 0.45) diffuseColor.rgb *= 0.72;
+}
 `);
   };
   material.customProgramCacheKey = () => 'parallax';
@@ -487,7 +496,7 @@ const FACADES = {
     px(4, 12, 8, 1, '#efe3c4');                                                                             // sill
   },
   glass: px => {
-    px(0, 0, 16, 16, '#5f86a3');
+    px(0, 0, 16, 16, '#58778d');
     px(0, 0, 16, 2, '#3b5468'); px(0, 0, 1, 16, '#3b5468'); px(8, 0, 1, 16, '#3b5468');
     px(2, 10, 3, 2, '#b9d6e8'); px(11, 5, 3, 2, '#b9d6e8'); px(3, 12, 1, 1, '#d9ecf6');
   },
@@ -534,9 +543,9 @@ const FACADES = {
   },
   // Green-tinted curtain wall with spandrel bands.
   glassGreen: px => {
-    px(0, 0, 16, 16, '#5e9a8a');
-    px(0, 0, 16, 3, '#3f6b60'); px(0, 0, 1, 16, '#2f5249'); px(5, 0, 1, 16, '#2f5249'); px(10, 0, 1, 16, '#2f5249');
-    px(2, 9, 2, 2, '#b8e0d4'); px(12, 5, 2, 1, '#b8e0d4');
+    px(0, 0, 16, 16, '#55716a');
+    px(0, 0, 16, 3, '#3f5751'); px(0, 0, 1, 16, '#2f5249'); px(5, 0, 1, 16, '#2f5249'); px(10, 0, 1, 16, '#2f5249');
+    px(2, 9, 2, 2, '#a6bfb8'); px(12, 5, 2, 1, '#a6bfb8');
   },
   // Dark glass tower grid: thin mullions, every floor the same.
   tower: px => {
@@ -554,8 +563,8 @@ const FACADES = {
   },
   // White metal cladding panels with a ribbon window.
   metal: px => {
-    px(0, 0, 16, 16, '#d7dbe0');
-    for (let x = 0; x < 16; x += 5) px(x, 0, 1, 16, '#bfc4cb');
+    px(0, 0, 16, 16, '#bfc2c4');
+    for (let x = 0; x < 16; x += 5) px(x, 0, 1, 16, '#a9adb1');
     px(0, 0, 16, 1, '#bfc4cb');
     px(0, 6, 16, 4, '#2e3a4f'); px(0, 6, 16, 1, '#9aa4b3'); px(3, 7, 3, 1, '#7c98c0');
   },
@@ -567,8 +576,8 @@ const FACADES = {
   },
   // Mass timber: vertical wood slats with tall windows.
   timber: px => {
-    px(0, 0, 16, 16, '#a8764a');
-    for (let x = 0; x < 16; x += 2) px(x, 0, 1, 16, '#8f6139');
+    px(0, 0, 16, 16, '#8b6c4f');
+    for (let x = 0; x < 16; x += 2) px(x, 0, 1, 16, '#765a40');
     px(9, 3, 5, 10, '#263248'); px(9, 3, 5, 1, '#5b4430'); px(10, 4, 2, 3, '#6582ad');
   },
 };
@@ -587,34 +596,45 @@ function facadeFor(b) {
   const r = (Math.sin(b.id * 12.9898) * 43758.5453) % 1, h = r < 0 ? r + 1 : r;
   const old = (b.built && b.built < 1935) || b.formerName;
   const civic = ['College', 'Library', 'Campus life'].includes(b.category);
+  const house = b.height < 12 && footprintArea(b) < 450;
+  // Evidence first: OSM's own wall material, when mapped.
+  switch (b.wallMaterial) {
+    case 'wood': case 'timber_framing': return 'timber';
+    case 'glass': return b.height > 45 ? 'tower' : 'glass';
+    case 'metal': case 'steel': case 'aluminium': case 'metal_plates': return 'metal';
+    case 'concrete': return b.height > 25 ? 'brutalist' : 'concrete';
+    case 'stone': case 'limestone': return old || civic ? 'gothic' : 'stone';
+    case 'sandstone': return 'sandstone';
+    case 'plaster': case 'stucco': return 'metal';
+    case 'brick': return old ? 'brickDark' : 'brick';
+    default: break;
+  }
+  // Otherwise the plain local norm for the material the pack derived, with modest variation.
   switch (b.material) {
-    case 'glass': return b.height > 45 ? 'tower' : h < 0.55 ? 'glass' : 'glassGreen';
+    case 'glass': return b.height > 45 ? 'tower' : h < 0.75 ? 'glass' : 'glassGreen';
     case 'concrete':
-      if (b.height > 45) return h < 0.5 ? 'tower' : 'brutalist';
-      if (b.height < 12) return h < 0.5 ? 'metal' : 'concrete';
-      return h < 0.4 ? 'brutalist' : h < 0.7 ? 'concrete' : 'metal';
-    case 'stone':
-      if (old || civic) return h < 0.7 ? 'gothic' : 'stone';
-      return h < 0.4 ? 'stone' : h < 0.75 ? 'sandstone' : 'gothic';
+      if (b.height > 25) return (b.built && b.built < 1985) || h < 0.5 ? 'brutalist' : 'concrete';
+      return h < 0.7 ? 'concrete' : 'metal';
+    case 'stone': return old || civic ? 'gothic' : h < 0.65 ? 'stone' : 'sandstone';
     default:
-      if (b.category === 'Residence') return b.height >= 14 ? 'residence' : h < 0.5 ? 'brick' : 'brickTan';
-      if (!b.category && b.height < 9 && footprintArea(b) < 450) return h < 0.5 ? 'siding' : h < 0.6 ? 'timber' : h < 0.8 ? 'brickDark' : 'brick';
-      if (old) return h < 0.7 ? 'brickDark' : 'brick';
-      return h < 0.42 ? 'brick' : h < 0.68 ? 'brickDark' : h < 0.88 ? 'brickTan' : 'timber';
+      if (b.category === 'Residence') return b.height >= 14 ? 'residence' : 'brick';
+      if (!b.category && house) return h < 0.5 ? 'siding' : 'brick';
+      if (old) return 'brickDark';
+      return h < 0.6 ? 'brick' : h < 0.8 ? 'brickDark' : 'brickTan';
   }
 }
 const GRASS = px => {
-  px(0, 0, 16, 16, '#78b552');
-  for (let i = 0; i < 40; i++) px((i * 5 + (i >> 2)) % 16, (i * 7) % 16, 1, 1, i % 3 ? '#6aa647' : '#8cc762');
-  for (let i = 0; i < 6; i++) px((i * 11 + 3) % 16, (i * 5 + 2) % 16, 1, 2, '#5e9a3e');
+  px(0, 0, 16, 16, '#6c944c');
+  for (let i = 0; i < 40; i++) px((i * 5 + (i >> 2)) % 16, (i * 7) % 16, 1, 1, i % 3 ? '#618a43' : '#7aa35a');
+  for (let i = 0; i < 6; i++) px((i * 11 + 3) % 16, (i * 5 + 2) % 16, 1, 2, '#557d3a');
 };
 const GARDEN = px => {
   GRASS(px);
   for (const [x, y, c] of [[3, 3, '#f2c14e'], [11, 5, '#e94f37'], [6, 11, '#ffffff'], [13, 13, '#f2c14e'], [1, 9, '#d36ba6']]) px(x, y, 1, 1, c);
 };
 const PITCH = px => {
-  px(0, 0, 16, 16, '#6fb04a'); px(0, 0, 16, 8, '#62a03f');
-  for (let i = 0; i < 12; i++) px((i * 5) % 16, (i * 3) % 16, 1, 1, '#7cbf55');
+  px(0, 0, 16, 16, '#679a49'); px(0, 0, 16, 8, '#5c8d40');
+  for (let i = 0; i < 12; i++) px((i * 5) % 16, (i * 3) % 16, 1, 1, '#72a553');
 };
 const ROOF = px => {
   px(0, 0, 16, 16, '#7d7a74');
@@ -629,22 +649,22 @@ const ROOFS = {
   gravel: [ROOF, 8, 0.12, false],
   // White membrane with rooftop units (dark boxes stick up) and a parapet line.
   membrane: [px => {
-    px(0, 0, 16, 16, '#d9d8d2');
-    for (let i = 0; i < 14; i++) px((i * 5 + 2) % 16, (i * 9) % 16, 1, 1, '#c6c5be');
-    px(0, 0, 16, 1, '#a8a7a0');
-    px(3, 4, 4, 3, '#8a8f98'); px(3, 4, 4, 1, '#b4b9c1'); px(11, 10, 3, 3, '#8a8f98'); px(11, 10, 3, 1, '#b4b9c1');
+    px(0, 0, 16, 16, '#a9a8a2');
+    for (let i = 0; i < 18; i++) px((i * 5 + 2) % 16, (i * 9) % 16, 1, 1, i % 2 ? '#9a9993' : '#b4b3ad');
+    px(0, 0, 16, 1, '#8c8b85');
+    px(3, 4, 4, 3, '#6f737a'); px(3, 4, 4, 1, '#8d9198'); px(11, 10, 3, 3, '#6f737a'); px(11, 10, 3, 1, '#8d9198');
   }, 10, 0.5, false],
   // Green copper patina with standing seams.
   copper: [px => {
-    px(0, 0, 16, 16, '#6fae96');
-    for (let x = 0; x < 16; x += 4) px(x, 0, 1, 16, '#4f8a74');
-    for (let i = 0; i < 12; i++) px((i * 7 + 1) % 16, (i * 5) % 16, 1, 1, i % 2 ? '#86c2aa' : '#5e9b84');
+    px(0, 0, 16, 16, '#5d7a6c');
+    for (let x = 0; x < 16; x += 4) px(x, 0, 1, 16, '#4b6458');
+    for (let i = 0; i < 14; i++) px((i * 7 + 1) % 16, (i * 5) % 16, 1, 1, ['#6b8a7a', '#54705f', '#6f6a55'][i % 3]);
   }, 8, 0.08, false],
   // Dark slate tiles in staggered rows.
   slate: [px => {
-    px(0, 0, 16, 16, '#4f5560');
-    for (let y = 0; y < 16; y += 4) { px(0, y, 16, 1, '#3a3f48'); for (let x = (y / 4) % 2 ? 2 : 0; x < 16; x += 4) px(x, y, 1, 4, '#3a3f48'); }
-    for (let i = 0; i < 8; i++) px((i * 5) % 16, (i * 7 + 1) % 16, 1, 1, '#6a717d');
+    px(0, 0, 16, 16, '#5d6168');
+    for (let y = 0; y < 16; y += 4) { px(0, y, 16, 1, '#484c53'); for (let x = (y / 4) % 2 ? 2 : 0; x < 16; x += 4) px(x, y, 1, 4, '#3a3f48'); }
+    for (let i = 0; i < 8; i++) px((i * 5) % 16, (i * 7 + 1) % 16, 1, 1, '#71767e');
   }, 6, 0.06, false],
   // Asphalt shingles for houses.
   shingles: [px => {
@@ -654,17 +674,92 @@ const ROOFS = {
   }, 6, 0.05, false],
   // Green (sedum) roof: planted beds between paths.
   green: [px => {
-    px(0, 0, 16, 16, '#6f9a45');
-    for (let i = 0; i < 40; i++) px((i * 7 + 3) % 16, (i * 5) % 16, 1, 1, ['#88b35a', '#5c8638', '#a2b860', '#c9a6c9'][i % 4]);
-    px(0, 7, 16, 2, '#b7b2a6'); px(7, 0, 2, 16, '#b7b2a6');
+    px(0, 0, 16, 16, '#61744a');
+    for (let i = 0; i < 40; i++) px((i * 7 + 3) % 16, (i * 5) % 16, 1, 1, ['#6f8452', '#53653d', '#7d8556', '#8a7d6a'][i % 4]);
+    px(0, 7, 16, 2, '#9c988e'); px(7, 0, 2, 16, '#9c988e');
   }, 8, 0.15, false],
   // Standing-seam metal.
   seam: [px => {
-    px(0, 0, 16, 16, '#9aa3ab');
-    for (let x = 0; x < 16; x += 3) px(x, 0, 1, 16, '#c0c7cd');
-    px(0, 15, 16, 1, '#7d868f');
+    px(0, 0, 16, 16, '#868c90');
+    for (let x = 0; x < 16; x += 3) px(x, 0, 1, 16, '#a1a6aa');
+    px(0, 15, 16, 1, '#71767a');
   }, 6, 0.06, true],
 };
+/**
+ * A gable roof for a small, roughly rectangular house: ridge along the long side, slopes rising about 35% of the
+ * short side (1.2 to 4 m), 0.3 m eaves. Walls stop at the eaves. Null if the footprint isn't rectangular enough.
+ */
+function gablePlan(b, base, top) {
+  if (b.outline.length !== 1 || b.outline[0].length !== 1) return null;   // one ring, no courtyard
+  const pts = b.outline[0][0].map(toLocal);
+  let best = 0, angle = 0;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const dx = pts[i + 1][0] - pts[i][0], dy = pts[i + 1][1] - pts[i][1], l = Math.hypot(dx, dy);
+    if (l > best) { best = l; angle = Math.atan2(dy, dx); }
+  }
+  const frame = (ux, uy) => {
+    const vx = -uy, vy = ux;
+    let u0 = Infinity, u1 = -Infinity, v0 = Infinity, v1 = -Infinity;
+    for (const [x, y] of pts) {
+      const u = x * ux + y * uy, v = x * vx + y * vy;
+      u0 = Math.min(u0, u); u1 = Math.max(u1, u); v0 = Math.min(v0, v); v1 = Math.max(v1, v);
+    }
+    return { ux, uy, vx, vy, u0, u1, v0, v1 };
+  };
+  let f = frame(Math.cos(angle), Math.sin(angle));
+  if (f.u1 - f.u0 < f.v1 - f.v0) f = frame(-Math.sin(angle), Math.cos(angle));   // ridge along the long side
+  if (footprintArea(b) / ((f.u1 - f.u0) * (f.v1 - f.v0)) < 0.8) return null;
+  const rise = Math.min(4, Math.max(1.2, (f.v1 - f.v0) * 0.35));
+  const wallTop = Math.max(base + 2.5, top - rise);
+  return { ...f, wallTop, ridge: wallTop + rise, vm: (f.v0 + f.v1) / 2 };
+}
+
+/** Adds a gable plan's two roof slopes (roof texture) and two gable-end triangles (wall texture). */
+function addGable(g, roofs, tile, roofTint, walls, wallTint) {
+  const P = (u, v, z) => [u * g.ux + v * g.vx, u * g.uy + v * g.vy, z];
+  const eave = 0.3, half = g.vm - g.v0, eaveZ = g.wallTop - eave * (g.ridge - g.wallTop) / half;
+  const ua = g.u0 - 0.2, ub = g.u1 + 0.2, slopeLen = Math.hypot(half + eave, g.ridge - eaveZ);
+  for (const side of [-1, 1]) {
+    const ve = side < 0 ? g.v0 - eave : g.v1 + eave;
+    const quad = [P(ua, ve, eaveZ), P(ub, ve, eaveZ), P(ub, g.vm, g.ridge), P(ua, g.vm, g.ridge)];
+    const uv = [[0, 0], [(ub - ua) / tile, 0], [(ub - ua) / tile, slopeLen / tile], [0, slopeLen / tile]];
+    const up = [-side * g.vx * (half + eave), -side * g.vy * (half + eave), g.ridge - eaveZ], n = Math.hypot(...up);
+    const light = side < 0 ? 1.0 : 0.82;   // the slope facing the sun side is brighter
+    for (const k of [0, 1, 2, 0, 2, 3]) {
+      roofs.pos.push(...quad[k]); roofs.uv.push(...uv[k]);
+      roofs.shade.push(roofTint[0] * light, roofTint[1] * light, roofTint[2] * light);
+      roofs.tan.push(g.ux, g.uy, 0); roofs.bit.push(up[0] / n, up[1] / n, up[2] / n);
+    }
+  }
+  for (const u of [g.u0, g.u1]) {
+    const tri = [P(u, g.v0, g.wallTop), P(u, g.v1, g.wallTop), P(u, g.vm, g.ridge)];
+    const uvs = [[0, g.wallTop / FLOOR], [(g.v1 - g.v0) / BAY, g.wallTop / FLOOR], [(g.vm - g.v0) / BAY, g.ridge / FLOOR]];
+    for (let k = 0; k < 3; k++) {
+      walls.pos.push(...tri[k]); walls.uv.push(...uvs[k]);
+      walls.shade.push(wallTint[0] * 0.9, wallTint[1] * 0.9, wallTint[2] * 0.9);
+      walls.tan.push(g.vx, g.vy, 0); walls.bit.push(0, 0, 1);
+    }
+  }
+}
+
+/**
+ * A building's colour multiplier: OSM's mapped colour (blended in gently, since textures carry the material),
+ * otherwise a stable slight brightness and warm/cool drift.
+ */
+function buildingTint(b, mapped) {
+  const r1 = Math.abs(Math.sin(b.id * 7.13) * 43758.5453) % 1, r2 = Math.abs(Math.sin(b.id * 3.71) * 24634.6345) % 1;
+  const bright = 0.9 + 0.16 * r1, warm = (r2 - 0.5) * 0.08;
+  let rgb = [bright * (1 + warm), bright, bright * (1 - warm)];
+  if (mapped) {
+    try {
+      const c = new THREE.Color(mapped), mean = (c.r + c.g + c.b) / 3 || 1;
+      // Gentle: "red" in OSM usually means red brick, not paint, so cap the shift at about +-20%.
+      rgb = rgb.map((v, i) => v * Math.min(1.2, Math.max(0.82, 0.8 + 0.2 * [c.r, c.g, c.b][i] / mean)));
+    } catch (e) { /* not a colour three.js knows: keep the drift */ }
+  }
+  return rgb;
+}
+
 /** Footprint area in square metres (outer rings minus courtyards), cached on the building. */
 function footprintArea(b) {
   if (b.area != null) return b.area;
@@ -680,20 +775,22 @@ function footprintArea(b) {
 const ROOF_TYPES = Object.keys(ROOFS);
 /** The roof that goes with a facade style (with some variety for plain brick). */
 function roofFor(facade, b) {
-  const r = (Math.sin(b.id * 78.233) * 43758.5453) % 1, h = r < 0 ? r + 1 : r;
+  // Evidence first: OSM's roof material, when mapped.
+  switch (b.roofMaterial) {
+    case 'copper': return 'copper';
+    case 'slate': return 'slate';
+    case 'roof_tiles': case 'tiles': case 'asphalt_shingle': case 'shingle': return 'shingles';
+    case 'metal': case 'steel': case 'tin': return 'seam';
+    case 'grass': case 'plants': return 'green';
+    case 'gravel': case 'tar_paper': case 'concrete': case 'asphalt': return 'gravel';
+    default: break;
+  }
+  if (b.height < 12 && footprintArea(b) < 450) return 'shingles';   // small houses: pitched shingle roofs
   switch (facade) {
-    case 'gothic': return h < 0.75 ? 'copper' : 'slate';
-    case 'stone': return h < 0.4 ? 'copper' : h < 0.7 ? 'slate' : 'gravel';
-    case 'brickDark': case 'sandstone': return h < 0.6 ? 'slate' : 'gravel';
-    case 'siding': return footprintArea(b) < 450 ? 'shingles' : 'gravel';
-    case 'timber': return 'green';
-    case 'metal': return h < 0.6 ? 'seam' : 'membrane';
-    case 'glass': case 'glassGreen': case 'tower': return h < 0.8 ? 'membrane' : 'green';
-    case 'residence': return h < 0.6 ? 'membrane' : 'gravel';
-    case 'brutalist': case 'concrete': return 'gravel';
-    default:
-      if (b.height < 9 && footprintArea(b) < 450) return h < 0.6 ? 'shingles' : 'gravel';
-      return h < 0.55 ? 'gravel' : h < 0.85 ? 'membrane' : 'green';
+    case 'gothic': case 'brickDark': case 'sandstone': return 'slate';
+    case 'metal': return 'seam';
+    case 'glass': case 'glassGreen': case 'tower': case 'residence': return 'membrane';
+    default: return 'gravel';
   }
 }
 
@@ -707,10 +804,18 @@ function buildMeshes() {
   const roofSets = Object.fromEntries(ROOF_TYPES.map(r => [r, { pos: [], uv: [], shade: [], tan: [], bit: [] }]));
   for (const b of pack.buildings) {
     if (b.flat) continue;
-    const m = facadeFor(b), roofType = roofFor(m, b), roofs = roofSets[roofType], tile = ROOFS[roofType][1];
-    const w = walls[m], wallStart = w.pos.length / 3, roofStart = roofs.pos.length / 3;
+    const m = facadeFor(b);
     // Overlapping OSM building parts often share a height; a few centimetres' stagger stops their roofs z-fighting.
-    const base = b.minHeight, top = Math.max(b.height, base + 1) + (b.id % 5) * 0.04;
+    const base = b.minHeight, fullTop = Math.max(b.height, base + 1) + (b.id % 5) * 0.04;
+    let roofType = roofFor(m, b);
+    // Small houses get a real pitched (gable) roof; a footprint that isn't roughly rectangular keeps a flat one.
+    const gable = roofType === 'shingles' ? gablePlan(b, base, fullTop) : null;
+    if (roofType === 'shingles' && !gable) roofType = 'gravel';
+    const roofs = roofSets[roofType], tile = ROOFS[roofType][1];
+    const top = gable ? gable.wallTop : fullTop;
+    // No two buildings quite alike: a slight brightness and warm/cool drift, or OSM's own colour when mapped.
+    const jitter = buildingTint(b, b.wallColour), roofJitter = buildingTint(b, b.roofColour);
+    const w = walls[m], wallStart = w.pos.length / 3, roofStart = roofs.pos.length / 3;
     for (const polygon of b.outline) {
       polygon.forEach((ring, ringIndex) => {
         const pts = ring.map(toLocal);
@@ -728,9 +833,14 @@ function buildMeshes() {
           along += len;
           w.pos.push(ax, ay, base, bx, by, base, bx, by, top, ax, ay, base, bx, by, top, ax, ay, top);
           w.uv.push(u0, v0, u1, v0, u1, v1, u0, v0, u1, v1, u0, v1);
-          for (let k = 0; k < 6; k++) { w.shade.push(light); w.tan.push((bx - ax) / len, (by - ay) / len, 0); w.bit.push(0, 0, 1); }
+          // Grime: walls darken towards the ground (bottom vertices), so facades don't look freshly printed.
+          for (const g of [0.84, 0.84, 1, 0.84, 1, 1]) {
+            w.shade.push(light * g * jitter[0], light * g * jitter[1], light * g * jitter[2]);
+            w.tan.push((bx - ax) / len, (by - ay) / len, 0); w.bit.push(0, 0, 1);
+          }
         }
       });
+      if (gable) continue;
       const outer = polygon[0].map(toLocal);
       const shape = new THREE.Shape(outer.map(([x, y]) => new THREE.Vector2(x, y)));
       for (const hole of polygon.slice(1)) shape.holes.push(new THREE.Path(hole.map(toLocal).map(([x, y]) => new THREE.Vector2(x, y))));
@@ -739,10 +849,11 @@ function buildMeshes() {
       for (let i = 0; i < rp.length; i += 3) {
         roofs.pos.push(rp[i], rp[i + 1], top);
         roofs.uv.push(rp[i] / tile, rp[i + 1] / tile);
-        roofs.shade.push(1); roofs.tan.push(1, 0, 0); roofs.bit.push(0, 1, 0);
+        roofs.shade.push(...roofJitter); roofs.tan.push(1, 0, 0); roofs.bit.push(0, 1, 0);
       }
       roof.dispose();
     }
+    if (gable) addGable(gable, roofs, tile, roofJitter, w, jitter);
     scene3d.ranges.set(b.id, { material: m, roofType, wallStart, wallEnd: w.pos.length / 3, roofStart,
       roofEnd: roofs.pos.length / 3 });
   }
@@ -750,8 +861,7 @@ function buildMeshes() {
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(data.pos, 3));
     geometry.setAttribute('uv', new THREE.Float32BufferAttribute(data.uv, 2));
-    const colors = new Float32Array(data.shade.length * 3);
-    data.shade.forEach((v, i) => colors.fill(v, i * 3, i * 3 + 3));
+    const colors = Float32Array.from(data.shade);   // RGB per vertex: light, grime and per-building drift
     geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
     geometry.setAttribute('ptan', new THREE.Float32BufferAttribute(data.tan, 3));
     geometry.setAttribute('pbit', new THREE.Float32BufferAttribute(data.bit, 3));
@@ -763,7 +873,8 @@ function buildMeshes() {
     if (!walls[m].pos.length) continue;
     const geometry = scene3d.geometries[m] = toGeometry(walls[m]);
     group.add(new THREE.Mesh(geometry, withParallax(new THREE.MeshBasicMaterial({ map: pixelTexture(FACADES[m]), vertexColors: true,
-      side: THREE.DoubleSide }), heightTexture(FACADES[m], RAISED_FRAMES.has(m)), [FACADE_RELIEF[m] / BAY, FACADE_RELIEF[m] / FLOOR])));
+      side: THREE.DoubleSide }), heightTexture(FACADES[m], RAISED_FRAMES.has(m)), [FACADE_RELIEF[m] / BAY, FACADE_RELIEF[m] / FLOOR],
+      !RAISED_FRAMES.has(m))));
   }
   for (const r of ROOF_TYPES) {
     if (!roofSets[r].pos.length) continue;
@@ -815,7 +926,7 @@ function buildGround() {
   const trees = pack.trees || [];
   if (trees.length) {
     // One blocky tree: trunk plus two canopy tiers, with baked light (tops brightest, east/south sides darker).
-    const parts = [[0.7, 3.2, 0.7, 1.6, 0x6b4a2f], [4.2, 3.2, 4.2, 4.4, 0x3f8f3a], [2.8, 1.8, 2.8, 6.6, 0x4fa446]];
+    const parts = [[0.7, 3.2, 0.7, 1.6, 0x5a4636], [4.2, 3.2, 4.2, 4.4, 0x3d5f33], [2.8, 1.8, 2.8, 6.6, 0x4a6e3b]];
     const geometries = parts.map(([w, h, d, z, color]) => {
       const box = new THREE.BoxGeometry(w, d, h).toNonIndexed();
       box.translate(0, 0, z);
@@ -837,7 +948,7 @@ function buildGround() {
       q.setFromAxisAngle(new THREE.Vector3(0, 0, 1), r * Math.PI);
       m.compose(new THREE.Vector3(x, y, 0), q, new THREE.Vector3(scale, scale, scale * (0.9 + r * 0.3)));
       mesh.setMatrixAt(i, m);
-      mesh.setColorAt(i, tint.setHSL(0.27 + r * 0.06, 0.45, 0.45 + r * 0.1).multiplyScalar(2.1));
+      mesh.setColorAt(i, tint.setRGB(0.88 + r * 0.22, 0.9 + r * 0.16, 0.78 + r * 0.18));   // subtle species/season variety
     });
     group.add(mesh);
   }
@@ -861,10 +972,10 @@ function tintBuilding(id, hex) {
   const apply = (geometry, start, end, strength) => {
     const colors = geometry.attributes.color.array, shade = geometry.userData.shade;
     for (let i = start; i < end; i++) {
-      const s = shade[i];
-      colors[i * 3] = tint ? s * (1 - strength + strength * tint.r * 1.6) : s;
-      colors[i * 3 + 1] = tint ? s * (1 - strength + strength * tint.g * 1.6) : s;
-      colors[i * 3 + 2] = tint ? s * (1 - strength + strength * tint.b * 1.6) : s;
+      for (let c = 0; c < 3; c++) {
+        const s = shade[i * 3 + c], t = tint ? [tint.r, tint.g, tint.b][c] : 0;
+        colors[i * 3 + c] = tint ? s * (1 - strength + strength * t * 1.6) : s;
+      }
     }
     geometry.attributes.color.needsUpdate = true;
   };
@@ -873,7 +984,7 @@ function tintBuilding(id, hex) {
 }
 
 // ---------- walking students: other players' recorded paths ----------
-const STUDENT_SHIRTS = ['#e94f37', '#3f7fd1', '#ffd23f', '#7fd6c2', '#b06ab3', '#f28f3b', '#4caf50', '#fff8e7'];
+const STUDENT_SHIRTS = ['#8c3b32', '#3d5a80', '#b8962e', '#5b7f73', '#6b4c7a', '#a8673a', '#4f6b3b', '#d8d2c4', '#2f3440', '#7d7f86'];
 const STUDENT_SPEED = 2.2;   // m/s: a brisk walk, a little quicker than life so the campus feels busy
 
 /** One blocky student, split into the part tinted per student (hoodie, backpack) and the rest (legs, head). */
@@ -1036,7 +1147,7 @@ function buildStyle() {
     layers: [
       // Ground is always textured. Unmapped campus ground is mostly lawn, so lawn is the default; paved land uses
       // come from the map below, and streets get sidewalks.
-      { id: 'bg', type: 'background', paint: { 'background-color': '#7aa653' } },
+      { id: 'bg', type: 'background', paint: { 'background-color': '#6e954d' } },
       { id: 'lawn', type: 'background', paint: { 'background-pattern': ['step', ['zoom'], 'meadow', 11, 'lawn'] } },
       { id: 'landcover', type: 'fill', source: 'omt', 'source-layer': 'landcover',
         paint: { 'fill-pattern': ['match', ['get', 'class'], 'wood', 'wood', 'grass'] } },
@@ -1097,7 +1208,7 @@ function speckleImage(base, palette, density, seed, extra) {
 }
 const GROUND_PATTERNS = {
   paving: () => pavingImage(),
-  grass: () => speckleImage('#79a955', ['#6c9c4a', '#86b65f', '#5f8f40', '#8fc068'], 70, 7),
+  grass: () => speckleImage('#6c944c', ['#628a44', '#78a15a', '#577f3d', '#82a862'], 70, 7),
   wood: () => speckleImage('#4f7f3a', ['#3f6c2e', '#5e9044', '#36602a', '#6a9b4c'], 90, 11, g => {
     g.fillStyle = '#3a6a2b'; g.fillRect(2, 3, 3, 3); g.fillRect(10, 9, 4, 3); g.fillRect(7, 1, 2, 2);
   }),
@@ -1108,7 +1219,7 @@ const GROUND_PATTERNS = {
   water: () => speckleImage('#3f7fd1', ['#3673c2', '#4a8ad9'], 24, 3, g => {
     g.fillStyle = '#5b97e0'; g.fillRect(2, 4, 4, 1); g.fillRect(9, 11, 5, 1); g.fillRect(12, 3, 3, 1);
   }),
-  lawn: () => speckleImage('#7aa653', ['#6f9a49', '#86b05e', '#68903f', '#8db966', '#9a9b7a'], 80, 17),
+  lawn: () => speckleImage('#6e954d', ['#648b45', '#7aa25a', '#5c823f', '#83a863', '#8f9172'], 80, 17),
   meadow: () => speckleImage('#8fb46a', ['#84a960', '#9bbf76', '#7a9f58', '#a5c77f'], 60, 13),
 };
 
