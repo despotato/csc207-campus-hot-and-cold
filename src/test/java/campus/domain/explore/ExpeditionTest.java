@@ -272,6 +272,19 @@ class ExpeditionTest {
                 easy.chooseHint(HintLevel.EASY));
     }
 
+    @Test void aOneStoreyTargetIsDescribedInTheSingular() {
+        CampusMap base = campus();
+        List<CampusMap.Building> buildings = new java.util.ArrayList<>();
+        for (int id = 1; id <= 6; id++) {
+            CampusMap.Building b = base.building(id).orElseThrow();
+            buildings.add(id == 1 ? new CampusMap.Building(1, b.name(), b.centre(), 4) : b);
+        }
+        CampusMap map = new CampusMap("Test campus", buildings, base.landmarks(), base.openSpace());
+        Expedition round = new Expedition(map, map.landmarks().getFirst(), new Zone(at(1000, 75), 90), START, T0);
+        reachZone(round);
+        assertEquals("It's a single storey tall.", round.chooseHint(HintLevel.HARD, target -> List.of()));
+    }
+
     @Test void factsThatGiveAwayTheNameAreIgnored() {
         Expedition leaky = round();
         reachZone(leaky);

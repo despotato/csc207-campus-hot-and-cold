@@ -485,7 +485,7 @@ public final class Expedition {
             return "It was designed by " + building.architect() + ".";
         }
         long floors = Math.max(1, Math.round(building.height() / 3.66));
-        return "It stands about " + floors + " storeys tall.";
+        return floors == 1 ? "It's a single storey tall." : "It stands about " + floors + " storeys tall.";
     }
 
     private void requireIdentifying() {
