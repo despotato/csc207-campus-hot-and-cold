@@ -132,6 +132,9 @@
     #checkBtn { display: block; }
   }
   @media (pointer: coarse) { #checkBtn { display: block; } }
+#campusSelect { font: inherit; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; width: 100%;
+  max-width: 100%; padding: 8px 10px; background: #fff8e1; color: #1d2038; border: 2px solid #1d2038;
+  box-shadow: 3px 3px 0 rgba(0,0,0,0.35); border-radius: 0; cursor: pointer; }
 </style>
 </head>
 <body>
@@ -1887,15 +1890,32 @@ function storedDailyResult() {
 function renderChoices() {
   const box = $('campusChoice');
   box.innerHTML = '';
-  for (const c of campusIndex) {
+  const go = id => {
+    if (id === pack.id) return;
+    store.set('campus', id);
+    const url = new URL(location.href); url.searchParams.set('campus', id); location.href = url.toString();
+  };
+  if (campusIndex.length > 6) {
+    // Many campuses: one dropdown grouped by province, sorted by name.
+    const select = document.createElement('select');
+    select.id = 'campusSelect'; select.setAttribute('aria-label', 'University');
+    const regions = [...new Set(campusIndex.map(c => c.region || 'Other'))].sort();
+    for (const region of regions) {
+      const group = document.createElement('optgroup'); group.label = region;
+      for (const c of campusIndex.filter(c => (c.region || 'Other') === region).sort((a, b) => a.name.localeCompare(b.name))) {
+        const o = document.createElement('option'); o.value = c.id; o.textContent = c.name; o.selected = c.id === pack.id;
+        group.append(o);
+      }
+      select.append(group);
+    }
+    select.addEventListener('change', () => go(select.value));
+    box.append(select);
+  }
+  for (const c of campusIndex.length > 6 ? [] : campusIndex) {
     const b = document.createElement('button');
     b.className = 'secondary'; b.textContent = c.short || c.name; b.setAttribute('role', 'radio');
     b.setAttribute('aria-checked', String(c.id === pack.id));
-    b.addEventListener('click', () => {
-      if (c.id === pack.id) return;
-      store.set('campus', c.id);
-      const url = new URL(location.href); url.searchParams.set('campus', c.id); location.href = url.toString();
-    });
+    b.addEventListener('click', () => go(c.id));
     box.append(b);
   }
   if (campusIndex.length < 2) {

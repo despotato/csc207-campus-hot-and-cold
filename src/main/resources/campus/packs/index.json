@@ -5,77 +5,88 @@
       "name": "University of Toronto — St. George",
       "short": "U of T St. George",
       "file": "st-george.json",
-      "timezone": "America/Toronto"
+      "timezone": "America/Toronto",
+      "region": "Ontario"
     },
     {
       "id": "uwaterloo",
       "name": "University of Waterloo — Main campus",
       "short": "UWaterloo",
       "file": "uwaterloo.json",
-      "timezone": "America/Toronto"
+      "timezone": "America/Toronto",
+      "region": "Ontario"
     },
     {
       "id": "mcmaster",
       "name": "McMaster University — Main campus",
       "short": "McMaster",
       "file": "mcmaster.json",
-      "timezone": "America/Toronto"
+      "timezone": "America/Toronto",
+      "region": "Ontario"
     },
     {
       "id": "guelph",
       "name": "University of Guelph — Main campus",
       "short": "Guelph",
       "file": "guelph.json",
-      "timezone": "America/Toronto"
+      "timezone": "America/Toronto",
+      "region": "Ontario"
     },
     {
       "id": "laurier",
       "name": "Wilfrid Laurier University — Waterloo campus",
       "short": "Laurier",
       "file": "laurier.json",
-      "timezone": "America/Toronto"
+      "timezone": "America/Toronto",
+      "region": "Ontario"
     },
     {
       "id": "ubc",
       "name": "University of British Columbia — Vancouver campus",
       "short": "UBC",
       "file": "ubc.json",
-      "timezone": "America/Vancouver"
+      "timezone": "America/Vancouver",
+      "region": "British Columbia"
     },
     {
       "id": "sfu",
       "name": "Simon Fraser University — Burnaby campus",
       "short": "SFU",
       "file": "sfu.json",
-      "timezone": "America/Vancouver"
+      "timezone": "America/Vancouver",
+      "region": "British Columbia"
     },
     {
       "id": "uvic",
       "name": "University of Victoria",
       "short": "UVic",
       "file": "uvic.json",
-      "timezone": "America/Vancouver"
+      "timezone": "America/Vancouver",
+      "region": "British Columbia"
     },
     {
       "id": "ualberta",
       "name": "University of Alberta — North campus",
       "short": "UAlberta",
       "file": "ualberta.json",
-      "timezone": "America/Edmonton"
+      "timezone": "America/Edmonton",
+      "region": "Alberta"
     },
     {
       "id": "ucalgary",
       "name": "University of Calgary — Main campus",
       "short": "UCalgary",
       "file": "ucalgary.json",
-      "timezone": "America/Edmonton"
+      "timezone": "America/Edmonton",
+      "region": "Alberta"
     },
     {
       "id": "usask",
       "name": "University of Saskatchewan",
       "short": "USask",
       "file": "usask.json",
-      "timezone": "America/Regina"
+      "timezone": "America/Regina",
+      "region": "Saskatchewan"
     }
   ]
 }
