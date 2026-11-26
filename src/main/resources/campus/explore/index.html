@@ -471,7 +471,6 @@ diffuseColor.rgb *= 1.0 - 0.35 * layer;   // deeper relief is a little darker (a
   return material;
 }
 /** Relief depth per facade, in metres. */
-const RELIEF = { brick: 0.32, stone: 0.4, glass: 0.12, concrete: 0.3 };
 
 // 16 x 16 pixel tiles; v runs from the floor (bottom row) to the ceiling (top row).
 const FACADES = {
@@ -497,7 +496,113 @@ const FACADES = {
     px(0, 5, 16, 6, '#47505f'); for (let x = 0; x < 16; x += 4) px(x, 5, 1, 6, '#a9a294');
     px(1, 6, 2, 1, '#8994ad'); px(9, 6, 2, 1, '#8994ad'); px(0, 1, 16, 1, '#a39c8f');
   },
+  // Older, darker Victorian brick: stone lintels and tall narrow windows.
+  brickDark: px => {
+    px(0, 0, 16, 16, '#7e3b2c');
+    for (let y = 1; y < 16; y += 3) { px(0, y, 16, 1, '#63291e'); for (let x = (y % 2) * 3; x < 16; x += 6) px(x, y - 2, 1, 2, '#63291e'); }
+    px(5, 2, 6, 1, '#d8ccb4'); px(5, 13, 6, 1, '#d8ccb4');                                 // sill and lintel
+    px(6, 3, 4, 10, '#1f2840'); px(6, 3, 2, 4, '#4d6290'); px(7, 3, 1, 10, '#d8ccb4');      // tall sash window
+  },
+  // Buff / yellow brick with wide modern windows.
+  brickTan: px => {
+    px(0, 0, 16, 16, '#c9a46c');
+    for (let y = 1; y < 16; y += 3) { px(0, y, 16, 1, '#ad8a55'); for (let x = (y % 2) * 4; x < 16; x += 8) px(x, y - 2, 1, 2, '#ad8a55'); }
+    px(2, 5, 12, 6, '#2e3d58'); px(2, 5, 12, 1, '#e8e2d2'); px(8, 5, 1, 6, '#e8e2d2'); px(3, 6, 3, 2, '#6f8bb8');
+  },
+  // Residence tower: pale brick, paired windows and a balcony slab on every floor.
+  residence: px => {
+    px(0, 0, 16, 16, '#cfc3ae');
+    px(0, 0, 16, 2, '#a59a88');                                                             // balcony slab
+    px(1, 2, 14, 1, '#6c6f78');                                                             // railing shadow
+    px(2, 5, 4, 6, '#2d3953'); px(10, 5, 4, 6, '#2d3953'); px(2, 5, 2, 2, '#6a86b3'); px(10, 5, 2, 2, '#6a86b3');
+    px(7, 4, 2, 9, '#b8ab95');
+  },
+  // Gothic limestone: pointed-arch window, buttress line, carved string course.
+  gothic: px => {
+    px(0, 0, 16, 16, '#b9b2a3');
+    for (let y = 0; y < 16; y += 4) px(0, y, 16, 1, '#a39b8b');
+    px(0, 0, 2, 16, '#a39b8b'); px(14, 0, 2, 16, '#cfc8b9');                                // buttress
+    px(5, 2, 6, 9, '#2a2740'); px(6, 11, 4, 1, '#2a2740'); px(7, 12, 2, 1, '#2a2740');       // pointed arch
+    px(7, 2, 2, 9, '#4d4a6d'); px(8, 2, 1, 10, '#b9b2a3');                                  // tracery
+  },
+  // Warm sandstone with square windows and a cornice.
+  sandstone: px => {
+    px(0, 0, 16, 16, '#d8b27a');
+    for (let y = 0; y < 16; y += 5) px(0, y, 16, 1, '#c09862');
+    px(0, 14, 16, 2, '#e9c993');                                                            // cornice
+    px(4, 4, 8, 8, '#3a3048'); px(4, 4, 8, 1, '#efd9b0'); px(7, 4, 1, 8, '#efd9b0'); px(5, 5, 2, 3, '#6a6690');
+  },
+  // Green-tinted curtain wall with spandrel bands.
+  glassGreen: px => {
+    px(0, 0, 16, 16, '#5e9a8a');
+    px(0, 0, 16, 3, '#3f6b60'); px(0, 0, 1, 16, '#2f5249'); px(5, 0, 1, 16, '#2f5249'); px(10, 0, 1, 16, '#2f5249');
+    px(2, 9, 2, 2, '#b8e0d4'); px(12, 5, 2, 1, '#b8e0d4');
+  },
+  // Dark glass tower grid: thin mullions, every floor the same.
+  tower: px => {
+    px(0, 0, 16, 16, '#36506e');
+    px(0, 0, 16, 1, '#1d2b3d'); px(0, 8, 16, 1, '#1d2b3d');
+    for (let x = 0; x < 16; x += 4) px(x, 0, 1, 16, '#1d2b3d');
+    px(1, 10, 2, 3, '#7fa4c8'); px(9, 2, 2, 3, '#7fa4c8'); px(13, 11, 1, 2, '#a7c3dd');
+  },
+  // Brutalist board-formed concrete with deep square windows in a heavy frame.
+  brutalist: px => {
+    px(0, 0, 16, 16, '#9e9a90');
+    for (let y = 1; y < 16; y += 2) px(0, y, 16, 1, '#949086');                             // board marks
+    px(3, 4, 10, 8, '#6e6a62'); px(5, 6, 6, 4, '#26262e'); px(5, 6, 2, 2, '#55607a');       // deep recess
+    px(0, 0, 16, 2, '#b3afa5');
+  },
+  // White metal cladding panels with a ribbon window.
+  metal: px => {
+    px(0, 0, 16, 16, '#d7dbe0');
+    for (let x = 0; x < 16; x += 5) px(x, 0, 1, 16, '#bfc4cb');
+    px(0, 0, 16, 1, '#bfc4cb');
+    px(0, 6, 16, 4, '#2e3a4f'); px(0, 6, 16, 1, '#9aa4b3'); px(3, 7, 3, 1, '#7c98c0');
+  },
+  // Clapboard siding for small houses.
+  siding: px => {
+    px(0, 0, 16, 16, '#dcd4c2');
+    for (let y = 0; y < 16; y += 2) px(0, y, 16, 1, '#c4bba6');
+    px(5, 4, 6, 7, '#f4efe4'); px(6, 5, 4, 5, '#2b3550'); px(6, 5, 2, 2, '#6f87b0'); px(8, 5, 1, 5, '#f4efe4');
+  },
+  // Mass timber: vertical wood slats with tall windows.
+  timber: px => {
+    px(0, 0, 16, 16, '#a8764a');
+    for (let x = 0; x < 16; x += 2) px(x, 0, 1, 16, '#8f6139');
+    px(9, 3, 5, 10, '#263248'); px(9, 3, 5, 1, '#5b4430'); px(10, 4, 2, 3, '#6582ad');
+  },
 };
+/** Facade relief depth, in metres, per facade style. */
+const FACADE_RELIEF = { brick: 0.32, stone: 0.4, glass: 0.12, concrete: 0.3, brickDark: 0.34, brickTan: 0.3, residence: 0.45,
+  gothic: 0.5, sandstone: 0.38, glassGreen: 0.12, tower: 0.1, brutalist: 0.6, metal: 0.18, siding: 0.12, timber: 0.2 };
+/** Facades whose dark lines are frames that stick out (glass), so their height map is inverted. */
+const RAISED_FRAMES = new Set(['glass', 'glassGreen', 'tower']);
+const FACADE_TYPES = Object.keys(FACADE_RELIEF);
+
+/**
+ * Chooses one of the facade styles for a building from what the pack knows (material, height, category, year
+ * built), with a stable per-building variation so neighbours of the same material don't all look alike.
+ */
+function facadeFor(b) {
+  const r = (Math.sin(b.id * 12.9898) * 43758.5453) % 1, h = r < 0 ? r + 1 : r;
+  const old = (b.built && b.built < 1935) || b.formerName;
+  const civic = ['College', 'Library', 'Campus life'].includes(b.category);
+  switch (b.material) {
+    case 'glass': return b.height > 45 ? 'tower' : h < 0.55 ? 'glass' : 'glassGreen';
+    case 'concrete':
+      if (b.height > 45) return h < 0.5 ? 'tower' : 'brutalist';
+      if (b.height < 12) return h < 0.5 ? 'metal' : 'concrete';
+      return h < 0.4 ? 'brutalist' : h < 0.7 ? 'concrete' : 'metal';
+    case 'stone':
+      if (old || civic) return h < 0.7 ? 'gothic' : 'stone';
+      return h < 0.4 ? 'stone' : h < 0.75 ? 'sandstone' : 'gothic';
+    default:
+      if (b.category === 'Residence') return b.height >= 14 ? 'residence' : h < 0.5 ? 'brick' : 'brickTan';
+      if (!b.category && b.height < 9) return h < 0.5 ? 'siding' : h < 0.6 ? 'timber' : h < 0.8 ? 'brickDark' : 'brick';
+      if (old) return h < 0.7 ? 'brickDark' : 'brick';
+      return h < 0.42 ? 'brick' : h < 0.68 ? 'brickDark' : h < 0.88 ? 'brickTan' : 'timber';
+  }
+}
 const GRASS = px => {
   px(0, 0, 16, 16, '#78b552');
   for (let i = 0; i < 40; i++) px((i * 5 + (i >> 2)) % 16, (i * 7) % 16, 1, 1, i % 3 ? '#6aa647' : '#8cc762');
@@ -523,11 +628,11 @@ const toLocal = ([lon, lat]) => [(lon - ORIGIN[0]) * M_LON, (lat - ORIGIN[1]) * 
 
 /** Builds one merged mesh per facade material plus one for roofs; remembers each building's vertex range. */
 function buildMeshes() {
-  const walls = Object.fromEntries(MATERIALS.map(m => [m, { pos: [], uv: [], shade: [], tan: [], bit: [] }]));
+  const walls = Object.fromEntries(FACADE_TYPES.map(m => [m, { pos: [], uv: [], shade: [], tan: [], bit: [] }]));
   const roofs = { pos: [], uv: [], shade: [], tan: [], bit: [] };
   for (const b of pack.buildings) {
     if (b.flat) continue;
-    const m = MATERIALS.includes(b.material) ? b.material : 'brick';
+    const m = facadeFor(b);
     const w = walls[m], wallStart = w.pos.length / 3, roofStart = roofs.pos.length / 3;
     // Overlapping OSM building parts often share a height; a few centimetres' stagger stops their roofs z-fighting.
     const base = b.minHeight, top = Math.max(b.height, base + 1) + (b.id % 5) * 0.04;
@@ -578,10 +683,11 @@ function buildMeshes() {
     return geometry;
   };
   const group = new THREE.Group();
-  for (const m of MATERIALS) {
+  for (const m of FACADE_TYPES) {
+    if (!walls[m].pos.length) continue;
     const geometry = scene3d.geometries[m] = toGeometry(walls[m]);
     group.add(new THREE.Mesh(geometry, withParallax(new THREE.MeshBasicMaterial({ map: pixelTexture(FACADES[m]), vertexColors: true,
-      side: THREE.DoubleSide }), heightTexture(FACADES[m], m === 'glass'), [RELIEF[m] / BAY, RELIEF[m] / FLOOR])));
+      side: THREE.DoubleSide }), heightTexture(FACADES[m], RAISED_FRAMES.has(m)), [FACADE_RELIEF[m] / BAY, FACADE_RELIEF[m] / FLOOR])));
   }
   scene3d.roofs = toGeometry(roofs);
   group.add(new THREE.Mesh(scene3d.roofs, withParallax(new THREE.MeshBasicMaterial({ map: pixelTexture(ROOF), vertexColors: true,
@@ -845,19 +951,24 @@ function buildStyle() {
       attribution: '<a href="https://openfreemap.org">OpenFreeMap</a> © <a href="https://www.openmaptiles.org/">OpenMapTiles</a> Data © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' } },
     sky: { 'sky-color': '#7ec8f0', 'horizon-color': '#d9e7ee', 'fog-color': '#b9c4c9', 'sky-horizon-blend': 0.5, 'horizon-fog-blend': 0.6, 'fog-ground-blend': 0.85 },
     layers: [
-      // Ground is always textured: meadow at country scale, paving on campus.
-      { id: 'bg', type: 'background', paint: { 'background-color': '#b4b1aa' } },
-      { id: 'meadow', type: 'background', paint: { 'background-pattern': 'meadow',
-        'background-opacity': ['interpolate', ['linear'], ['zoom'], 10, 1, 12, 0] } },
-      { id: 'paving', type: 'background', paint: { 'background-pattern': 'paving',
-        'background-opacity': ['interpolate', ['linear'], ['zoom'], 11, 0, 13, 0.9] } },
+      // Ground is always textured. Unmapped campus ground is mostly lawn, so lawn is the default; paved land uses
+      // come from the map below, and streets get sidewalks.
+      { id: 'bg', type: 'background', paint: { 'background-color': '#7aa653' } },
+      { id: 'lawn', type: 'background', paint: { 'background-pattern': ['step', ['zoom'], 'meadow', 11, 'lawn'] } },
       { id: 'landcover', type: 'fill', source: 'omt', 'source-layer': 'landcover',
         paint: { 'fill-pattern': ['match', ['get', 'class'], 'wood', 'wood', 'grass'] } },
       { id: 'landuse-grass', type: 'fill', source: 'omt', 'source-layer': 'landuse',
         filter: ['in', ['get', 'class'], ['literal', ['residential', 'grass', 'cemetery', 'pitch', 'playground']]],
         paint: { 'fill-pattern': ['match', ['get', 'class'], 'residential', 'residential', 'grass'] } },
       { id: 'park', type: 'fill', source: 'omt', 'source-layer': 'park', paint: { 'fill-pattern': 'grass' } },
+      { id: 'landuse-paved', type: 'fill', source: 'omt', 'source-layer': 'landuse', minzoom: 12,
+        filter: ['in', ['get', 'class'], ['literal', ['commercial', 'retail', 'industrial', 'railway', 'garages', 'bus_station']]],
+        paint: { 'fill-pattern': 'paving' } },
       { id: 'water', type: 'fill', source: 'omt', 'source-layer': 'water', paint: { 'fill-pattern': 'water' } },
+      { id: 'sidewalk', type: 'line', source: 'omt', 'source-layer': 'transportation', minzoom: 14,
+        filter: ['!', ['in', ['get', 'class'], ['literal', ['path', 'track', 'rail', 'transit']]]],
+        layout: { 'line-cap': 'round', 'line-join': 'round' },
+        paint: { 'line-color': '#c9c5bb', 'line-width': ['interpolate', ['exponential', 2], ['zoom'], 14, 4, 19, 48] } },
       { id: 'road', type: 'line', source: 'omt', 'source-layer': 'transportation', minzoom: 10,
         filter: ['!', ['in', ['get', 'class'], ['literal', ['path', 'track']]]],
         paint: { 'line-color': '#55545a', 'line-width': ['interpolate', ['exponential', 2], ['zoom'], 14, 2, 19, 26] } },
@@ -914,6 +1025,7 @@ const GROUND_PATTERNS = {
   water: () => speckleImage('#3f7fd1', ['#3673c2', '#4a8ad9'], 24, 3, g => {
     g.fillStyle = '#5b97e0'; g.fillRect(2, 4, 4, 1); g.fillRect(9, 11, 5, 1); g.fillRect(12, 3, 3, 1);
   }),
+  lawn: () => speckleImage('#7aa653', ['#6f9a49', '#86b05e', '#68903f', '#8db966', '#9a9b7a'], 80, 17),
   meadow: () => speckleImage('#8fb46a', ['#84a960', '#9bbf76', '#7a9f58', '#a5c77f'], 60, 13),
 };
 
@@ -933,7 +1045,7 @@ function addGameLayers() {
   map.addSource('walkways', { type: 'geojson', data: fc(pack.walkways.edges.map(([a, b]) => ({ type: 'Feature', properties: {},
     geometry: { type: 'LineString', coordinates: [pack.walkways.nodes[a], pack.walkways.nodes[b]] } }))) });
   map.addLayer({ id: 'walkways', type: 'line', source: 'walkways', layout: { 'line-cap': 'round', 'line-join': 'round' },
-    paint: { 'line-color': '#dcd8cd', 'line-width': ['interpolate', ['exponential', 2], ['zoom'], 15, 1, 19, 6], 'line-opacity': 0.9 } });
+    paint: { 'line-color': '#d6d1c4', 'line-width': ['interpolate', ['exponential', 2], ['zoom'], 15, 1.5, 19, 12], 'line-opacity': 0.95 } });
 
   map.addSource('routes', { type: 'geojson', data: fc([]) });
   map.addLayer({ id: 'routes', type: 'line', source: 'routes', layout: { 'line-cap': 'round', 'line-join': 'round' },
