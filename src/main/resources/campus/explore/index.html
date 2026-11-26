@@ -144,6 +144,11 @@
     margin: auto; display: flex; flex-direction: column; }
   #history.hidden { display: none; }
   #historyHead { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  #historyTabs { display: flex; gap: 8px; }
+  #historyTabs button { padding: 6px 10px; }
+  #statsView { margin-top: 10px; overflow-y: auto; }
+  #statsView dl { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; margin: 8px 0; }
+  #statsView dd { margin: 0; color: var(--gold); }
   #historyList { min-height: 120px; overflow-y: auto; margin: 10px 0; }
   .historyRow { width: 100%; display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; text-align: left;
     margin: 0 0 8px; background: var(--paper); }
@@ -330,6 +335,7 @@
     <tr><td>Time to zone</td><td id="zoneTime"></td></tr>
     <tr><td>Checks used</td><td id="checksUsed"></td></tr>
     <tr><td>Guesses</td><td id="guessesUsed"></td></tr>
+    <tr id="streakRow" class="hidden"><td>Streak</td><td id="streak"></td></tr>
   </table>
   <p id="saveError" class="hidden"></p>
   <div id="wiki" class="hidden"><img id="wikiImg" alt=""><div><b id="wikiTitle"></b><p id="wikiText"></p><a id="wikiLink" target="_blank" rel="noopener noreferrer">Read on Wikipedia ↗</a></div></div>
@@ -339,7 +345,9 @@
 
 <aside id="history" class="panel hidden" aria-label="Explore history">
   <div id="historyHead"><h2>History</h2><button id="historyClose" class="secondary" type="button">Close</button></div>
+  <div id="historyTabs"><button id="historyTab" type="button">History</button><button id="statsTab" class="secondary" type="button">Stats</button></div>
   <div id="historyList"></div>
+  <div id="statsView" class="hidden"></div>
 </aside>
 
 <script>
@@ -353,6 +361,8 @@ if (!STATIC) {
   $('historyBtn').classList.remove('hidden');
   $('historyBtn').addEventListener('click', openHistory);
   $('historyClose').addEventListener('click', () => hide('history'));
+  $('historyTab').addEventListener('click', openHistory);
+  $('statsTab').addEventListener('click', openStats);
 }
 const $ = id => document.getElementById(id);
 const HEAT_COLORS = { hot: '#ff4d2e', warm: '#ff9f1c', cool: '#4cc9f0', cold: '#6f8cff' };
@@ -2112,7 +2122,7 @@ function orbit(centre) {
   requestAnimationFrame(spin);
 }
 
-function fillResults(r, saveError) {
+async function fillResults(r, saveError) {
   $('modeLabel').textContent = game.mode === 'daily' ? `Daily · ${game.date} · ${$('campusName').textContent}` : 'Unlimited';
   const fmt = m => m >= 1000 ? (m / 1000).toFixed(2) + ' km' : m + ' m';
   $('outcome').textContent = r.won ? `Identified in ${r.guessesUsed} ${r.guessesUsed === 1 ? 'guess' : 'guesses'}`
@@ -2156,6 +2166,14 @@ function fillResults(r, saveError) {
     $('wikiLink').classList.toggle('hidden', !w.url);
     if (w.url) $('wikiLink').href = w.url;
   }
+  $('streakRow').classList.add('hidden');
+  if (!STATIC && game.mode === 'daily') {
+    const stats = await api('stats', { campus: pack.id }).catch(() => null);
+    if (stats?.status === 200) {
+      $('streak').textContent = `${stats.body.currentDailyStreak} days`;
+      $('streakRow').classList.remove('hidden');
+    }
+  }
 }
 
 function countUp(el, target) {
@@ -2170,6 +2188,8 @@ function countUp(el, target) {
 
 async function openHistory() {
   show('history');
+  show('historyList');
+  hide('statsView');
   const list = $('historyList');
   list.textContent = 'Loading…';
   const response = await api('history', { campus: pack.id }).catch(() => null);
@@ -2200,6 +2220,43 @@ async function openHistory() {
     button.addEventListener('click', () => openRecap(round.roundId));
     list.append(button);
   }
+}
+
+async function openStats() {
+  show('history');
+  hide('historyList');
+  show('statsView');
+  const view = $('statsView');
+  view.textContent = 'Loading…';
+  const response = await api('stats', { campus: pack.id }).catch(() => null);
+  if (!response || response.status !== 200) {
+    view.textContent = response?.body?.error || 'Could not load player statistics.';
+    return;
+  }
+  const stats = response.body;
+  const dl = document.createElement('dl');
+  const rows = [
+    ['Rounds played', stats.roundsPlayed],
+    ['Win rate', stats.winRate + '%'],
+    ['Average score', stats.averageScore],
+    ['Best score', stats.bestScore],
+    ['Average route efficiency', stats.averageRouteEfficiency + '%'],
+    ['Favourite hint', stats.favouriteHintLevel],
+    ['Current daily streak', stats.currentDailyStreak + ' days'],
+    ['Longest daily streak', stats.longestDailyStreak + ' days'],
+  ];
+  for (const [label, value] of rows) {
+    const dt = document.createElement('dt'), dd = document.createElement('dd');
+    dt.textContent = label; dd.textContent = value;
+    dl.append(dt, dd);
+  }
+  view.innerHTML = '<h3>Score by campus</h3>';
+  for (const [campus, score] of Object.entries(stats.bestScorePerCampus || {})) {
+    const p = document.createElement('p');
+    p.textContent = `${campus}: ${score}`;
+    view.append(p);
+  }
+  view.append(dl);
 }
 
 async function openRecap(roundId) {
