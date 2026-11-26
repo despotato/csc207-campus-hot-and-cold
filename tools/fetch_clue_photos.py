@@ -24,7 +24,7 @@ Keys come from the environment or from ~/.config/campus-hot-and-cold/keys.env (o
 
 Usage:
     python3 tools/fetch_clue_photos.py src/main/resources/campus/packs/st-george.json
-    pip install pillow; python3 tools/fetch_clue_photos.py --source mapillary <pack>
+    pip install pillow certifi; python3 tools/fetch_clue_photos.py --source mapillary <pack>
 Options: --region 60 (metres), --refresh (redo regions that already have a view; by default they're kept, so views
 players have seen don't change).
 """
@@ -39,6 +39,13 @@ import time
 import urllib.parse
 import urllib.request
 
+try:   # python.org builds on macOS ship without CA certificates; certifi supplies them
+    import certifi
+    import ssl
+    urllib.request.install_opener(urllib.request.build_opener(
+        urllib.request.HTTPSHandler(context=ssl.create_default_context(cafile=certifi.where()))))
+except ImportError:
+    pass
 try:
     from PIL import Image   # only for --source mapillary
 except ImportError:
