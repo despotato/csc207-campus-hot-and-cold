@@ -526,7 +526,11 @@ function segmentClear(a, b) {
 }
 
 // ---------- state ----------
-let pack, map, buildings = new Map(), named = [], landmarkBuildings = [];
+let pack, map, buildings = new Map(), named = [], labelled = [], landmarkBuildings = [];
+/** What a building is called on the map: its name, else a pack label (another OSM name, a business inside). */
+const labelOf = b => b.name || b.label;
+/** The guess tooltip: the name, else the label and address ("123 College Street", "House on Huron Street"). */
+const tipOf = b => b?.name || [b?.label, b?.address].filter(Boolean).join(' · ') || 'Building';
 const game = {
   phase: 'loading', pos: null, heading: 0, camBearing: 0, keys: {}, walked: 0, startedAt: 0, zoneAt: 0,
   checksLeft: 0, checkCount: 0, zone: null, zoneBuildings: new Set(), guessed: new Set(), hover: null, target: null,
@@ -1510,9 +1514,9 @@ function placeLabels() {
     const centre = map.getCenter();
     const ppm = 512 * Math.pow(2, zoom) / (40075016.686 * Math.cos(centre.lat * Math.PI / 180));
     const here = [centre.lng, centre.lat];
-    // On the overview map: landmarks first, then other named buildings as you zoom in.
+    // On the overview map: landmarks first, then other named buildings as you zoom in. In the zone, labels too.
     const pool = game.phase === 'guess' || game.phase === 'hint' || game.phase === 'zone'
-      ? named.filter(b => game.zoneBuildings.has(b.id))
+      ? labelled.filter(b => game.zoneBuildings.has(b.id))
       : game.mapView && zoom < 16.3 ? landmarkBuildings : named;
     const limit = game.mapView ? 70 : game.phase === 'walk' ? 14 : 40;
     const reach = game.mapView ? Infinity : 700;
@@ -1524,13 +1528,13 @@ function placeLabels() {
       const p = map.project(b.center);
       const y = p.y - b.height * ppm * Math.sin(pitch) - (game.mapView ? -8 : 6);
       if (p.x < -50 || p.x > width + 50 || y < 20 || y > height - 10) continue;
-      const w = b.name.length * 7.2 + 12, h = 16;
+      const text = labelOf(b), w = text.length * 7.2 + 12, h = 16;
       const rect = [p.x - w / 2, y - h, p.x + w / 2, y];
       if (placed.some(r => rect[0] < r[2] && rect[2] > r[0] && rect[1] < r[3] && rect[3] > r[1])) continue;
       placed.push(rect);
       let el = labelPool[used];
       if (!el) { el = document.createElement('div'); labelPool.push(el); layer.append(el); }
-      if (el.textContent !== b.name) el.textContent = b.name;
+      if (el.textContent !== text) el.textContent = text;
       el.className = b.id === game.target ? 'target' : game.zoneBuildings.has(b.id) && game.phase === 'guess' ? 'zone' : '';
       el.style.transform = `translate(${Math.round(rect[0])}px, ${Math.round(rect[1])}px)`;
       el.style.display = '';
@@ -2108,7 +2112,7 @@ function onHover(e) {
   setHover(f.id);
   map.getCanvas().style.cursor = 'pointer';
   const tip = $('tip');
-  tip.textContent = buildings.get(f.id)?.name || 'Unnamed building';
+  tip.textContent = tipOf(buildings.get(f.id));
   tip.style.left = e.point.x + 'px'; tip.style.top = e.point.y + 'px';
   tip.classList.remove('hidden');
 }
@@ -3557,6 +3561,7 @@ for (const card of document.querySelectorAll('.hintcard')) {
     buildings.set(b.id, b);
   }
   named = pack.buildings.filter(b => b.name);
+  labelled = pack.buildings.filter(labelOf);
   if (pack.mascot) $('mascotLine').textContent = ` · Play as ${pack.mascot.name}`
     + (mascotNamesItself(pack.mascot) ? '' : ` the ${pack.mascot.species}`);
   landmarkBuildings = named.filter(b => b.category);
