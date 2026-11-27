@@ -42,7 +42,11 @@
       "osm": "w111293421",
       "name": "Education",
       "category": "Teaching",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It houses the Faculty of Education and spaces used for teaching and educational research.",
+        "It opened as part of Memorial's expanded St. John's campus."
+      ]
     },
     {
       "osm": "w118119217",
@@ -54,13 +58,20 @@
       "osm": "w649775723",
       "name": "Faculty of Engineering",
       "category": "Teaching",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It is home to the Faculty of Engineering and Applied Science.",
+        "It contains teaching laboratories and project spaces for engineering students."
+      ]
     },
     {
       "osm": "r1590151",
       "name": "Science",
       "category": "Teaching",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It houses science departments and teaching laboratories."
+      ]
     },
     {
       "osm": "w649161547",
@@ -72,19 +83,29 @@
       "osm": "w649775110",
       "name": "Earth Sciences",
       "category": "Teaching",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It is a teaching and research building for the Earth sciences."
+      ]
     },
     {
       "osm": "r10766153",
       "name": "Physics and Chemistry",
       "category": "Teaching",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It contains laboratories and classrooms for physics and chemistry."
+      ]
     },
     {
       "osm": "w649256219",
       "name": "Aquarena Fitness Centre",
       "category": "Athletics",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It is the campus aquatic and fitness facility.",
+        "It includes a swimming pool used by student athletes and the university community."
+      ]
     },
     {
       "osm": "w649770927",
@@ -99,13 +120,19 @@
       "osm": "w111662183",
       "name": "Bruneau Center",
       "category": "Teaching",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It is home to interdisciplinary research and research-institute spaces."
+      ]
     },
     {
       "osm": "w649256222",
       "name": "Physical Education",
       "category": "Athletics",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It contains teaching spaces and facilities for physical education."
+      ]
     },
     {
       "osm": "w111662179",
@@ -117,19 +144,28 @@
       "osm": "w118116907",
       "name": "Music",
       "category": "Teaching",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It houses the School of Music and performance and rehearsal spaces."
+      ]
     },
     {
       "osm": "w118117186",
       "name": "Henrietta Harvey",
       "category": "Teaching",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It is a lecture and classroom building on the St. John's campus."
+      ]
     },
     {
       "osm": "w118112560",
       "name": "Business Administration",
       "category": "Teaching",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It is home to the Faculty of Business Administration."
+      ]
     },
     {
       "osm": "w118111301",

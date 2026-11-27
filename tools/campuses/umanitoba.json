@@ -27,7 +27,11 @@
       "osm": "w105921924",
       "name": "Max Bell Centre",
       "category": "Athletics",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It is an on-campus arena and home to university hockey.",
+        "It was named for a Canadian oilman and Calgary businessman."
+      ]
     },
     {
       "osm": "w54724752",
@@ -81,19 +85,29 @@
       "osm": "w60355307",
       "name": "Extended Education Complex",
       "category": "Teaching",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It provides classrooms and offices for continuing and extended education."
+      ]
     },
     {
       "osm": "w60355315",
       "name": "Frank Kennedy Centre",
       "category": "Teaching",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It houses gymnasiums and recreation facilities.",
+        "It is named after a former university physical education director."
+      ]
     },
     {
       "osm": "w60613858",
       "name": "Education Building",
       "category": "Teaching",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It houses the Faculty of Education and its classrooms and clinics."
+      ]
     },
     {
       "osm": "w203537811",
@@ -108,37 +122,56 @@
       "osm": "w312714173",
       "name": "Active Living Centre",
       "category": "Athletics",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It is a recreation and fitness facility for students and the university community."
+      ]
     },
     {
       "osm": "w97287463",
       "name": "Engineering and Information Technology Complex-E1",
       "category": "Teaching",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It is part of the engineering and information technology teaching complex."
+      ]
     },
     {
       "osm": "r1508150",
       "name": "Animal Science/Entomology Building",
       "category": "Teaching",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It supports teaching and research in animal science and entomology."
+      ]
     },
     {
       "osm": "w60460606",
       "name": "Drake Centre",
       "category": "Teaching",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It is home to the Asper School of Business."
+      ]
     },
     {
       "osm": "w60460601",
       "name": "Agriculture Building",
       "category": "Teaching",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It contains classrooms and laboratories for agriculture and related sciences."
+      ]
     },
     {
       "osm": "w986373948",
       "name": "Ellis Building",
       "category": "Teaching",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It is named after a former university vice-president and professor.",
+        "It includes teaching and research spaces for engineering."
+      ]
     },
     {
       "osm": "r6684833",
@@ -150,7 +183,11 @@
       "osm": "w54724751",
       "name": "Duff Roblin Building",
       "category": "Teaching",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It is named for Duff Roblin, a former premier of Manitoba.",
+        "It is a major classroom and administrative building."
+      ]
     },
     {
       "osm": "w105957302",
@@ -183,7 +220,10 @@
       "osm": "w60415090",
       "name": "Machray Hall",
       "category": "Teaching",
-      "wikipedia": null
+      "wikipedia": null,
+      "facts": [
+        "It is a historic science building on the Fort Garry campus."
+      ]
     },
     {
       "osm": "w54724746",
