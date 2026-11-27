@@ -85,9 +85,16 @@
   #mapTitle .taps { display: none; }
   @media (pointer: coarse) { #tip { transform: translate(-50%, calc(-100% - 18px)); width: max-content; max-width: 70vw; text-align: center; } }
   @media (pointer: coarse) { #mapTitle .keys { display: none; } #mapTitle .taps { display: block; } }
-  #travelling { position: fixed; inset: 0; display: grid; place-items: center; background: #1b1f3aaa; font-size: 28px; }
-  #travelling .bar { width: 220px; height: 14px; border: 3px solid var(--paper); margin: 14px auto 0; }
-  #travelling .bar i { display: block; height: 100%; width: 0; background: var(--gold); animation: fill 1s steps(10) forwards; }
+  /* The preview pin: a gold diamond on a post, unlike the round check and mascot dots. */
+  #previewPin { position: fixed; left: 0; top: 0; pointer-events: none; z-index: 5; }
+  #previewPin.hidden { display: none; }
+  #previewPin i { position: absolute; left: -13px; top: -44px; width: 22px; height: 22px; background: var(--gold);
+    border: 4px solid var(--ink); transform: rotate(45deg); }
+  #previewPin::after { content: ''; position: absolute; left: -2px; top: -16px; width: 4px; height: 16px; background: var(--ink); }
+  #previewPin span { position: absolute; left: 20px; top: -50px; white-space: nowrap; font-size: 11px; padding: 3px 7px;
+    background: #1b1f3aee; border: 2px solid var(--gold); color: var(--gold); animation: pulse 900ms steps(2) infinite; }
+  #mapActions { display: flex; gap: 8px; }
+  #mapCheck:disabled { opacity: .5; }
   @keyframes fill { to { width: 100%; } }
 
   /* Screens */
@@ -265,7 +272,7 @@
       left: 8px; transform: none; font-size: 11px; padding: 6px 8px; text-align: left; }
     #mapTitle { top: auto; bottom: max(16px, env(safe-area-inset-bottom)); left: 8px; right: 8px; transform: none;
       justify-content: space-between; text-align: left; font-size: 13px; padding: 8px 10px; }
-    #mapBack { min-height: 44px; }
+    #mapBack, #mapCheck { min-height: 44px; }
     body:has(#mapTitle:not(.hidden)) #compass { bottom: calc(max(16px, env(safe-area-inset-bottom)) + 84px); }
     /* Hint cards: short rows; once one is drawn the other two step aside so its text and the button fit. */
     .hintcard { min-height: 64px; padding: 8px; }
@@ -316,8 +323,8 @@
 <div id="help" class="panel hidden">
   Drag to move · right-drag to turn · <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> <kbd>Q</kbd><kbd>E</kbd> fly · <kbd>C</kbd> back to you · <kbd>Space</kbd> check · <kbd>M</kbd> map: click to travel
 </div>
-<div id="mapTitle" class="panel hidden"><span>Campus map<small class="keys">Click anywhere to travel there · pinch or scroll to zoom · <kbd>M</kbd>/<kbd>Esc</kbd> to return</small><small class="taps">Tap anywhere to travel there · pinch to zoom</small></span><button id="mapBack" class="secondary" type="button">Back</button></div>
-<div id="travelling" class="hidden"><div>Travelling…<div class="bar"><i></i></div></div></div>
+<div id="mapTitle" class="panel hidden"><span>Campus map<small class="keys">Click a spot to preview it, click the pin again to move · scroll to zoom</small><small class="taps">Tap a spot to preview it, tap the pin again to move</small></span><span id="mapActions"><button id="mapCheck" type="button">Check this spot <kbd>Space</kbd></button><button id="mapBack" class="secondary" type="button">Look around</button></span></div>
+<div id="previewPin" class="hidden"><i></i><span></span></div>
 <div id="toast"></div>
 <div id="banner" class="panel hidden"><div id="bannerText"></div><div class="hint" id="bannerHint"></div></div>
 <div id="tip" class="panel hidden"></div>
@@ -1478,11 +1485,12 @@ function addGameLayers() {
   map.on('click', 'buildings', onBuildingClick);
   map.on('render', placeLabels);
   map.on('resize', reaimFlight);
-  map.on('click', e => { if (game.mapView) travelTo(e.lngLat); });
+  map.on('click', onMapTap);
   map.on('mousemove', e => {
     if (!game.mapView || game.travelling) return;
-    const to = [e.lngLat.lng, e.lngLat.lat], cursor = $('travelCursor'), open = isOpen(to);
-    cursor.textContent = open ? `Travel here · ${Math.round(distOf(game.pos, to))} m away` : "Can't travel into a building";
+    const to = [e.lngLat.lng, e.lngLat.lat], cursor = $('travelCursor'), open = isOpen(to) || !!nearbyOpen(to);
+    if (onPreviewPin(e.point)) { cursor.classList.add('hidden'); return; }
+    cursor.textContent = open ? (game.preview ? 'Preview this spot instead' : 'Preview this spot') : "Can't go inside a building";
     cursor.classList.toggle('blocked', !open);
     cursor.style.left = e.point.x + 'px'; cursor.style.top = e.point.y + 'px';
     cursor.classList.remove('hidden');
@@ -1538,6 +1546,7 @@ function placeCheckLabels() {
 
 function placeLabels() {
   placeCheckLabels();
+  placePreview();
   const layer = $('labels');
   const zoom = map.getZoom();
   const active = game.phase !== 'title' && game.phase !== 'loading';
@@ -1956,7 +1965,7 @@ function checkHeadline(b) {
     same: 'About the same · No closer to the zone' }[b.trend] || heat;
 }
 async function doCheck() {
-  if (game.phase !== 'walk' || game.mapView || game.checking) return;
+  if (game.phase !== 'walk' || game.travelling || game.checking) return;
   if (game.checksLeft <= 0 && !(game.armedSearch && performance.now() - game.armedSearch < 3000)) {
     game.armedSearch = performance.now();
     toast('FINAL SEARCH?', 'warm', 'Press Space or tap Check again. If the zone isn\'t here, the round ends.');
@@ -1992,6 +2001,7 @@ async function doCheck() {
       li.textContent = `#${b.number} ${checkHeadline(b)} · ${b.temperature}°C${delta}`;
     }
     $('checks').append(li); $('nochecks').classList.add('hidden');
+    if (game.mapView && game.phase === 'walk') drawMapOverlays();
     renderHud();
     saveDailyRun();
   } finally { game.checking = false; }
@@ -2027,15 +2037,22 @@ function toggleMapView(force) {
     game.usedMap = true;
     $('mapBtn').classList.remove('pulse');
     map.getCanvas().style.cursor = 'crosshair';
-    map.getSource('dots').setData(fc([...checkDots,
-      { type: 'Feature', properties: { color: '#e94f37', r: 13, stroke: '#ffd23f' }, geometry: { type: 'Point', coordinates: game.pos } }]));
-    map.getSource('routes').setData(fc(game.trail.length > 1 ? [{ type: 'Feature', properties: { color: '#ff5fa2', scale: 0.6 },
-      geometry: { type: 'LineString', coordinates: game.trail } }] : []));
-    const b = pack.bounds;
-    fitBounds([[b.west, b.south], [b.east, b.north]], () => ({ padding: 40, pitch: 0, bearing: 0, duration: 900 }));
+    map.doubleClickZoom.disable();   // a quick double-tap previews and moves; it mustn't zoom too
+    // Your route so far, drawn above the 3D ground (which otherwise hides it on the flat map).
+    map.moveLayer('routes-casing', 'dots'); map.moveLayer('routes', 'dots');
+    hide('help');
+    drawMapOverlays();
+    // Frame where you are and where you've checked, with room around to choose the next spot.
+    const pts = [game.pos, ...checkList.map(c => c.point)].flatMap(p => [offsetPt(p, 0, 250), offsetPt(p, 90, 250), offsetPt(p, 180, 250), offsetPt(p, 270, 250)]);
+    const lons = pts.map(p => p[0]), lats = pts.map(p => p[1]);
+    fitBounds([[Math.min(...lons), Math.min(...lats)], [Math.max(...lons), Math.max(...lats)]],
+      () => ({ padding: mapPadding(), pitch: 0, bearing: 0, duration: 900 }));
   } else {
+    game.preview = null;
     map.getCanvas().style.cursor = '';
     map.getSource('routes').setData(fc([]));
+    map.moveLayer('routes-casing', 'routes-shortest'); map.moveLayer('routes', 'routes-shortest');
+    show('help');
     drawAvatar();
     flyTo({ center: game.pos, zoom: LOOK_ZOOM, pitch: 55, bearing: game.camBearing, duration: 700 });
     lookAroundMode();
@@ -2064,33 +2081,105 @@ function drawAvatar() {
 }
 const pitchFor = zoom => 50 + (zoom - ZOOM_MIN) * 4;
 
-/** Click on the campus map: a short "travelling" pause, then Java charges the shortest walk there. */
-async function travelTo(lngLat) {
+// ---------- travel: tap a spot to preview it, tap the pin again to move ----------
+const PIN_REACH_PX = 30;
+/** Open ground within a few metres of a spot on a roof, so a tap just beside a path still lands on it. */
+function nearbyOpen(p, metres = 12) {
+  for (let r = 1.5; r <= metres; r += 1.5) {
+    for (let h = 0; h < 360; h += 20) { const q = offsetPt(p, h, r); if (isOpen(q)) return q; }
+  }
+  return null;
+}
+function onPreviewPin(point) {
+  if (!game.preview) return false;
+  const p = map.project(game.preview);
+  return Math.hypot(p.x - point.x, p.y - point.y) <= PIN_REACH_PX;
+}
+function placePreview() {
+  const pin = $('previewPin');
+  if (!game.preview || !game.mapView) { pin.classList.add('hidden'); return; }
+  const p = map.project(game.preview);
+  pin.style.transform = `translate(${Math.round(p.x)}px, ${Math.round(p.y)}px)`;
+  pin.querySelector('span').textContent = game.travelling ? 'Moving…' : TOUCH ? 'Tap again to move' : 'Click again to move';
+  pin.classList.remove('hidden');
+}
+/**
+ * A tap on the map previews that spot; a tap on the preview pin (a quick double-tap works too) moves there. Taps
+ * elsewhere replace the preview; drags and pinches are not taps, so they never move the mascot.
+ */
+function onMapTap(e) {
   if (!game.mapView || game.travelling || game.phase !== 'walk') return;
-  const to = [lngLat.lng, lngLat.lat];
-  if (!isOpen(to)) { toast('Not there', 'cold', "You can't travel into a building."); return; }
+  if (onPreviewPin(e.point)) { travelTo(game.preview); return; }
+  let to = [e.lngLat.lng, e.lngLat.lat];
+  if (!isOpen(to)) to = nearbyOpen(to);   // on a roof: the nearest open ground beside it, marked by the pin
+  if (!to) { toast("Can't go there", 'cold', 'Pick a spot on a path or open ground.'); return; }
+  game.preview = to;
+  $('travelCursor').classList.add('hidden');
+  placePreview();
+}
+/** Keeps the map clear of its own panel (at the top, or along the bottom on phones) so no pin hides under it. */
+function mapPadding() {
+  const r = $('mapTitle').getBoundingClientRect(), pad = { top: 40, bottom: 40, left: 40, right: 40 };
+  if (r.height && r.top < innerHeight / 2) pad.top = Math.round(r.bottom + 30);
+  else if (r.height) pad.bottom = Math.round(innerHeight - r.top + 30);
+  return pad;
+}
+/** What the map shows: the check dots, your route so far, and the mascot's dot at {@code at}. */
+function drawMapOverlays(at = game.pos) {
+  map.getSource('dots').setData(fc([...checkDots,
+    { type: 'Feature', properties: { color: '#e94f37', r: 13, stroke: '#ffd23f' }, geometry: { type: 'Point', coordinates: at } }]));
+  map.getSource('routes').setData(fc(game.trail.length > 1 ? [{ type: 'Feature', properties: { color: '#ff5fa2', scale: 0.6 },
+    geometry: { type: 'LineString', coordinates: game.trail } }] : []));
+}
+/** Slides the mascot's dot along the walked path. */
+function animateMarker(path, ms) {
+  const legs = path.slice(1).map((p, i) => distOf(path[i], p)), total = legs.reduce((a, b) => a + b, 0);
+  if (!total) return Promise.resolve();
+  const began = performance.now();
+  return new Promise(done => {
+    const step = now => {
+      let left = Math.min(1, (now - began) / ms) * total, i = 0;
+      while (i < legs.length - 1 && left > legs[i]) left -= legs[i++];
+      const a = path[i], b = path[i + 1], f = legs[i] ? Math.min(1, left / legs[i]) : 1;
+      drawMapOverlays([a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f]);
+      if (now - began < ms) requestAnimationFrame(step); else done();
+    };
+    requestAnimationFrame(step);
+  });
+}
+/** Moves to a previewed spot: Java charges the shortest walk there. The map stays open. */
+async function travelTo(to) {
+  if (!game.mapView || game.travelling || game.phase !== 'walk') return;
   game.travelling = true;
-  show('travelling');
+  $('mapCheck').disabled = true;   // a check always happens where the mascot has arrived, never mid-move
+  placePreview();
   try {
     while (game.sending) await new Promise(r => setTimeout(r, 20));
     if (game.lastPushed !== game.pos) push(game.pos);
     await syncPosition();
-    const [r] = await Promise.all([api('travel', { to }), new Promise(res => setTimeout(res, 1000))]);
+    const r = await api('travel', { to });
     if (r.status !== 200) { toast('Not there', 'cold', r.body.error || 'Could not travel.'); return; }
+    const from = game.pos;
     game.pos = r.body.point; game.lastPushed = game.pos; game.prevPos = game.pos; game.pending = [];
-    game.trail.push(...r.body.path, game.pos);
     // The trip costs the time walking it would take.
     game.startedAt -= (r.body.metresWalked - game.walked) / WALK_SPEED * 1000;
     game.walked = r.body.metresWalked;
     game.heading = r.body.path.length ? bearingOf(r.body.path.at(-1), game.pos) || game.heading : game.heading;
     game.camBearing = game.heading;
     game.confirmedPos = game.pos;
+    game.preview = null;
+    placePreview();
+    await animateMarker([from, ...r.body.path, game.pos], 800);
+    game.trail.push(...r.body.path, game.pos);
+    drawMapOverlays();
+    drawAvatar();
+    renderHud();
     saveDailyRun();
-    hide('travelling');
-    toggleMapView(false);
+    if (!game.checkCount) toast('ARRIVED', 'warm', TOUCH ? 'Tap Check this spot to take a reading.' : 'Press Space or Check this spot to take a reading.');
   } finally {
     game.travelling = false;
-    hide('travelling');
+    $('mapCheck').disabled = false;
+    placePreview();
   }
 }
 
@@ -3473,9 +3562,11 @@ async function startRound() {
   lookAroundMode();
   await showClue(await Promise.race([photo, new Promise(res => setTimeout(() => res(null), 6000))]), true);
   if (!game.cluePhoto && !game.clueText) toast('NO ZONE CLUE', 'warm', 'No photo or clue for this zone. Use your checks.');
-  toast('FIND THE ZONE', 'warm', 'Open the map (M) and click where to go. Space checks the temperature.');
-  setTimeout(() => { if (game.phase === 'walk' && !game.usedMap) toast('HOW TO MOVE', 'warm', 'Press M or the Map button, then click a spot to travel there.'); }, 20000);
-  setTimeout(() => $('mapBtn').classList.remove('pulse'), 20000);
+  // Stage 1 happens on the map: pick a spot, move, check.
+  if (game.phase === 'walk') toggleMapView(true);
+  toast('1. FIND THE ZONE', 'warm', TOUCH ? 'Tap a spot, tap the pin again to move, then check the temperature.'
+    : 'Click a spot, click the pin again to move, then check the temperature.');
+  $('mapBtn').classList.remove('pulse');
 }
 
 /** Face the direction with the most open ground ahead, so the first step isn't into a wall. */
@@ -3617,8 +3708,8 @@ addEventListener('keydown', e => {
   if (game.phase === 'walk') {
     if (e.code === 'KeyM' && !e.repeat) { toggleMapView(); e.preventDefault(); return; }
     if (e.code === 'Escape') { toggleMapView(false); return; }
-    if (game.mapView) return;
     if (e.code === 'Space' && !e.repeat) { doCheck(); e.preventDefault(); return; }
+    if (game.mapView) return;
   }
   if (LOOK_PHASES.has(game.phase) && !game.mapView && KEYMAP[e.code]) { game.keys[KEYMAP[e.code]] = true; e.preventDefault(); }
   if (LOOK_PHASES.has(game.phase) && !game.mapView && e.code === 'KeyC' && game.pos) easeTo({ center: game.pos, duration: 600 });
@@ -3656,6 +3747,7 @@ $('viewDailyResult').addEventListener('click', () => {
 });
 $('mapBtn').addEventListener('click', () => toggleMapView(true));
 $('mapBack').addEventListener('click', () => toggleMapView(false));
+$('mapCheck').addEventListener('click', () => doCheck());
 $('checkBtn').addEventListener('click', doCheck);
 // A spoiler-free summary to compare with friends (no building name, no route).
 $('shareBtn').addEventListener('click', async () => {
@@ -3718,7 +3810,7 @@ for (const card of document.querySelectorAll('.hintcard')) {
       const info = STATIC ? { route: LocalRules.debugRoute() } : await (await fetch('/api/debug')).json();
       const to = info.route[info.route.length - 1];
       toggleMapView(true);
-      await travelTo({ lng: to[0], lat: to[1] });
+      await travelTo(to);
       return info.route.length;
     };
   }
