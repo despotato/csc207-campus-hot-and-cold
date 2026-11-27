@@ -1,0 +1,246 @@
+{
+  "id": "uottawa",
+  "name": "University of Ottawa",
+  "timezone": "America/Toronto",
+  "bounds": {
+    "south": 45.41526,
+    "west": -75.6919,
+    "north": 45.42964,
+    "east": -75.6714
+  },
+  "mascot": {
+    "name": "Gee-Gee",
+    "species": "horse",
+    "colors": {
+      "fur": "#6B4A33",
+      "belly": "#8F6A4F",
+      "dark": "#1f140b",
+      "primary": "#8F001A",
+      "secondary": "#9A9A9A"
+    },
+    "school": "University of Ottawa"
+  },
+  "flat": [],
+  "dailyFrom": "2026-11-01",
+  "landmarks": [
+    {
+      "osm": "w162799164",
+      "name": "Montpetit Hall",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It is the original sports building, next to the Minto Sports Complex."
+      ]
+    },
+    {
+      "osm": "w68665290",
+      "name": "Morisset Hall",
+      "category": "Library",
+      "wikipedia": "University of Ottawa",
+      "facts": [
+        "It houses the main library.",
+        "The university began in 1848 as the College of Bytown, founded by Ottawa's first Catholic bishop."
+      ]
+    },
+    {
+      "osm": "w172333296",
+      "name": "Minto Sports Complex",
+      "category": "Athletics",
+      "wikipedia": null
+    },
+    {
+      "osm": "w68665449",
+      "name": "Tabaret Hall",
+      "category": "Campus life",
+      "wikipedia": null,
+      "facts": [
+        "Its domed, columned front is the university's best-known image; it houses the central administration.",
+        "It was designed by New York architect A. O. Von Herbulis to replace a building lost to fire."
+      ]
+    },
+    {
+      "osm": "w638327766",
+      "name": "STEM Complex",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w307247853",
+      "name": "Advanced Research Complex",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "A photonics lab can be seen through a two-storey window in its lobby."
+      ]
+    },
+    {
+      "osm": "w34244676",
+      "name": "SITE",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w264538297",
+      "name": "Desmarais Building",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It houses the Telfer School of Management.",
+        "It was completed in 2007."
+      ]
+    },
+    {
+      "osm": "w68665491",
+      "name": "Fauteux Hall",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It is home to the Faculty of Law.",
+        "It was built in 1973 and named after a former Chief Justice of Canada."
+      ]
+    },
+    {
+      "osm": "w164257817",
+      "name": "Lamoureux Pavillon",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w68710212",
+      "name": "Colonel By Building",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It is an engineering building named after the builder of the Rideau Canal.",
+        "A green roof was set up on its rooftop in 1971."
+      ]
+    },
+    {
+      "osm": "w638327780",
+      "name": "Learning Crossroads",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w638327782",
+      "name": "Vanier Hall",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w68709953",
+      "name": "Marion Hall",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w34244686",
+      "name": "Jock Turcot University Centre",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w68665368",
+      "name": "Simard Hall",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "Café Alt, a green and fair-trade student café, opened in its basement in October 2008."
+      ]
+    },
+    {
+      "osm": "w60923578",
+      "name": "D'lorio Hall",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w165790733",
+      "name": "Peréz Hall",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w60923582",
+      "name": "Biosciences",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w123936823",
+      "name": "Hamelin Hall",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It is at 70 Laurier Avenue East and was called Arts Hall until September 2015."
+      ]
+    },
+    {
+      "osm": "w620505980",
+      "name": "Henderson Residence",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w68710222",
+      "name": "Gendron Hall",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w68665260",
+      "name": "LeBlanc Residence",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w55448742",
+      "name": "Academic Hall",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w460673432",
+      "name": "Thompson Hall",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w485160762",
+      "name": "Brooks Building",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w152488094",
+      "name": "Hagen Hall",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w264398863",
+      "name": "Thompson Residence",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w264398854",
+      "name": "Marchand Residence",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w485160833",
+      "name": "Bernard Syron Student Centre",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w264398853",
+      "name": "Stanton Residence",
+      "category": "Residence",
+      "wikipedia": null
+    }
+  ],
+  "dailyStartInsideBounds": true
+}

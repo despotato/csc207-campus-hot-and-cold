@@ -94,7 +94,8 @@ public final class CampusGame {
         JPanel titleRow = new JPanel(new FlowLayout(FlowLayout.LEADING));
         titleRow.add(heading);
         controls.add(titleRow);
-        JLabel instructions = new JLabel("Find the secret landmark in six guesses. Hot <100 m; warm <250 m; cool <500 m.");
+        JLabel instructions = new JLabel(
+                "Find the secret landmark in six guesses. Hot <100 m; warm <250 m; cool <500 m.");
         controls.add(instructions);
         controls.add(new JLabel("Warmer / colder compares your latest guess with the previous one."));
 

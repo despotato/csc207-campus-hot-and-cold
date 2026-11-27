@@ -1,0 +1,292 @@
+{
+  "campuses": [
+    {
+      "id": "st-george",
+      "name": "University of Toronto — St. George",
+      "short": "U of T St. George",
+      "file": "st-george.json",
+      "timezone": "America/Toronto",
+      "region": "Ontario",
+      "center": [
+        -79.3957,
+        43.663
+      ]
+    },
+    {
+      "id": "uwaterloo",
+      "name": "University of Waterloo — Main campus",
+      "short": "UWaterloo",
+      "file": "uwaterloo.json",
+      "timezone": "America/Toronto",
+      "region": "Ontario",
+      "center": [
+        -80.5435,
+        43.471
+      ]
+    },
+    {
+      "id": "mcmaster",
+      "name": "McMaster University — Main campus",
+      "short": "McMaster",
+      "file": "mcmaster.json",
+      "timezone": "America/Toronto",
+      "region": "Ontario",
+      "center": [
+        -79.9195,
+        43.2617
+      ]
+    },
+    {
+      "id": "guelph",
+      "name": "University of Guelph — Main campus",
+      "short": "Guelph",
+      "file": "guelph.json",
+      "timezone": "America/Toronto",
+      "region": "Ontario",
+      "center": [
+        -80.2283,
+        43.5312
+      ]
+    },
+    {
+      "id": "laurier",
+      "name": "Wilfrid Laurier University — Waterloo campus",
+      "short": "Laurier",
+      "file": "laurier.json",
+      "timezone": "America/Toronto",
+      "region": "Ontario",
+      "center": [
+        -80.527,
+        43.4738
+      ]
+    },
+    {
+      "id": "ubc",
+      "name": "University of British Columbia — Vancouver campus",
+      "short": "UBC",
+      "file": "ubc.json",
+      "timezone": "America/Vancouver",
+      "region": "British Columbia",
+      "center": [
+        -123.2488,
+        49.2608
+      ]
+    },
+    {
+      "id": "sfu",
+      "name": "Simon Fraser University — Burnaby campus",
+      "short": "SFU",
+      "file": "sfu.json",
+      "timezone": "America/Vancouver",
+      "region": "British Columbia",
+      "center": [
+        -122.9183,
+        49.2767
+      ]
+    },
+    {
+      "id": "uvic",
+      "name": "University of Victoria",
+      "short": "UVic",
+      "file": "uvic.json",
+      "timezone": "America/Vancouver",
+      "region": "British Columbia",
+      "center": [
+        -123.3105,
+        48.463
+      ]
+    },
+    {
+      "id": "ualberta",
+      "name": "University of Alberta — North campus",
+      "short": "UAlberta",
+      "file": "ualberta.json",
+      "timezone": "America/Edmonton",
+      "region": "Alberta",
+      "center": [
+        -113.5238,
+        53.5236
+      ]
+    },
+    {
+      "id": "ucalgary",
+      "name": "University of Calgary — Main campus",
+      "short": "UCalgary",
+      "file": "ucalgary.json",
+      "timezone": "America/Edmonton",
+      "region": "Alberta",
+      "center": [
+        -114.136,
+        51.075
+      ]
+    },
+    {
+      "id": "usask",
+      "name": "University of Saskatchewan",
+      "short": "USask",
+      "file": "usask.json",
+      "timezone": "America/Regina",
+      "region": "Saskatchewan",
+      "center": [
+        -106.6325,
+        52.1315
+      ]
+    },
+    {
+      "id": "western",
+      "name": "Western University",
+      "short": "Western",
+      "file": "western.json",
+      "timezone": "America/Toronto",
+      "region": "Ontario",
+      "center": [
+        -81.2762,
+        43.0053
+      ]
+    },
+    {
+      "id": "queens",
+      "name": "Queen's University",
+      "short": "Queen's",
+      "file": "queens.json",
+      "timezone": "America/Toronto",
+      "region": "Ontario",
+      "center": [
+        -76.504,
+        44.2251
+      ]
+    },
+    {
+      "id": "uottawa",
+      "name": "University of Ottawa",
+      "short": "uOttawa",
+      "file": "uottawa.json",
+      "timezone": "America/Toronto",
+      "region": "Ontario",
+      "center": [
+        -75.6817,
+        45.4224
+      ]
+    },
+    {
+      "id": "carleton",
+      "name": "Carleton University",
+      "short": "Carleton",
+      "file": "carleton.json",
+      "timezone": "America/Toronto",
+      "region": "Ontario",
+      "center": [
+        -75.6953,
+        45.3858
+      ]
+    },
+    {
+      "id": "york",
+      "name": "York University — Keele campus",
+      "short": "York",
+      "file": "york.json",
+      "timezone": "America/Toronto",
+      "region": "Ontario",
+      "center": [
+        -79.5025,
+        43.7745
+      ]
+    },
+    {
+      "id": "tmu",
+      "name": "Toronto Metropolitan University",
+      "short": "TMU",
+      "file": "tmu.json",
+      "timezone": "America/Toronto",
+      "region": "Ontario",
+      "center": [
+        -79.3794,
+        43.6577
+      ]
+    },
+    {
+      "id": "mcgill",
+      "name": "McGill University — Downtown campus",
+      "short": "McGill",
+      "file": "mcgill.json",
+      "timezone": "America/Toronto",
+      "region": "Quebec",
+      "center": [
+        -73.577,
+        45.506
+      ]
+    },
+    {
+      "id": "concordia",
+      "name": "Concordia University — Sir George Williams campus",
+      "short": "Concordia",
+      "file": "concordia.json",
+      "timezone": "America/Toronto",
+      "region": "Quebec",
+      "center": [
+        -73.578,
+        45.4963
+      ]
+    },
+    {
+      "id": "umontreal",
+      "name": "Université de Montréal — Main campus",
+      "short": "UdeM",
+      "file": "umontreal.json",
+      "timezone": "America/Toronto",
+      "region": "Quebec",
+      "center": [
+        -73.6149,
+        45.5056
+      ]
+    },
+    {
+      "id": "ulaval",
+      "name": "Université Laval",
+      "short": "Laval",
+      "file": "ulaval.json",
+      "timezone": "America/Toronto",
+      "region": "Quebec",
+      "center": [
+        -71.2761,
+        46.7816
+      ]
+    },
+    {
+      "id": "dal",
+      "name": "Dalhousie University — Studley campus",
+      "short": "Dal",
+      "file": "dal.json",
+      "timezone": "America/Halifax",
+      "region": "Nova Scotia",
+      "center": [
+        -63.5846,
+        44.6385
+      ]
+    },
+    {
+      "id": "mun",
+      "name": "Memorial University of Newfoundland — St. John's campus",
+      "short": "Memorial",
+      "file": "mun.json",
+      "timezone": "America/St_Johns",
+      "region": "Newfoundland and Labrador",
+      "center": [
+        -52.7345,
+        47.574
+      ]
+    },
+    {
+      "id": "umanitoba",
+      "name": "University of Manitoba — Fort Garry campus",
+      "short": "UManitoba",
+      "file": "umanitoba.json",
+      "timezone": "America/Winnipeg",
+      "region": "Manitoba",
+      "center": [
+        -97.1325,
+        49.8095
+      ]
+    }
+  ]
+}

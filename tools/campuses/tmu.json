@@ -1,0 +1,225 @@
+{
+  "id": "tmu",
+  "name": "Toronto Metropolitan University",
+  "timezone": "America/Toronto",
+  "bounds": {
+    "south": 43.65046,
+    "west": -79.38934,
+    "north": 43.66484,
+    "east": -79.36946
+  },
+  "mascot": {
+    "name": "Frankie the Falcon",
+    "species": "falcon",
+    "colors": {
+      "fur": "#5b4636",
+      "belly": "#f2e8d5",
+      "dark": "#1b1f3a",
+      "primary": "#004C9B",
+      "secondary": "#FFDC00"
+    },
+    "school": "Toronto Metropolitan University"
+  },
+  "flat": [],
+  "dailyFrom": "2026-11-01",
+  "landmarks": [
+    {
+      "osm": "w10443759",
+      "name": "Ted Rogers School of Management",
+      "category": "Teaching",
+      "wikipedia": "Ryerson University"
+    },
+    {
+      "osm": "w23447525",
+      "name": "George Vari Engineering and Computing Centre",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w23447534",
+      "name": "Rogers Communications Centre",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w20061267",
+      "name": "Kerr Hall North",
+      "category": "Teaching",
+      "wikipedia": "Kerr Hall",
+      "facts": [
+        "Its four wings form a hollow square around a quad, on the site of the old Toronto Normal School.",
+        "It was completed in 1963, the first building built specifically for the institute."
+      ]
+    },
+    {
+      "osm": "w23447476",
+      "name": "Kerr Hall East",
+      "category": "Teaching",
+      "wikipedia": "Kerr Hall"
+    },
+    {
+      "osm": "w23447478",
+      "name": "Kerr Hall South",
+      "category": "Teaching",
+      "wikipedia": "Kerr Hall"
+    },
+    {
+      "osm": "w23447362",
+      "name": "Library Building",
+      "category": "Library",
+      "wikipedia": "Ryerson University Library",
+      "facts": [
+        "Its collection includes over 500,000 books.",
+        "It opened in 1974 as the Learning Resources Centre."
+      ]
+    },
+    {
+      "osm": "w298926536",
+      "name": "Sheldon & Tracy Levy Student Learning Centre",
+      "category": "Library",
+      "wikipedia": "Sheldon & Tracy Levy Student Learning Centre",
+      "facts": [
+        "It stands at the corner of Yonge Street and Gould Street.",
+        "It first opened to students on September 1, 2015."
+      ]
+    },
+    {
+      "osm": "w23447522",
+      "name": "South Bond Building",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It opened in the fall of 2007 after a renovation that kept the original facade."
+      ]
+    },
+    {
+      "osm": "w1281062696",
+      "name": "The Image Centre",
+      "category": "Campus life",
+      "wikipedia": "The Image Centre",
+      "facts": [
+        "It is a photography museum in a remodelled former warehouse at Gould and Bond.",
+        "It officially opened on September 29, 2012, after the university received 292,000 photographs of the Black Star collection."
+      ]
+    },
+    {
+      "osm": "w23447517",
+      "name": "Oakham House",
+      "category": "Campus life",
+      "wikipedia": "Oakham House",
+      "facts": [
+        "It is a Gothic Revival brick house at Church and Gould Streets.",
+        "It was built in 1848 as the home of its architect, William Thomas."
+      ]
+    },
+    {
+      "osm": "w23447438",
+      "name": "Heaslip House",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It is the home of the G. Raymond Chang School of Continuing Education.",
+        "A public school stood on the site from at least 1880 until the 1930s."
+      ]
+    },
+    {
+      "osm": "w23447474",
+      "name": "Kerr Hall West",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "Its triple gym was the home court of the Rams basketball and volleyball teams until 2012."
+      ]
+    },
+    {
+      "osm": "w23447542",
+      "name": "Eric Palin Hall",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w23447437",
+      "name": "School of Image Arts",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w23448194",
+      "name": "Daphne Cockwell Health Sciences Complex",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It is the university's newest building."
+      ]
+    },
+    {
+      "osm": "w23447538",
+      "name": "Architecture Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w23447577",
+      "name": "Centre for Urban Innovation",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w23447424",
+      "name": "Victoria Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w23447570",
+      "name": "International Living/Learing Centre",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w23447514",
+      "name": "Student Campus Centre",
+      "category": "Campus life",
+      "wikipedia": null,
+      "facts": [
+        "It holds the offices of the students' union and The Eyeopener student newspaper.",
+        "It incorporated an older house when it was built in 2005."
+      ]
+    },
+    {
+      "osm": "w23447536",
+      "name": "Pitman Hall",
+      "category": "Residence",
+      "wikipedia": null,
+      "facts": [
+        "It is a residence with 565 rooms.",
+        "It was completed in 1991; before then O'Keefe House was the only residence."
+      ]
+    },
+    {
+      "osm": "w628845422",
+      "name": "School of Interior Design",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w23447550",
+      "name": "Sally Horsfall Eaton Centre for Studies in Community Health",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w23447369",
+      "name": "Jorgenson Hall",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w23447537",
+      "name": "Civil Engineering Building (Monetary Times)",
+      "category": "Teaching",
+      "wikipedia": null
+    }
+  ],
+  "dailyStartInsideBounds": true
+}

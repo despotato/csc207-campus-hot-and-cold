@@ -1,0 +1,112 @@
+{
+  "id": "concordia",
+  "name": "Concordia University — Sir George Williams campus",
+  "timezone": "America/Toronto",
+  "bounds": {
+    "south": 45.48906,
+    "west": -73.58826,
+    "north": 45.50344,
+    "east": -73.56774
+  },
+  "mascot": {
+    "name": "Buzz the Stinger",
+    "species": "bee",
+    "colors": {
+      "fur": "#F2C200",
+      "belly": "#1A1A1A",
+      "dark": "#111111",
+      "primary": "#912338",
+      "secondary": "#D3A44C"
+    },
+    "school": "Concordia University"
+  },
+  "flat": [],
+  "dailyFrom": "2026-11-01",
+  "landmarks": [
+    {
+      "osm": "w1369689991",
+      "name": "Maison-Mère des Sœurs grises",
+      "category": "Residence",
+      "wikipedia": null,
+      "facts": [
+        "It is the former motherhouse of the Grey Nuns, now a residence and reading room.",
+        "It was built for the Grey Nuns in the 1870s to a design by Victor Bourgeau; the university acquired it in 2007."
+      ]
+    },
+    {
+      "osm": "w22080570",
+      "name": "H - Henry F. Hall Building",
+      "category": "Teaching",
+      "wikipedia": "Henry F. Hall Building",
+      "facts": [
+        "It is named after a president of Sir George Williams University from 1956 to 1962.",
+        "It was the scene of the Sir George Williams computer riot in 1969."
+      ]
+    },
+    {
+      "osm": "w22080572",
+      "name": "LB - J. W. McConnell Building (Library Building)",
+      "category": "Library",
+      "wikipedia": null,
+      "facts": [
+        "It is home to the Webster Library.",
+        "It opened in 1992."
+      ]
+    },
+    {
+      "osm": "w103248064",
+      "name": "EV - Engineering, Computer Science and Visual Arts Integrated Complex",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It opened in 2005 and joins two faculties under one roof, with art studios and labs."
+      ]
+    },
+    {
+      "osm": "w103248050",
+      "name": "FG - Le Faubourg",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w22080581",
+      "name": "MB - John Molson School of Business",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It opened in 2009 beside Guy-Concordia metro station."
+      ]
+    },
+    {
+      "osm": "w103248058",
+      "name": "FB - Faubourg Tower",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w103248055",
+      "name": "CL Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w86068897",
+      "name": "GM - Guy Metro Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w979438074",
+      "name": "LS - Concordia Learning Square",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w103248049",
+      "name": "TD - TD Bank Building",
+      "category": "Teaching",
+      "wikipedia": null
+    }
+  ],
+  "dailyStartInsideBounds": true
+}

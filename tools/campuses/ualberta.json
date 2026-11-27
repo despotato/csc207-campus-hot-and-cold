@@ -1,0 +1,456 @@
+{
+  "id": "ualberta",
+  "name": "University of Alberta — North campus",
+  "timezone": "America/Edmonton",
+  "bounds": {
+    "south": 53.51505,
+    "west": -113.53585,
+    "north": 53.53205,
+    "east": -113.51165
+  },
+  "mascot": {
+    "name": "GUBA",
+    "species": "bear",
+    "colors": {
+      "fur": "#C99700",
+      "belly": "#E8C66A",
+      "dark": "#2b1a0e",
+      "primary": "#275D38",
+      "secondary": "#F2CD00"
+    },
+    "school": "University of Alberta"
+  },
+  "flat": [],
+  "dailyFrom": "2026-11-01",
+  "landmarks": [
+    {
+      "osm": "w217652077",
+      "name": "Students' Union Building",
+      "category": "Campus life",
+      "wikipedia": null,
+      "facts": [
+        "It is the undergraduate student government's headquarters, with a theatre inside.",
+        "It opened in 1967 as the largest building of its kind in Canada."
+      ]
+    },
+    {
+      "osm": "w51060517",
+      "name": "Rutherford Library",
+      "category": "Library",
+      "wikipedia": "Rutherford Library",
+      "facts": [
+        "It is named after the founder of the university and its long-time chancellor, who was also Alberta's first premier.",
+        "It opened on May 15, 1951, as the university's first free-standing library, starting with its namesake's own collection of over 8,000 books."
+      ]
+    },
+    {
+      "osm": "w322564414",
+      "name": "National Institute for Nanotechnology",
+      "category": "Teaching",
+      "wikipedia": "National Institute for Nanotechnology",
+      "facts": [
+        "It was designed to be one of the world's largest buildings for research at the scale of atoms and molecules.",
+        "Its research centre was founded in 2001 and moved into this 20,000 m² facility in June 2006."
+      ]
+    },
+    {
+      "osm": "w51255740",
+      "name": "Lister Centre",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w51060519",
+      "name": "Cameron Library",
+      "category": "Library",
+      "wikipedia": null
+    },
+    {
+      "osm": "w51063100",
+      "name": "Alberta School of Business",
+      "category": "College",
+      "wikipedia": "University of Alberta School of Business",
+      "facts": [
+        "In 1968 its school became the first in Canada accredited by the AACSB.",
+        "Its school was founded in 1916 as a School of Accountancy; the first Bachelor of Commerce degrees were awarded in 1924."
+      ]
+    },
+    {
+      "osm": "w51065237",
+      "name": "Clare Drake Arena",
+      "category": "Athletics",
+      "wikipedia": "Clare Drake Arena",
+      "facts": [
+        "It is home to the Golden Bears and Pandas ice hockey teams, and named after a legendary Golden Bears coach."
+      ]
+    },
+    {
+      "osm": "w51065219",
+      "name": "St. Joseph's College",
+      "category": "College",
+      "wikipedia": "St Joseph's College, Edmonton",
+      "facts": [
+        "It is a Catholic college whose courses and residences are open to all students.",
+        "Its men's residence was founded in 1926."
+      ]
+    },
+    {
+      "osm": "w51065218",
+      "name": "Old St. Stephen's College",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w597591787",
+      "name": "Myer Horowitz Theatre",
+      "category": "Campus life",
+      "wikipedia": "University of Alberta Students' Union"
+    },
+    {
+      "osm": "w322564412",
+      "name": "HUB Mall",
+      "category": "Residence",
+      "wikipedia": null,
+      "facts": [
+        "It is a long glass-roofed street of shops with student apartments above."
+      ]
+    },
+    {
+      "osm": "w51063089",
+      "name": "Centennial Centre for Interdisciplinary Science",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w1408876035",
+      "name": "University Commons",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w51063099",
+      "name": "Biological Sciences",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "r15834621",
+      "name": "Van Vliet Complex",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It is named after the first director of the physical education faculty."
+      ]
+    },
+    {
+      "osm": "w51063995",
+      "name": "Fine Arts Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w51063096",
+      "name": "Gunning/Lemieux Chemistry Centre",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It houses the department that studies molecules and reactions, and was renamed after two of its professors in 2001.",
+        "It was renamed on November 30, 2001, after two of the department's most distinguished professors."
+      ]
+    },
+    {
+      "osm": "w51060515",
+      "name": "Humanities Centre",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w116900965",
+      "name": "Engineering Teaching and Learning Complex",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It was completed in February 2002 together with an electrical engineering research building."
+      ]
+    },
+    {
+      "osm": "w217652075",
+      "name": "Agriculture/Forestry Centre",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w322566452",
+      "name": "Corbett Hall",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It was built in 1930 as a school, and from 1941 to 1945 shared its south wing with the Royal Canadian Air Force."
+      ]
+    },
+    {
+      "osm": "w51063095",
+      "name": "HM Tory Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w51065216",
+      "name": "Timms Centre for the Arts",
+      "category": "Campus life",
+      "wikipedia": null,
+      "facts": [
+        "It is a theatre for the drama department.",
+        "The $11 million building began construction in 1993, funded largely by a donation from its namesake."
+      ]
+    },
+    {
+      "osm": "w51063994",
+      "name": "Law Centre",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w51065215",
+      "name": "Education Centre North",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w51065234",
+      "name": "South Academic Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "r8031320",
+      "name": "Peter Lougheed Hall",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w51065217",
+      "name": "Telus Centre",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w217652055",
+      "name": "Mechanical Engineering Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w51065221",
+      "name": "Education Centre South",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w51060516",
+      "name": "Earth Sciences Building",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It was completed in 1972 for the geology, anthropology, archaeology and geography departments."
+      ]
+    },
+    {
+      "osm": "w709175866",
+      "name": "Nîpisîy House",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w51060518",
+      "name": "Arts and Convocation Hall",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w328047175",
+      "name": "PAW Centre",
+      "category": "Athletics",
+      "wikipedia": null
+    },
+    {
+      "osm": "w1091955929",
+      "name": "Chemical Materials Engineering",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w217612738",
+      "name": "Donadeo Innovation Centre for Engineering",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w985565172",
+      "name": "Thelma Chalifoux",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w51063097",
+      "name": "Central Academic Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w51063088",
+      "name": "Computing Science Centre",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w387438253",
+      "name": "SJC Women's Residence",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w51065220",
+      "name": "Education Gym",
+      "category": "Athletics",
+      "wikipedia": null
+    },
+    {
+      "osm": "w51255744",
+      "name": "Schäffer Hall",
+      "category": "Residence",
+      "wikipedia": null,
+      "facts": [
+        "It was the newest student residence when it was named in 2003."
+      ]
+    },
+    {
+      "osm": "w317637267",
+      "name": "Pinecrest House",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w51066634",
+      "name": "Human Ecology",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w51065222",
+      "name": "Herbert T. Coutts Education Library",
+      "category": "Library",
+      "wikipedia": null
+    },
+    {
+      "osm": "w322967205",
+      "name": "Aspen House",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w322967204",
+      "name": "Maple House",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w322566414",
+      "name": "Triffo Hall",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w51063993",
+      "name": "International House",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w51066640",
+      "name": "University Hall",
+      "category": "Campus life",
+      "wikipedia": null,
+      "facts": [
+        "It houses the university's central administration.",
+        "It was given to the administration after the Students' Union Building was finished in 1967."
+      ]
+    },
+    {
+      "osm": "w51255743",
+      "name": "Kelsey Hall",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w51255742",
+      "name": "Mackenzie Hall",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w51255741",
+      "name": "Henday Hall",
+      "category": "Residence",
+      "wikipedia": null,
+      "facts": [
+        "It is one of the residence towers of the Lister complex, named after an 18th-century fur trader and explorer."
+      ]
+    },
+    {
+      "osm": "w51065423",
+      "name": "Faculty Club",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w51063087",
+      "name": "Assiniboia Hall",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It is one of the three original residence halls, next to Athabasca and Pembina Halls.",
+        "In 1916, a company of the university's First World War recruits stayed here before leaving for Winnipeg."
+      ]
+    },
+    {
+      "osm": "w317637263",
+      "name": "Tamarack House",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w51065223",
+      "name": "Brain and Aging Research Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w51063082",
+      "name": "Pembina Hall",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "In 1913, as it was being built, students spread rumours that it was sinking.",
+        "In October 1918, it was turned into a temporary hospital for people with the Spanish flu."
+      ]
+    },
+    {
+      "osm": "w51065420",
+      "name": "Tory Lecture Theatre",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w336758065",
+      "name": "Athabasca Hall",
+      "category": "Campus life",
+      "wikipedia": null,
+      "facts": [
+        "It was the university's first campus building.",
+        "In 1916, the university's recruits for a First World War field ambulance unit were billeted here before leaving for Winnipeg."
+      ]
+    }
+  ],
+  "dailyStartInsideBounds": true
+}

@@ -6,7 +6,8 @@ Java 21 / Swing geography game.
 
 - Start a round and Submit a guess use Clean Architecture input/output boundaries, controllers, interactors, presenters, and immutable view models.
 - The core game supports six distinct guesses, written heat/trend feedback, wins/losses, answer reveal, and scoring. The UI does not receive the hidden target or exact distances during play.
-- Finished rounds save locally. Open **History** to reopen a recap and view its answer or guesses on a browser map. The 3D map remains a proposal.
+- Finished rounds save locally. Open **History** to reopen a recap and view its answer or guesses on a browser map.
+- **Explore mode** adds a two-stage 3D game in the browser: look around the 3D campus and travel with the map to find a hidden zone with limited hot/cold checks, then identify the building with a blind hint. See [Explore mode (3D)](#explore-mode-3d).
 
 ## Project domain
 
@@ -121,11 +122,106 @@ Use feature branches and pull requests. GitHub Actions runs `mvn verify` under a
 
 `campus.Main` is the composition root. Application/domain code has no Swing or infrastructure dependencies. Start output goes through the presenter into an immutable view model; the target stays inside `GameSession`/`Round` during play. Do not add credentials or API keys to this public repository.
 
-## 3D campus view
+## Explore mode (3D)
 
-The proposed 3D viewer uses the [Google Maps JavaScript 3D camera API](https://developers.google.com/maps/documentation/javascript/3d/animate-camera) in a browser page opened by the Java app. Each valid guess sends the guessed coordinates to the viewer and flies the camera to an angled view of the landmark. For a front-facing shot, try a per-landmark camera heading and offset. The final reveal uses the secret landmark as the destination.
+Explore is the two-stage version of the game, played in a pixel-art 3D model of a real campus. Run the app and click **Play Explore (3D)** in the launcher. It opens in your browser. **Classic mode** is the original six-guess game.
 
-First prototype one U of T building in a normal browser and confirm imagery, camera framing, and [key and billing setup](https://developers.google.com/maps/documentation/javascript/get-api-key). The 3D API has not been called from this project yet. Check coverage before adding another campus. The map viewing use case can use a 2D map link while the 3D view is being evaluated. Keep the game and scoring in Java.
+### Campuses and modes
+
+- **University:** the start screen lists the campuses in `src/main/resources/campus/packs/index.json` (U of T St. George and UWaterloo). Each campus is a data pack; see *Development* below.
+- **Daily:** everyone gets the same puzzle each day (same target, zone and start, in the Java app and on the website), always on normal difficulty, with **one try**. The day changes at midnight campus time. The puzzles are generated ahead in the campus pack. The one-try rule is per player device: the Java app keeps a marker in `~/.campus-hot-and-cold/daily/`, the website uses browser storage. Refreshing the page offers **Resume daily** for an unfinished run on that device. After a round, **Share** copies a spoiler-free result (score, check colours, guesses).
+- **Unlimited:** a fresh random round every time.
+
+### What the player sees and does
+
+**Stage 1: find the zone**
+- You start somewhere on campus, 450–900 m from a hidden 90 m zone, as your school's mascot. You don't walk: drag (or use the arrow keys) to look around where you stand, and pinch or scroll to zoom.
+- Press <kbd>Space</kbd> to spend one of 6 temperature checks. You see a temperature (hotter means closer) and whether you're warmer or colder than at your last check. Each check is numbered, in the list and on the map. The avatar has a 3 m radius: touching the zone edge counts, and a check there ends stage 1. With no checks left, your next check is a final search: touching the zone continues, anywhere else the round ends.
+- To move, press <kbd>M</kbd> (or the Travel button) to open the campus map with your checks and trail, then click where to go. Each trip is charged as the shortest walk there (distance and time).
+- Distance travelled and time are shown at all times.
+
+**Stage 2: guess the building**
+- The camera rises over the zone and its buildings light up; drag or use the arrow keys to look around. You pick one of three face-down hint cards: **easy ×1** (what anyone can see: height rank, storeys, facade, courtyard), **normal ×1.5** (what students know: its category and best-known fact) or **hard ×2** (campus history: a historical fact). Easy also gives a name clue (first letter and number of words); normal and hard never give location or size. You only see the hint after choosing. Facts are reviewed sentences stored in each campus pack (drawn from Wikipedia, name blanked out); the live Wikipedia lookup is only a fallback.
+- Hover a highlighted building to see its name, and click it to guess. You get 3 guesses.
+
+**Results**
+- The camera flies to the answer, which glows gold under a beacon. You see your score, the building's Wikipedia summary and photo (when it has an article), and a replay of your route drawn against the shortest walking route.
+- **Score** (out of 1000) = route (400 at 80% efficiency or better; the shortest route assumes you already knew the zone) + identification (250 / 200 / 150 for a correct 1st / 2nd / 3rd guess) + hint bonus (+0% / +50% / +100% for easy / normal / hard) + checks saved (up to 100; the check that finds the zone is free).
+
+The game never sends the hidden zone, the target or exact distances to the browser before the stage that reveals them. Moves are checked by Java for speed and path connectivity, so the page can't teleport or cut through buildings.
+
+### APIs and data
+| Source | What it provides | Where it's used | Why it fits |
+|---|---|---|---|
+| Wikipedia REST API `page/summary` | Title, intro extract, thumbnail and link for the revealed landmark | `WikipediaSummaryGateway` → `GuessBuildingInteractor` at the end of a round | Public, keyless, reliable descriptions for real campus buildings. Failures just hide the card. |
+| MediaWiki Action API (`prop=coordinates`) | Landmark coordinates | Classic mode (`WikipediaLandmarkGateway`) | See *External API* above. |
+| OpenStreetMap (via `tools/build_pack.py`) | Building outlines, heights and footpaths for curated landmarks | `src/main/resources/campus/packs/*.json`, loaded by `CampusPackLoader` | Accurate, openly licensed (ODbL) geometry. Curated offline so play needs no slow live queries. |
+| OpenFreeMap vector tiles + MapLibre GL | Ground, roads and parks for the 3D view | Browser page only | Keyless and free. Rendered at low resolution for the pixel look. |
+
+### Architecture
+
+```mermaid
+flowchart LR
+  subgraph Frameworks["Frameworks & drivers"]
+    Page["Browser page (MapLibre)"]
+    Web["ExploreWebServer"]
+    Wiki["WikipediaSummaryGateway"]
+    Pack["CampusPackLoader + Json"]
+  end
+  subgraph Adapters["Interface adapters"]
+    Ctl["ExploreController"]
+    Pres["ExplorePresenter → ExploreViewModel"]
+  end
+  subgraph App["Application (use cases)"]
+    IB["Start / Move / Check / ChooseHint / GuessBuilding\nInputBoundary"]
+    UC["…Interactor ×5"]
+    OB["ExploreOutputBoundary"]
+    Ports["LandmarkInfoGateway · ExpeditionResultRepository · LandmarkClueGateway"]
+  end
+  subgraph Domain["Entities"]
+    Exp["Expedition · WalkGraph · Zone · CampusMap · Difficulty"]
+  end
+  Page -- "JSON over HTTP" --> Web --> Ctl --> IB
+  UC -. implements .-> IB
+  UC --> Exp
+  UC --> OB
+  UC --> Ports
+  Pres -. implements .-> OB
+  Wiki -. implements .-> Ports
+  Pack --> Exp
+  Web --> Pres
+```
+
+Dependencies point inward: entities import nothing from outer layers, and use cases see only ports. `campus.Main` is the only class that wires concrete classes.
+
+**SOLID in practice**
+- *Dependency inversion:* `GuessBuildingInteractor` depends on the `LandmarkInfoGateway` interface, not on HTTP. Tests pass a fake; `Main` passes the Wikipedia gateway.
+- *Single responsibility:* rules live in `Expedition`, formatting in `ExplorePresenter`, input validation in `ExploreController`, and transport security in `ExploreWebServer`.
+- *Interface segregation:* each use case has its own small input boundary, so the controller depends only on what each action needs.
+- *Open/closed:* new difficulty presets, clue sources or result stores plug in through `Difficulty` and the ports without editing the interactors.
+
+**Design patterns**
+- *Null Object:* `LandmarkInfoGateway.NONE`, `ExpeditionResultRepository.DISABLED` and `LandmarkClueGateway.NONE` let the game run before optional features exist, without null checks.
+- *Adapter:* the gateways adapt external services to the application's ports.
+- *Strategy:* the hard hint takes an outside clue source as a function, so a different clue strategy (e.g. Wikipedia sentences) can be swapped in.
+
+**Deliberate exceptions**
+- `Expedition.zoneForDiagnostics()` exposes the hidden zone. The server only uses it when started with `-Dcampus.explore.debug=true`, so automated visual tests can walk to the zone.
+- `ExploreController.handle` returns the presenter's view model so the web server can reply synchronously. The presenter still produces the data, and the controller doesn't format anything.
+
+### Extension points left open
+- `Difficulty`: only `NORMAL` exists. Add easy/hard presets and a selector on the start screen.
+- `ExpeditionResultRepository`: finished rounds are passed to it, but the default doesn't save. Add a file-backed store and a history view.
+- `LandmarkClueGateway`: hard hints can use a redacted encyclopedia sentence once a clue source is added.
+
+### Development
+- `mvn verify` runs all tests and Checkstyle (`checkstyle.xml`; the build fails on violations).
+- For visual testing, run headless with a fixed port and debug info:
+  `java -Djava.awt.headless=true -Dcampus.explore.port=8790 -Dcampus.explore.debug=true -jar target/campus-hot-and-cold-0.2.0.jar`,
+  then open `http://127.0.0.1:8790/?debug=1`. Debug mode adds `game.debugWalkToZone()` in the browser console.
+- `python3 tools/build_pack.py <buildings.json> src/main/resources/campus/packs/st-george.json [greenery.json]` regenerates the campus pack from Overpass exports. The curated landmark list is at the top of the script.
+- **Adding a campus:** follow [`docs/ADD_A_CAMPUS.md`](docs/ADD_A_CAMPUS.md), a step-by-step prompt you can hand to a coding agent (or follow yourself).
+- **Mascot per university:** each campus pack names the player's avatar in `MASCOT` (see `tools/build_pack.py`): a name, a body the page can draw (`beaver`, otherwise a student) and school colours. U of T plays as True Blue the beaver, an original pixel design in school colours. Change it for every university's pack.
 
 ## November 13 milestone
 
@@ -138,4 +234,4 @@ The desktop integration suite clicks the actual Swing controls with deterministi
 
 On Linux, run all desktop tests with `xvfb-run -a mvn verify`. On a normal desktop, `mvn verify` includes them automatically. In headless environments without a display, desktop tests are skipped; the other tests still run. The integration tests do not access Wikipedia or modify real player history.
 
-The implemented scope is one campus and browser map links. Multiple campuses and animated 3D views are future extensions.
+Classic mode covers one campus with browser map links. Explore mode adds the 3D campus; multiple campuses are a future extension.

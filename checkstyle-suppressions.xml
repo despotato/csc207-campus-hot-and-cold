@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<!DOCTYPE suppressions PUBLIC "-//Checkstyle//DTD SuppressionFilter Configuration 1.2//EN"
+        "https://checkstyle.org/dtds/suppressions_1_2.dtd">
+<!-- Known, justified exceptions. Each entry says why; remove it once the code is refactored. -->
+<suppressions>
+    <!-- Record validation checks every invariant in one constructor (complexity 16 vs 15).
+         Owner of saved results: consider extracting the score/outcome checks into a helper. -->
+    <suppress checks="CyclomaticComplexity" files="campus[\\/]domain[\\/]CompletedRoundResult\.java"/>
+</suppressions>

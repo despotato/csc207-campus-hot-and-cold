@@ -1,0 +1,737 @@
+{
+  "id": "st-george",
+  "name": "University of Toronto — St. George",
+  "timezone": "America/Toronto",
+  "bounds": {
+    "south": 43.6565,
+    "west": -79.404,
+    "north": 43.6695,
+    "east": -79.3875
+  },
+  "mascot": {
+    "name": "True Blue",
+    "species": "beaver",
+    "school": "University of Toronto",
+    "colors": {
+      "fur": "#7a4a2a",
+      "belly": "#b98a5e",
+      "dark": "#3e2a1c",
+      "primary": "#1e3765",
+      "secondary": "#ffffff"
+    }
+  },
+  "flat": [
+    "w6147259"
+  ],
+  "dailyFrom": "2026-11-01",
+  "landmarks": [
+    {
+      "osm": "w7991747",
+      "name": "Robarts Library",
+      "category": "Library",
+      "wikipedia": "Robarts Library",
+      "facts": [
+        "Its brutalist concrete tower is the main humanities and social sciences library, with more than 4.5 million books.",
+        "Construction began in 1968 and finished in 1973, at a cost of over $40 million. It is named for the 17th Premier of Ontario."
+      ]
+    },
+    {
+      "osm": "r14756874",
+      "name": "Gerstein Science Information Centre",
+      "category": "Library",
+      "wikipedia": "Gerstein Science Information Centre",
+      "facts": [
+        "It is the largest science and health science academic library in Canada.",
+        "It was the university's main library from 1892 to 1973, when the humanities collections moved to a new library on St. George Street."
+      ]
+    },
+    {
+      "osm": "w9916090",
+      "name": "Thomas Fisher Rare Book Library",
+      "category": "Library",
+      "wikipedia": "Thomas Fisher Rare Book Library",
+      "facts": [
+        "It holds the university archives, including the papers of Margaret Atwood and Leonard Cohen.",
+        "In 2018 it acquired the oldest English-language book in Canada, a Cicero printed by William Caxton in 1481."
+      ]
+    },
+    {
+      "osm": "w8111900",
+      "name": "E. J. Pratt Library",
+      "category": "Library",
+      "wikipedia": null,
+      "facts": [
+        "It is Victoria College's library, named after a Canadian poet.",
+        "It was founded while the literary critic Northrop Frye was principal of Victoria College."
+      ]
+    },
+    {
+      "osm": "w8027952",
+      "name": "John M. Kelly Library",
+      "category": "Library",
+      "wikipedia": null,
+      "facts": [
+        "It is St. Michael's College's library, named after a former president of the college."
+      ]
+    },
+    {
+      "osm": "w12000627",
+      "name": "Bora Laskin Law Library",
+      "category": "Library",
+      "wikipedia": null,
+      "facts": [
+        "It is named after a former Chief Justice of Canada who once taught law at the university."
+      ]
+    },
+    {
+      "osm": "w7685383",
+      "name": "Wetmore Hall",
+      "category": "Residence",
+      "wikipedia": null,
+      "facts": [
+        "It is one of the three halls of New College's serpentine residence.",
+        "It was first planned as a wing of New College for what became Innis College, which was founded separately in 1964."
+      ]
+    },
+    {
+      "osm": "w10336058",
+      "name": "Wilson Hall",
+      "category": "Residence",
+      "wikipedia": null,
+      "facts": [
+        "It is one of the three halls of New College's serpentine residence, alongside Wetmore Hall and the New Building of 2003."
+      ]
+    },
+    {
+      "osm": "w8068859",
+      "name": "New College Residence (45 Willcocks)",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w8027962",
+      "name": "Sir Daniel Wilson Residence",
+      "category": "Residence",
+      "wikipedia": null,
+      "facts": [
+        "It has six houses: Jeanneret, Taylor, Wallace, Hutton, Loudon and McCaul.",
+        "University College built it in 1954; its older neighbour, Whitney Hall, dates from 1931."
+      ]
+    },
+    {
+      "osm": "w12873850",
+      "name": "Burwash Hall",
+      "category": "Residence",
+      "wikipedia": "Burwash Hall",
+      "facts": [
+        "It is Victoria College's main residence, split into the Upper Houses and the Lower Houses.",
+        "Its Upper Houses were built in 1913 and its Lower Houses in 1931. It is named after Nathanael ____, president of Victoria from 1887 to 1912."
+      ]
+    },
+    {
+      "osm": "w12873822",
+      "name": "Margaret Addison Hall",
+      "category": "Residence",
+      "wikipedia": null,
+      "facts": [
+        "It was built in 1959 to add women's residence rooms at Victoria College."
+      ]
+    },
+    {
+      "osm": "w23436623",
+      "name": "Annesley Hall",
+      "category": "Residence",
+      "wikipedia": "Annesley Hall",
+      "facts": [
+        "It is the oldest residence building at Victoria University.",
+        "Built in 1903 to a design by George Martel Miller, it was the first university residence built for women in Canada."
+      ]
+    },
+    {
+      "osm": "w12874392",
+      "name": "Whitney Hall",
+      "category": "Residence",
+      "wikipedia": null,
+      "facts": [
+        "It is a University College residence named after a former Premier of Ontario.",
+        "The original hall was built in 1931, decades before its neighbour Sir Daniel Wilson Residence (1954)."
+      ]
+    },
+    {
+      "osm": "w12874330",
+      "name": "Morrison Hall",
+      "category": "Residence",
+      "wikipedia": null,
+      "facts": [
+        "It has five houses: Landsberg-Lewis, Perron, Wolfe, Bratty and Langley.",
+        "It was added in 2005 as University College's third residence."
+      ]
+    },
+    {
+      "osm": "r73341",
+      "name": "Graduate House",
+      "category": "Residence",
+      "wikipedia": "Graduate House (University of Toronto)",
+      "facts": [
+        "It is a residence for master's and doctoral students, designed by Thom Mayne of Morphosis with Teeple Architects.",
+        "It opened on Harbord Street in 2000."
+      ]
+    },
+    {
+      "osm": "w20898043",
+      "name": "Innis Residence",
+      "category": "Residence",
+      "wikipedia": null,
+      "facts": [
+        "It is a seven-storey apartment-style residence across the street from its college, at 111 St. George Street.",
+        "Built in 1994, it replaced the college's first residence, Vladimir House on Spadina Avenue."
+      ]
+    },
+    {
+      "osm": "w10336057",
+      "name": "Woodsworth College Residence",
+      "category": "Residence",
+      "wikipedia": null,
+      "facts": [
+        "In 2001 the university began redeveloping the site to make room for it."
+      ]
+    },
+    {
+      "osm": "w23435125",
+      "name": "Elmsley Hall",
+      "category": "Residence",
+      "wikipedia": null,
+      "facts": [
+        "A Ukrainian Catholic chapel, St. Sophia, is on its lower floor.",
+        "St. Michael's College built it in 1955 as a men's residence."
+      ]
+    },
+    {
+      "osm": "w15401950",
+      "name": "Sorbara Hall",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w23433444",
+      "name": "St. Hilda's College",
+      "category": "Residence",
+      "wikipedia": "St. Hilda's College, University of Toronto",
+      "facts": [
+        "It is Trinity College's residence and is named after a 7th-century abbess of Whitby.",
+        "In 1903 it moved into a purpose-built building on the old Trinity College grounds in Trinity Bellwoods Park."
+      ]
+    },
+    {
+      "osm": "w23436644",
+      "name": "Loretto College",
+      "category": "Residence",
+      "wikipedia": null,
+      "facts": [
+        "It is a women's residence of St. Michael's College.",
+        "Its college moved to St. George Street in 1937, and its residence here was built in 1958."
+      ]
+    },
+    {
+      "osm": "w23436633",
+      "name": "Rowell Jackman Hall",
+      "category": "Residence",
+      "wikipedia": null,
+      "facts": [
+        "It is the newest of Victoria College's residence buildings, built in 1993.",
+        "Before it was built, the site held a parking lot and the historic Stephenson House."
+      ]
+    },
+    {
+      "osm": "w1383202632",
+      "name": "Oak House",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w8032167",
+      "name": "University College",
+      "category": "College",
+      "wikipedia": "University College, Toronto",
+      "facts": [
+        "It was founded in 1853 as the non-denominational teaching arm of the University of Toronto.",
+        "Its main building, built from 1856 to 1859, was designed by Frederick William Cumberland and William George Storm."
+      ]
+    },
+    {
+      "osm": "r2687",
+      "name": "Trinity College",
+      "category": "College",
+      "wikipedia": "Trinity College, Toronto",
+      "facts": [
+        "It was founded in 1851 by Bishop John Strachan as an Anglican university.",
+        "After five decades as an independent institution, it joined the University of Toronto federation in 1904."
+      ]
+    },
+    {
+      "osm": "w204323029",
+      "name": "Victoria College",
+      "category": "College",
+      "wikipedia": "Victoria University, Toronto",
+      "facts": [
+        "It began as Upper Canada Academy, founded in 1836 in Cobourg by the Wesleyan Methodists.",
+        "It federated with the University of Toronto in 1890 and moved from Cobourg to Toronto."
+      ]
+    },
+    {
+      "osm": "w22372215",
+      "name": "Innis College",
+      "category": "College",
+      "wikipedia": "Innis College, Toronto",
+      "facts": [
+        "It has its own cinema, the Town Hall, which hosts film festivals and free screenings.",
+        "Founded in 1964, it is named after the political economist Harold ____."
+      ]
+    },
+    {
+      "osm": "r2032",
+      "name": "Knox College",
+      "category": "College",
+      "wikipedia": "Knox College, Toronto",
+      "facts": [
+        "It is a Presbyterian theological college in the Collegiate Gothic style.",
+        "Its building on the St. George campus was finished in 1915, designed by Chapman & McGiffin; the college itself was founded in 1844."
+      ]
+    },
+    {
+      "osm": "r4323",
+      "name": "Massey College",
+      "category": "College",
+      "wikipedia": "Massey College, Toronto",
+      "facts": [
+        "It is a residential college for graduate students, designed by Canadian architect Ron Thom.",
+        "It opened in 1963 and admitted women only from 1974."
+      ]
+    },
+    {
+      "osm": "r47346",
+      "name": "Wycliffe College",
+      "category": "College",
+      "wikipedia": "Wycliffe College, Toronto",
+      "facts": [
+        "It is an evangelical Anglican seminary and a founding member of the Toronto School of Theology.",
+        "It was founded in 1877; its Dining Hall and Dormitory Wing were designed by Henry Bauld Gordon in 1907."
+      ]
+    },
+    {
+      "osm": "w204323317",
+      "name": "Emmanuel College",
+      "category": "College",
+      "wikipedia": "Emmanuel College, Toronto",
+      "facts": [
+        "It is a theological college that appointed its first woman principal in 2018.",
+        "Its main building opened in 1931, the same year as Burwash Hall's Lower Houses, which were built for its theology students."
+      ]
+    },
+    {
+      "osm": "w60303738",
+      "name": "Regis College",
+      "category": "College",
+      "wikipedia": "Regis College (Toronto)",
+      "facts": [
+        "It is the Jesuit school of theology in Canada.",
+        "It began in 1930 as a Jesuit philosophy college on Wellington Street and moved near its present site in 1976."
+      ]
+    },
+    {
+      "osm": "w27750952",
+      "name": "Woodsworth College (Kruger Hall)",
+      "category": "College",
+      "wikipedia": null,
+      "facts": [
+        "Its college is named after the founder of the CCF party and began in 1974 to serve part-time students."
+      ]
+    },
+    {
+      "osm": "w141691917",
+      "name": "Bahen Centre for Information Technology",
+      "category": "Teaching",
+      "wikipedia": "Bahen Centre for Information Technology",
+      "facts": [
+        "Its 8 floors hold about 50 labs, 10 lecture theatres and 300 offices, including computer science.",
+        "It opened in 2002; the entrance portico of a demolished house on the site is displayed in its lobby."
+      ]
+    },
+    {
+      "osm": "w7948423",
+      "name": "Sidney Smith Hall",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It was completed in 1961 and is named after a former president of the university."
+      ]
+    },
+    {
+      "osm": "w403302492",
+      "name": "Myhal Centre",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It is an engineering building that opened in 2018."
+      ]
+    },
+    {
+      "osm": "w988615299",
+      "name": "Medical Sciences Building",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "Its west wing is slated to be replaced by the planned Temerty Building.",
+        "The university has taught science on this site since about 1850; in 2025 the city designated the building under the Ontario Heritage Act."
+      ]
+    },
+    {
+      "osm": "w1466900017",
+      "name": "Lash Miller Chemical Laboratories",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It is the chemistry building, named after a chemistry professor at the university."
+      ]
+    },
+    {
+      "osm": "w1428103037",
+      "name": "McLennan Physical Laboratories",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "An atmospheric observatory on the roof of its Burton Tower has measured stratospheric gases since 2001."
+      ]
+    },
+    {
+      "osm": "w13403180",
+      "name": "Sandford Fleming Building",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It is named after the engineer who proposed worldwide standard time zones.",
+        "A fire in 1977 gutted much of the building."
+      ]
+    },
+    {
+      "osm": "r76177",
+      "name": "Galbraith Building",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It was built in 1960 to a design by Page & Steele Architects."
+      ]
+    },
+    {
+      "osm": "w1464898602",
+      "name": "Wallberg Building",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It was built in the late 1940s, when engineering classes moved back to Toronto after the war."
+      ]
+    },
+    {
+      "osm": "w354180331",
+      "name": "Mechanical Engineering Building",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "Camp labourers built it in the late 1940s from cement blocks instead of the campus's usual limestone."
+      ]
+    },
+    {
+      "osm": "w12873543",
+      "name": "Lassonde Mining Building",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It opened in 1905 and is one of the oldest engineering buildings on campus."
+      ]
+    },
+    {
+      "osm": "r2152",
+      "name": "Earth Sciences Centre",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w9303310",
+      "name": "Ramsay Wright Building",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It is named after a 19th-century professor of natural history at the university."
+      ]
+    },
+    {
+      "osm": "w12873582",
+      "name": "Leslie Dan Pharmacy Building",
+      "category": "Teaching",
+      "wikipedia": "Leslie Dan Faculty of Pharmacy",
+      "facts": [
+        "Its faculty began in 1953, when the provincial college that trained pharmacists merged into the university."
+      ]
+    },
+    {
+      "osm": "w12000960",
+      "name": "Rotman School of Management",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "Its programs trace back to a commerce diploma first offered in 1901."
+      ]
+    },
+    {
+      "osm": "w676618964",
+      "name": "Jackman Law Building",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It was designed by B+H Architects with Hariri Pontarini Architects.",
+        "It is named after Hal ____, whose $11 million gift in 2012 was the largest the faculty had ever received."
+      ]
+    },
+    {
+      "osm": "w8101762",
+      "name": "Daniels Building (One Spadina)",
+      "category": "Teaching",
+      "wikipedia": "1 Spadina Crescent",
+      "facts": [
+        "It houses the Faculty of Architecture, Landscape, and Design, on a crescent in the middle of a major avenue.",
+        "The Gothic Revival building, designed by James Avon Smith, was built in 1875 as the home of Knox College."
+      ]
+    },
+    {
+      "osm": "w12000624",
+      "name": "Edward Johnson Building",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It is home to the Faculty of Music."
+      ]
+    },
+    {
+      "osm": "w10725629",
+      "name": "OISE",
+      "category": "Teaching",
+      "wikipedia": "Ontario Institute for Studies in Education",
+      "facts": [
+        "Its main complex stands at 252 Bloor Street West, above St. George subway station.",
+        "The complex was built from 1966 to 1969, designed by architect Kenneth Raymond Cooper; the institute was founded in 1965 by an act of the Ontario Legislature."
+      ]
+    },
+    {
+      "osm": "w23436801",
+      "name": "Health Sciences Building",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It houses the Faculty of Nursing, established in 1933."
+      ]
+    },
+    {
+      "osm": "w12873396",
+      "name": "Donnelly Centre",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It is a centre for cellular and biomolecular research, opened in 2005 and designed by Behnisch Architects."
+      ]
+    },
+    {
+      "osm": "w23433584",
+      "name": "C. David Naylor Building",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It was called the Tanz Building until it was renamed in 2015."
+      ]
+    },
+    {
+      "osm": "w23201562",
+      "name": "Jackman Humanities Building",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It used to be known as the Medical Arts Building."
+      ]
+    },
+    {
+      "osm": "w8117208",
+      "name": "Northrop Frye Hall",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "A bronze statue of the literary critic it is named after sits on a bench just west of it."
+      ]
+    },
+    {
+      "osm": "w8810864",
+      "name": "Carr Hall",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "Designed by Ernest Cormier and built in 1954, it is an example of the campus's early post-war architecture."
+      ]
+    },
+    {
+      "osm": "w10334995",
+      "name": "Claude T. Bissell Building",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It houses the Faculty of Information and connects to the Thomas Fisher Rare Book Library.",
+        "It is named after a former president of the University of Toronto."
+      ]
+    },
+    {
+      "osm": "w22372209",
+      "name": "Max Gluskin House",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w1461363247",
+      "name": "Schwartz Reisman Innovation Campus",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It is a two-tower innovation complex that houses the Vector Institute for Artificial Intelligence.",
+        "The Banting Institute was demolished in 2025 to make way for its second phase."
+      ]
+    },
+    {
+      "osm": "w9916087",
+      "name": "Clara Benson Building",
+      "category": "Athletics",
+      "wikipedia": null,
+      "facts": [
+        "It is named after one of the first women to earn a PhD at the university, in chemistry in 1903."
+      ]
+    },
+    {
+      "osm": "w23113405",
+      "name": "Gerald Larkin Building",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It opened in 1962; the George Ignatieff Theatre was added to its northwest corner in 1979."
+      ]
+    },
+    {
+      "osm": "r1989",
+      "name": "Hart House",
+      "category": "Campus life",
+      "wikipedia": "Hart House (University of Toronto)",
+      "facts": [
+        "Established in 1919, it is one of the earliest student centres in North America.",
+        "It was paid for by Vincent Massey and named after his grandfather, ____ Massey."
+      ]
+    },
+    {
+      "osm": "w330718925",
+      "name": "Convocation Hall",
+      "category": "Campus life",
+      "wikipedia": "Convocation Hall (University of Toronto)",
+      "facts": [
+        "Al Gore gave a public lecture on climate change here in 2007.",
+        "Designed by Darling and Pearson, it was finished in 1907 at almost twice its estimated cost."
+      ]
+    },
+    {
+      "osm": "w10336055",
+      "name": "Simcoe Hall",
+      "category": "Campus life",
+      "wikipedia": null,
+      "facts": [
+        "It houses the offices of the university's president and Governing Council.",
+        "It was listed in the City of Toronto's Heritage Register in 1973."
+      ]
+    },
+    {
+      "osm": "w28822997",
+      "name": "Soldiers' Tower",
+      "category": "Campus life",
+      "wikipedia": "Soldiers' Tower",
+      "facts": [
+        "It is a Gothic Revival bell and clock tower with a carillon of 51 bells.",
+        "Alumni raised $397,141 after the First World War to build it as a war memorial; it was designed by Henry Sproatt and Ernest Ross Rolph."
+      ]
+    },
+    {
+      "osm": "w8099717",
+      "name": "Koffler Student Services Centre",
+      "category": "Campus life",
+      "wikipedia": "Koffler Student Centre",
+      "facts": [
+        "It houses the campus bookstore, the Career Centre and the health clinic.",
+        "It opened in 1909 as the Toronto Public Library's Central Reference Library, Ontario's largest Carnegie library."
+      ]
+    },
+    {
+      "osm": "w12872719",
+      "name": "Student Commons",
+      "category": "Campus life",
+      "wikipedia": null,
+      "facts": [
+        "The students' union moved its offices here, to 230 College Street, in 2021."
+      ]
+    },
+    {
+      "osm": "w12873892",
+      "name": "Isabel Bader Theatre",
+      "category": "Campus life",
+      "wikipedia": null,
+      "facts": [
+        "It is a Victoria College theatre that opened in March 2001."
+      ]
+    },
+    {
+      "osm": "w27291427",
+      "name": "George Ignatieff Theatre",
+      "category": "Campus life",
+      "wikipedia": null,
+      "facts": [
+        "It is Trinity College's theatre, named after a former provost.",
+        "It was added to the northwest corner of the Gerald Larkin Building in 1979; before that, Trinity's drama society performed at Hart House."
+      ]
+    },
+    {
+      "osm": "w23436928",
+      "name": "Central Exams Facility",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w6147259",
+      "name": "Varsity Stadium",
+      "category": "Athletics",
+      "wikipedia": "Varsity Stadium",
+      "facts": [
+        "It is home field for the university's football team.",
+        "Athletic events have been held on the site since 1898; the current stadium replaced the 1911 original in 2007."
+      ]
+    },
+    {
+      "osm": "w8095834",
+      "name": "Varsity Arena",
+      "category": "Athletics",
+      "wikipedia": "Varsity Arena",
+      "facts": [
+        "It is the home rink of the university's ice hockey teams.",
+        "It opened on December 17, 1926, as one of the first arenas without pillars blocking the view from the seats."
+      ]
+    },
+    {
+      "osm": "w258167657",
+      "name": "Goldring Centre",
+      "category": "Athletics",
+      "wikipedia": "Goldring Centre for High Performance Sport",
+      "facts": [
+        "It is home to the Varsity Blues basketball and volleyball teams.",
+        "It was completed in 2014 at a cost of $58 million, designed by Patkau Architects with MacLennan Jaunkalns Miller."
+      ]
+    }
+  ]
+}

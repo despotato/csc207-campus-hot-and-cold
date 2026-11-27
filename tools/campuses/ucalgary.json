@@ -1,0 +1,336 @@
+{
+  "id": "ucalgary",
+  "name": "University of Calgary — Main campus",
+  "timezone": "America/Edmonton",
+  "bounds": {
+    "south": 51.06525,
+    "west": -114.15323,
+    "north": 51.08475,
+    "east": -114.11887
+  },
+  "mascot": {
+    "name": "Rex O. Saurus",
+    "species": "dinosaur",
+    "colors": {
+      "fur": "#C8102E",
+      "belly": "#FFCD00",
+      "dark": "#2b2b2b",
+      "primary": "#D6001C",
+      "secondary": "#FFCD00"
+    },
+    "school": "University of Calgary"
+  },
+  "flat": [],
+  "dailyFrom": "2026-11-01",
+  "landmarks": [
+    {
+      "osm": "r18112238",
+      "name": "Kinesiology Block A",
+      "category": "Athletics",
+      "wikipedia": null
+    },
+    {
+      "osm": "w4976471",
+      "name": "Olympic Oval",
+      "category": "Athletics",
+      "wikipedia": "Olympic Oval",
+      "facts": [
+        "It was North America's first covered long-track speed skating venue.",
+        "It was built for the 1988 Winter Olympics and opened on September 27, 1987."
+      ]
+    },
+    {
+      "osm": "w4973053",
+      "name": "Craigie Hall",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w4976661",
+      "name": "Rozsa Centre",
+      "category": "Campus life",
+      "wikipedia": null,
+      "facts": [
+        "It is a concert hall with a Bach organ built by Jürgen and Hendrik Ahrend."
+      ]
+    },
+    {
+      "osm": "w25619429",
+      "name": "Reeve Theatre",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w4976659",
+      "name": "University Theatre",
+      "category": "Campus life",
+      "wikipedia": null,
+      "facts": [
+        "It is designed for drama and dance and seats 505 people, beside the Rozsa Centre."
+      ]
+    },
+    {
+      "osm": "w4973040",
+      "name": "MacEwan Student Centre",
+      "category": "Campus life",
+      "wikipedia": null,
+      "facts": [
+        "It is an extension of the students' hall that opened in 1988."
+      ]
+    },
+    {
+      "osm": "w521659157",
+      "name": "MacEwan Hall",
+      "category": "Campus life",
+      "wikipedia": null,
+      "facts": [
+        "It is the students' union building and concert venue, known as MacHall.",
+        "The first act to perform here was Ian & Sylvia, on October 13, 1967."
+      ]
+    },
+    {
+      "osm": "w539331376",
+      "name": "Taylor Family Digital Library",
+      "category": "Library",
+      "wikipedia": null,
+      "facts": [
+        "It is the main library and even has a video game collection.",
+        "In 2011 it replaced the MacKimmie Library as the university's main library."
+      ]
+    },
+    {
+      "osm": "w4976776",
+      "name": "Science Theatres",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w4976658",
+      "name": "Professional Faculties",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w4970219",
+      "name": "Energy Environment Experiential Learning Building (EEEL)",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w539325875",
+      "name": "Science B",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w4973054",
+      "name": "Biological Sciences",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w4973045",
+      "name": "Science A",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It opened in October 1960 as one of the campus's first two permanent buildings, originally for physics, chemistry and engineering."
+      ]
+    },
+    {
+      "osm": "w4973043",
+      "name": "Administration",
+      "category": "Campus life",
+      "wikipedia": null,
+      "facts": [
+        "It opened in October 1960 as the Arts and Education Building, one of the campus's first two permanent buildings."
+      ]
+    },
+    {
+      "osm": "w4973048",
+      "name": "Scurfield Hall",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It is home to the business school.",
+        "It opened on January 1, 1986, funded by donations from a homebuilder and his company."
+      ]
+    },
+    {
+      "osm": "w1174102420",
+      "name": "Information and Communications Technology (ICT) Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w25603078",
+      "name": "Dining Centre",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w165680964",
+      "name": "Yamnuska Hall",
+      "category": "Residence",
+      "wikipedia": null,
+      "facts": [
+        "It is a residence with a Starbucks, a Domino's and a Subway.",
+        "It opened in 2011 for second-year students."
+      ]
+    },
+    {
+      "osm": "w452550147",
+      "name": "Engineering Block G",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w990520245",
+      "name": "Mathison Hall",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It was built after a $20 million gift from a Calgary entrepreneur, announced in 2018."
+      ]
+    },
+    {
+      "osm": "w4976657",
+      "name": "Murray Fraser Hall",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w990521865",
+      "name": "Hunter Student Commons",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w539325873",
+      "name": "Earth Sciences",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "The staff Faculty Club was on its 7th floor when it opened in 1973."
+      ]
+    },
+    {
+      "osm": "w270493215",
+      "name": "Calgary Centre for Innovative Technology",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w25619413",
+      "name": "Cascade Hall",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w539325876",
+      "name": "Taylor Institute for Teaching and Learning",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It was launched for the university's 50th anniversary, on the site of the former Nickle Arts Museum."
+      ]
+    },
+    {
+      "osm": "w1316801140",
+      "name": "Mathematical Sciences",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w25619419",
+      "name": "Glacier Hall",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w265524575",
+      "name": "Crowsnest Hall",
+      "category": "Residence",
+      "wikipedia": null,
+      "facts": [
+        "It opened in 2015 as a residence for professional and graduate students."
+      ]
+    },
+    {
+      "osm": "w25619421",
+      "name": "Olympus Hall",
+      "category": "Residence",
+      "wikipedia": null,
+      "facts": [
+        "It was built before the 1988 Winter Olympics as part of the athletes' Olympic Village."
+      ]
+    },
+    {
+      "osm": "w4973042",
+      "name": "Social Sciences",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w23647433",
+      "name": "Mechanical Engineering Building",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It houses the department of the Schulich School that designs machines and manufacturing systems."
+      ]
+    },
+    {
+      "osm": "w273190755",
+      "name": "International House",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w4973052",
+      "name": "MacKimmie Tower",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w392876765",
+      "name": "Aurora Hall",
+      "category": "Residence",
+      "wikipedia": null,
+      "facts": [
+        "It opened in 2015 for upper-year students, replacing the demolished Norquay, Brewster and Castle Halls."
+      ]
+    },
+    {
+      "osm": "w270493220",
+      "name": "Engineering Block F",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w25619424",
+      "name": "Rundle Hall",
+      "category": "Residence",
+      "wikipedia": null,
+      "facts": [
+        "It was built in the early 1960s when the university moved to its present campus."
+      ]
+    },
+    {
+      "osm": "w25619423",
+      "name": "Kananaskis Hall",
+      "category": "Residence",
+      "wikipedia": null,
+      "facts": [
+        "It is one of the two oldest residences, built in the early 1960s when the university moved to its present campus."
+      ]
+    },
+    {
+      "osm": "w4973049",
+      "name": "Education Tower",
+      "category": "Teaching",
+      "wikipedia": null
+    }
+  ],
+  "dailyStartInsideBounds": true
+}

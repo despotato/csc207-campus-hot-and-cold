@@ -1,0 +1,427 @@
+{
+  "id": "usask",
+  "name": "University of Saskatchewan",
+  "timezone": "America/Regina",
+  "bounds": {
+    "south": 52.12165,
+    "west": -106.6472,
+    "north": 52.14135,
+    "east": -106.6178
+  },
+  "mascot": {
+    "name": "Howler",
+    "species": "husky",
+    "colors": {
+      "fur": "#8A8F99",
+      "belly": "#F2F2F2",
+      "dark": "#222222",
+      "primary": "#006A4E",
+      "secondary": "#FFFFFF"
+    },
+    "school": "University of Saskatchewan"
+  },
+  "flat": [],
+  "dailyFrom": "2026-11-01",
+  "landmarks": [
+    {
+      "osm": "w688965120",
+      "name": "Merlis Belsher Place",
+      "category": "Athletics",
+      "wikipedia": null,
+      "facts": [
+        "It is the campus hockey arena, which hosted the 2024 national women's university hockey championship.",
+        "It officially opened in 2018."
+      ]
+    },
+    {
+      "osm": "w39159869",
+      "name": "Edwards School of Business",
+      "category": "College",
+      "wikipedia": null
+    },
+    {
+      "osm": "w275551468",
+      "name": "St. Andrew's College",
+      "category": "College",
+      "wikipedia": null,
+      "facts": [
+        "It is a theological college of the United Church of Canada.",
+        "It was the Presbyterian Theological College until 1925, when it was renamed after the United Church of Canada formed."
+      ]
+    },
+    {
+      "osm": "w39085234",
+      "name": "Western College of Veterinary Medicine",
+      "category": "College",
+      "wikipedia": null
+    },
+    {
+      "osm": "w39159689",
+      "name": "Engineering",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "Its original building was designed by Brown & Vallance and first opened in 1912.",
+        "Its college awarded its first degrees on April 26, 1916, to just three civil students."
+      ]
+    },
+    {
+      "osm": "w39084234",
+      "name": "Canadian Light Source Synchrotron",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It is a particle accelerator facility, one of Canada's largest investments in science."
+      ]
+    },
+    {
+      "osm": "w39084240",
+      "name": "College of Education",
+      "category": "College",
+      "wikipedia": null,
+      "facts": [
+        "Its college was founded in 1928, and in 1964 it took over the teacher's colleges in Saskatoon and Regina."
+      ]
+    },
+    {
+      "osm": "w23329795",
+      "name": "Kinesiology Physical Activity Centre",
+      "category": "Athletics",
+      "wikipedia": null
+    },
+    {
+      "osm": "r19658599",
+      "name": "Thorvaldson",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w23174078",
+      "name": "Saskatoon Fieldhouse",
+      "category": "Athletics",
+      "wikipedia": null
+    },
+    {
+      "osm": "w39160572",
+      "name": "The Galleria",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w39084238",
+      "name": "Health Sciences",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w39160012",
+      "name": "Arts",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "Its seven-storey tower and its theatre opened in 1961, two years after its classroom wing."
+      ]
+    },
+    {
+      "osm": "w1470076187",
+      "name": "Agriculture Building",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It is a large glass building built between 1988 and 1991, with a seventh floor added in 2000."
+      ]
+    },
+    {
+      "osm": "w39160219",
+      "name": "Murray Building",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It was the main library's first home when it opened in 1959; a seven-storey addition was finished in 1974.",
+        "It is named after the university's first president, like a park in Saskatoon."
+      ]
+    },
+    {
+      "osm": "r19606909",
+      "name": "Physics",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "Construction began on May 10, 1962, when Nobel laureate Sir John Cockcroft turned the first sod."
+      ]
+    },
+    {
+      "osm": "w39085583",
+      "name": "Geology",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w39159793",
+      "name": "St Thomas Moore College",
+      "category": "College",
+      "wikipedia": null
+    },
+    {
+      "osm": "w39085624",
+      "name": "W.P Thompson",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w39161343",
+      "name": "Williams",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w39160850",
+      "name": "Dr. Jack McFaull Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w39160844",
+      "name": "Dr. Burton Craig Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w39085625",
+      "name": "John Mitchell",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w39084239",
+      "name": "Diefenbaker Canada Centre",
+      "category": "Campus life",
+      "wikipedia": null,
+      "facts": [
+        "It holds the papers and legacy of a prime minister from Prince Albert, Saskatchewan.",
+        "It is a museum and archive named after the prime minister who led the country from 1957 to 1963."
+      ]
+    },
+    {
+      "osm": "w236361501",
+      "name": "Graduate Hall",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w39160250",
+      "name": "Saskatchewan Hall",
+      "category": "Residence",
+      "wikipedia": null,
+      "facts": [
+        "It was designed by Brown & Vallance, like the Administration Building.",
+        "Completed in 1912, it was the university's first student residence."
+      ]
+    },
+    {
+      "osm": "w39160256",
+      "name": "Administration",
+      "category": "Campus life",
+      "wikipedia": null,
+      "facts": [
+        "It houses the president's office.",
+        "It was designed by Brown & Vallance and built from 1910 to 1912."
+      ]
+    },
+    {
+      "osm": "w39160106",
+      "name": "Ellis Hall",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w39160253",
+      "name": "Athabasca Hall",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w39160255",
+      "name": "Peter MacKinnon Building",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "A campus museum moved into it in 2005, after the building was renovated."
+      ]
+    },
+    {
+      "osm": "w39160457",
+      "name": "Stone Barn",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w39160254",
+      "name": "Memorial Union Building",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w39161324",
+      "name": "Kirk Hall",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It is home to the School of Environment and Sustainability, founded in 2007."
+      ]
+    },
+    {
+      "osm": "w39159865",
+      "name": "Law",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "Its college is the oldest school of its kind in Western Canada, training future attorneys and judges since 1912.",
+        "Its college was established in 1912 and hired its first professor, a classics teacher, in 1913."
+      ]
+    },
+    {
+      "osm": "w236361458",
+      "name": "Aspen Hall",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w236361461",
+      "name": "Birch Hall",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w962347373",
+      "name": "Collaborative Science Research Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w236361460",
+      "name": "Pine Hall",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w236361459",
+      "name": "Spruce Hall",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w39160222",
+      "name": "Qu'Appele Hall",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w39159690",
+      "name": "McLean Hall",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w39161332",
+      "name": "Archaeology",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w962347368",
+      "name": "Gordon Oakes Red Bear Student Centre",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w39084990",
+      "name": "Peterson",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w39160845",
+      "name": "Waste Management",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w39084496",
+      "name": "Wollaston Hall",
+      "category": "Residence",
+      "wikipedia": null,
+      "facts": [
+        "It is a family apartment tower in McEown Park.",
+        "It was added to the McEown Park complex in 1976."
+      ]
+    },
+    {
+      "osm": "w39161360",
+      "name": "Souris Hall",
+      "category": "Residence",
+      "wikipedia": null,
+      "facts": [
+        "It is a nine-storey apartment complex for students with families, named after a prairie river."
+      ]
+    },
+    {
+      "osm": "w39084494",
+      "name": "Assiniboine Hall",
+      "category": "Residence",
+      "wikipedia": null,
+      "facts": [
+        "It is an eleven-storey apartment house for students, named after a prairie river."
+      ]
+    },
+    {
+      "osm": "w39084495",
+      "name": "Seager Wheeler Hall",
+      "category": "Residence",
+      "wikipedia": null,
+      "facts": [
+        "It is a fourteen-storey residence named after a Saskatchewan pioneer of wheat breeding."
+      ]
+    },
+    {
+      "osm": "w275859023",
+      "name": "University Club",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w1470261909",
+      "name": "FACILITY FOR APPLIED AVIAN RESEARCH",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w39160218",
+      "name": "Qu'Appele Hall addition",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w39159691",
+      "name": "Emmanuel Chapel",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w1481456037",
+      "name": "Horticulture Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w275733567",
+      "name": "St. Chad Chapel",
+      "category": "Campus life",
+      "wikipedia": null,
+      "facts": [
+        "Since 2007 it has housed the graduate students' association's headquarters, called GSA Commons."
+      ]
+    }
+  ],
+  "dailyStartInsideBounds": true
+}

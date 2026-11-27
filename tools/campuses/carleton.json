@@ -1,0 +1,319 @@
+{
+  "id": "carleton",
+  "name": "Carleton University",
+  "timezone": "America/Toronto",
+  "bounds": {
+    "south": 45.37725,
+    "west": -75.70549,
+    "north": 45.39425,
+    "east": -75.68501
+  },
+  "mascot": {
+    "name": "Rodney the Raven",
+    "species": "raven",
+    "colors": {
+      "fur": "#1A1A1A",
+      "belly": "#333333",
+      "dark": "#000000",
+      "primary": "#E91C24",
+      "secondary": "#FFFFFF"
+    },
+    "school": "Carleton University"
+  },
+  "flat": [],
+  "dailyFrom": "2026-11-01",
+  "landmarks": [
+    {
+      "osm": "w220485352",
+      "name": "Mackenzie Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w671842709",
+      "name": "MacOdrum Library",
+      "category": "Library",
+      "wikipedia": null,
+      "facts": [
+        "It is the main library, at the heart of campus.",
+        "It was one of the first three buildings, built in 1959 around a quadrangle with the Tory Building and Paterson Hall."
+      ]
+    },
+    {
+      "osm": "w130330773",
+      "name": "Nesbitt Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w242712135",
+      "name": "Loeb Building",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "Arthur Kroeger College has had its offices on its first floor since 1999."
+      ]
+    },
+    {
+      "osm": "w244435010",
+      "name": "Tory Building",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It is named after the founding president of the University of Alberta, who also led the National Research Council.",
+        "It was one of the first three buildings, built in 1959 with the library and Paterson Hall."
+      ]
+    },
+    {
+      "osm": "w220485353",
+      "name": "Architecture Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w68999465",
+      "name": "Southam Hall",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It is named after a member of a newspaper-publishing family."
+      ]
+    },
+    {
+      "osm": "w68999439",
+      "name": "The Minto Centre for Advanced Studies in Engineering",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w68999467",
+      "name": "St. Patrick's Building",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "Since 1992 it has housed the Carleton University Art Gallery at the north end of campus."
+      ]
+    },
+    {
+      "osm": "w89181640",
+      "name": "Paterson Hall",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It was one of the first three buildings on the Rideau River campus, built in 1959."
+      ]
+    },
+    {
+      "osm": "w68999470",
+      "name": "Pigiarvik",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w220485351",
+      "name": "Canal Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w89181645",
+      "name": "Dunton Tower",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It is the tallest building on campus and one of the tallest in Ottawa.",
+        "It was finished in September 1972 as the Arts Tower and later named after a former university president."
+      ]
+    },
+    {
+      "osm": "w242712134",
+      "name": "Human Computer Interaction Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w130330555",
+      "name": "Carleton Ice House",
+      "category": "Athletics",
+      "wikipedia": null,
+      "facts": [
+        "Germany's women's national hockey team trained here before the 2013 world championship.",
+        "On January 20, 2013, a game here against the cross-town rival Gee-Gees ended in a shootout."
+      ]
+    },
+    {
+      "osm": "w89181638",
+      "name": "Nideyinàn Centre",
+      "category": "Campus life",
+      "wikipedia": null
+    },
+    {
+      "osm": "w130299326",
+      "name": "Athletics Building",
+      "category": "Athletics",
+      "wikipedia": null
+    },
+    {
+      "osm": "w130299327",
+      "name": "Fieldhouse",
+      "category": "Athletics",
+      "wikipedia": null
+    },
+    {
+      "osm": "w130299329",
+      "name": "Alumni Hall",
+      "category": "Athletics",
+      "wikipedia": null
+    },
+    {
+      "osm": "w671623111",
+      "name": "Teraanga Commons",
+      "category": "Campus life",
+      "wikipedia": null,
+      "facts": [
+        "It is the residence dining hall, home to the residence association's convenience store."
+      ]
+    },
+    {
+      "osm": "w244435744",
+      "name": "Herzberg Laboratories",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w242713818",
+      "name": "Richcraft Hall",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It houses the School of Public Policy and Administration."
+      ]
+    },
+    {
+      "osm": "w1223914681",
+      "name": "Rideau House",
+      "category": "Residence",
+      "wikipedia": null,
+      "facts": [
+        "It is the newest residence, opened in 2025."
+      ]
+    },
+    {
+      "osm": "w24762885",
+      "name": "Leeds House",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w242713817",
+      "name": "Steacie Building",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It is the chemistry building, named after a former president of the National Research Council."
+      ]
+    },
+    {
+      "osm": "w1000386026",
+      "name": "Nicol Building",
+      "category": "Teaching",
+      "wikipedia": null,
+      "facts": [
+        "It is the home of the Sprott School of Business, designed by Hariri Pontarini Architects.",
+        "It was completed in 2021."
+      ]
+    },
+    {
+      "osm": "w24762927",
+      "name": "Prescott House",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w68999459",
+      "name": "Norm Fenn Gym",
+      "category": "Athletics",
+      "wikipedia": null
+    },
+    {
+      "osm": "w242714238",
+      "name": "Lennox and Addington House",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w587766145",
+      "name": "Health Sciences Building",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w244436923",
+      "name": "Frontenac House",
+      "category": "Residence",
+      "wikipedia": null,
+      "facts": [
+        "It is a residence for returning second-year students.",
+        "It was added in 2008 as a sustainably designed residence hall."
+      ]
+    },
+    {
+      "osm": "w68999435",
+      "name": "Stormont House",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w204254785",
+      "name": "Dundas House",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w68999413",
+      "name": "Glengarry House",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w204254786",
+      "name": "Russell House",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w68999457",
+      "name": "Grenville House",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w244434905",
+      "name": "Azrieli Theatre",
+      "category": "Teaching",
+      "wikipedia": null
+    },
+    {
+      "osm": "w68999437",
+      "name": "Renfrew House",
+      "category": "Residence",
+      "wikipedia": null
+    },
+    {
+      "osm": "w68999478",
+      "name": "Lanark House",
+      "category": "Residence",
+      "wikipedia": null,
+      "facts": [
+        "It was one of the first residences, originally reserved for men while Renfrew House was for women."
+      ]
+    },
+    {
+      "osm": "w1112168819",
+      "name": "Engineering Design Center",
+      "category": "Teaching",
+      "wikipedia": null
+    }
+  ],
+  "dailyStartInsideBounds": true
+}
