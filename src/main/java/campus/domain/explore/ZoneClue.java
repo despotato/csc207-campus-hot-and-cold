@@ -4,8 +4,11 @@ import campus.domain.explore.CampusMap.Building;
 import campus.domain.explore.CampusMap.CampusLandmark;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -16,17 +19,23 @@ import java.util.stream.Collectors;
 final class ZoneClue {
     /** Clue buildings stand this far inside the zone edge where possible. */
     static final double INSET = 10;
+    /** A year from 1600 to 2099: what makes a fact history. */
+    private static final Pattern DATED = Pattern.compile("\\b(1[6-9]|20)\\d\\d\\b");
 
     private final CampusMap map;
     private final Zone zone;
     private final int targetBuilding;
-    private final Set<Integer> landmarkBuildings;
+    private final Map<Integer, CampusLandmark> landmarkOf;
+    private final String targetName;
 
     ZoneClue(CampusMap map, Zone zone, int targetBuilding) {
         this.map = map;
         this.zone = zone;
         this.targetBuilding = targetBuilding;
-        this.landmarkBuildings = map.landmarks().stream().map(CampusLandmark::buildingId).collect(Collectors.toSet());
+        this.landmarkOf = map.landmarks().stream()
+                .collect(Collectors.toMap(CampusLandmark::buildingId, Function.identity(), (a, b) -> a));
+        CampusLandmark target = landmarkOf.get(targetBuilding);
+        this.targetName = target == null ? null : target.name();
     }
 
     /**
@@ -40,9 +49,10 @@ final class ZoneClue {
 
     /**
      * The clue in words, for when there's no photo (or it can't load): about the photographed building if there is
-     * one; else recorded history of a candidate, or failing that a deliberately vague look. A landmark only ever gets
-     * the look (storeys and facade), since its history would name it. Empty only when the zone holds no building but
-     * the target.
+     * one; else recorded history of a candidate, or failing that a deliberately vague look. Where every candidate is
+     * a landmark, an obscure piece of a landmark's history: the fact its hard hint would use, else what OpenStreetMap
+     * records, else its look. Never a fact that names the target. Empty only when the zone holds no building but the
+     * target.
      */
     Optional<String> text() {
         Optional<Building> photographed = building().map(id -> map.building(id).orElseThrow());
@@ -51,10 +61,36 @@ final class ZoneClue {
         }
         List<Building> candidates = candidates();
         if (!candidates.isEmpty() && isLandmark(candidates.getFirst())) {
-            return pick(candidates).map(ZoneClue::look);
+            Optional<String> fact = pick(candidates.stream().filter(building -> historyFact(building).isPresent())
+                    .toList()).flatMap(this::historyFact);
+            if (fact.isPresent()) {
+                return fact.map(text -> "About one building in the zone: " + startOfSentence(text));
+            }
         }
         return pick(candidates.stream().filter(ZoneClue::hasHistory).toList()).or(() -> pick(candidates))
                 .map(ZoneClue::describe);
+    }
+
+    /**
+     * A landmark's obscure history: the fact its hard hint uses (the second, or the only one), if it is dated (a
+     * year: history, not "it houses the registrar") and names neither the landmark nor the target.
+     */
+    private Optional<String> historyFact(Building building) {
+        CampusLandmark landmark = landmarkOf.get(building.id());
+        if (landmark == null || landmark.facts().isEmpty()) {
+            return Optional.empty();
+        }
+        String fact = landmark.facts().get(landmark.facts().size() == 1 ? 0 : 1);
+        boolean safe = fact != null && DATED.matcher(fact).find() && !LandmarkNames.givesAway(fact, landmark.name())
+                && (targetName == null || !LandmarkNames.givesAway(fact, targetName));
+        return safe ? Optional.of(fact.strip()) : Optional.empty();
+    }
+
+    /** "It was built..." reads on after a colon as "it was built..."; a sentence starting with a name stays as is. */
+    static String startOfSentence(String fact) {
+        String first = fact.split("\\s+", 2)[0];
+        return Set.of("It", "Its", "It's", "The", "This", "A", "An").contains(first)
+                ? Character.toLowerCase(fact.charAt(0)) + fact.substring(1) : fact;
     }
 
     /**
@@ -77,7 +113,7 @@ final class ZoneClue {
     }
 
     private boolean isLandmark(Building building) {
-        return landmarkBuildings.contains(building.id());
+        return landmarkOf.containsKey(building.id());
     }
 
     /** The same pick for everyone: an index taken from the zone's centre. */

@@ -2570,7 +2570,7 @@ const LocalRules = (() => {
     const photographed = new Set((pack.cluePhotos || []).map(p => p.building));
     return pickClue(zone, clueCandidates(zone, targetId).filter(b => !isLandmark(b) && photographed.has(b.id)))?.id ?? null;
   }
-  /** Mirrors ZoneClue.text, describe and look: recorded history first, else storeys and facade; never a name. */
+  /** Mirrors ZoneClue.text, describe and look: recorded history first (a landmark's obscure fact), else the look. */
   const usableFormerName = b => !!b.formerName && (!b.name || !givesAway(b.formerName, b.name));
   function lookClue(b) {
     const floors = Math.max(1, Math.round(b.height / 3.66));
@@ -2582,11 +2582,24 @@ const LocalRules = (() => {
     if (b.built != null) return `One building in the zone dates from the ${Math.floor(b.built / 10) * 10}s.`;
     return lookClue(b);
   }
+  /** Mirrors ZoneClue.historyFact: the fact a landmark's hard hint uses, if it has a year and names neither it nor the target. */
+  function historyFact(b, targetName) {
+    const l = pack.landmarks.find(l => l.building === b.id), facts = l?.facts || [];
+    const fact = facts.length ? facts[facts.length === 1 ? 0 : 1] : null;
+    return fact && /\b(1[6-9]|20)\d\d\b/.test(fact) && !givesAway(fact, l.name) && !(targetName && givesAway(fact, targetName)) ? fact.trim() : null;
+  }
+  const startOfSentence = f => ['It', 'Its', "It's", 'The', 'This', 'A', 'An'].includes(f.split(/\s+/)[0])
+    ? f[0].toLowerCase() + f.slice(1) : f;
   function clueText(zone, targetId) {
     const photoId = clueBuilding(zone, targetId);
     if (photoId != null) return describeClue(buildings.get(photoId));
     const candidates = clueCandidates(zone, targetId);
-    if (candidates.length && isLandmark(candidates[0])) return lookClue(pickClue(zone, candidates));
+    if (candidates.length && isLandmark(candidates[0])) {
+      const target = pack.landmarks.find(l => l.building === targetId)?.name;
+      const fact = b => historyFact(b, target);
+      const b = pickClue(zone, candidates.filter(fact));
+      if (b) return `About one building in the zone: ${startOfSentence(fact(b))}`;
+    }
     const b = pickClue(zone, candidates.filter(o => usableFormerName(o) || o.architect || o.built != null)) || pickClue(zone, candidates);
     return b ? describeClue(b) : null;
   }

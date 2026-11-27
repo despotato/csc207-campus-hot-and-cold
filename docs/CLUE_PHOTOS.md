@@ -7,7 +7,7 @@ of the round.
 - **Domain:** `ZoneClue` (used by `Expedition.clueBuilding()` / `clueText()`) chooses from ordinary buildings 10 m or
   more inside the zone, else ordinary ones anywhere in it, picked from the zone's centre so a daily's clue is the same
   for everyone. Only when every building in the zone is a landmark does it use another landmark, and then only as
-  words about its look ("4 storeys, stone"): no photo, no history. The page mirrors it (`LocalRules`, measuring with
+  words: an obscure, dated fact from its reviewed hint facts (the one the hard hint uses), else its OSM history, else its look; never a photo, never a fact naming the target. The page mirrors it (`LocalRules`, measuring with
   the same haversine formula so both agree at the boundaries).
 - **Pack:** `cluePhotos` lists one view per ~60 m region of the campus, chosen ahead of time by
   `tools/fetch_clue_photos.py`. Players never trigger that step.

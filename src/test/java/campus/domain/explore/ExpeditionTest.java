@@ -415,15 +415,16 @@ class ExpeditionTest {
         assertTrue(onlyLandmark.clueText().isEmpty(), "Far Hall is a landmark");
     }
 
-    /** Target Hall plus {@code others}, all landmarks except the unnamed ones. */
-    private static CampusMap allLandmarks(Set<Integer> cluePhotos, Building... others) {
+    /** Target Hall plus {@code others}, all landmarks except the unnamed ones; North Hall has {@code northFacts}. */
+    private static CampusMap allLandmarks(Set<Integer> cluePhotos, List<String> northFacts, Building... others) {
         List<Building> buildings = new ArrayList<>(List.of(new Building(1, "Target Hall", at(1000, 75), 22)));
         buildings.addAll(List.of(others));
         List<CampusLandmark> landmarks = new ArrayList<>(List.of(
                 new CampusLandmark(1, 1, "Target Hall", "Library", "Target Hall")));
         for (Building other : others) {
             if (other.name() != null) {
-                landmarks.add(new CampusLandmark(other.id(), other.id(), other.name(), "Teaching", null));
+                landmarks.add(new CampusLandmark(other.id(), other.id(), other.name(), "Teaching", null,
+                        other.name().equals("North Hall") ? northFacts : List.of()));
             }
         }
         OpenSpace ground = new OpenSpace(at(-20, -20), at(1300, 200), 1.5, List.of(square(1000, 75, 10)));
@@ -431,19 +432,43 @@ class ExpeditionTest {
                 landmarks, ground, cluePhotos);
     }
 
-    @Test void aZoneOfLandmarksGetsOnlyTheLookOfAnotherLandmarkAndNoPhoto() {
-        CampusMap map = allLandmarks(Set.of(1, 2), new Building(2, "North Hall", at(1010, 130), 11, "stone", false,
-                1907, "Darling & Pearson", "Old North"));
-        Expedition round = new Expedition(map, map.landmarks().getFirst(), new Zone(at(1000, 75), 90), START, T0);
-        assertTrue(round.clueBuilding().isEmpty(), "a landmark photo would give the zone away");
-        assertEquals("One building in the zone is 3 storeys, stone.", round.clueText().orElseThrow(),
-                "the look only: a landmark's history would name it");
+    private static CampusMap allLandmarks(Set<Integer> cluePhotos, Building... others) {
+        return allLandmarks(cluePhotos, List.of(), others);
+    }
 
-        CampusMap targetOnly = allLandmarks(Set.of(1));
-        Expedition alone = new Expedition(targetOnly, targetOnly.landmarks().getFirst(), new Zone(at(1000, 75), 90),
-                START, T0);
+    private static Expedition targetHallRound(CampusMap map) {
+        return new Expedition(map, map.landmarks().getFirst(), new Zone(at(1000, 75), 90), START, T0);
+    }
+
+    @Test void aZoneOfLandmarksGetsAnotherLandmarksObscureHistoryAndNoPhoto() {
+        Building north = new Building(2, "North Hall", at(1010, 130), 11, "stone", false, 1907, "Darling & Pearson",
+                null);
+        Expedition round = targetHallRound(allLandmarks(Set.of(1, 2), List.of("It is where first-years live.",
+                "It was moved here brick by brick in 1931."), north));
+        assertTrue(round.clueBuilding().isEmpty(), "a landmark photo would give the zone away");
+        assertEquals("About one building in the zone: it was moved here brick by brick in 1931.",
+                round.clueText().orElseThrow(), "the hard hint's fact, not the well-known one");
+
+        assertEquals("One building in the zone was designed by Darling & Pearson.",
+                targetHallRound(allLandmarks(Set.of(), north)).clueText().orElseThrow(),
+                "no reviewed facts: what OpenStreetMap records");
+        assertEquals("One building in the zone was designed by Darling & Pearson.", targetHallRound(allLandmarks(
+                Set.of(), List.of("It was built beside Target Hall in 1920."), north)).clueText().orElseThrow(),
+                "a fact naming the target is skipped");
+        assertEquals("One building in the zone was designed by Darling & Pearson.", targetHallRound(allLandmarks(
+                Set.of(), List.of("It houses the registrar."), north)).clueText().orElseThrow(),
+                "an undated fact is what students know, not history");
+        assertEquals("One building in the zone is 3 storeys, brick.", targetHallRound(allLandmarks(Set.of(),
+                new Building(2, "North Hall", at(1010, 130), 11))).clueText().orElseThrow(), "no history: the look");
+
+        Expedition alone = targetHallRound(allLandmarks(Set.of(1)));
         assertTrue(alone.clueBuilding().isEmpty(), "the target's photo is never used");
         assertTrue(alone.clueText().isEmpty(), "nothing but the target");
+    }
+
+    @Test void factsReadOnAfterTheColon() {
+        assertEquals("it opened in 1978.", ZoneClue.startOfSentence("It opened in 1978."));
+        assertEquals("Queen Victoria opened it.", ZoneClue.startOfSentence("Queen Victoria opened it."));
     }
 
     @Test void anOrdinaryBuildingNearTheEdgeComesBeforeLandmarks() {
