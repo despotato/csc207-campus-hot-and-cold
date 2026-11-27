@@ -79,6 +79,10 @@ class ExploreWebServerTest {
         assertEquals(404, send(HttpRequest.newBuilder(server.address().resolve("/packs/secret.json"))).statusCode(),
                 "only packs listed in the index are served");
         assertEquals(404, send(HttpRequest.newBuilder(server.address().resolve("/secret"))).statusCode());
+        assertEquals(404, send(HttpRequest.newBuilder(server.address().resolve("/packs/clues/st-george/1.jpg")))
+                .statusCode(), "a photo that isn't stored");
+        assertEquals(404, send(HttpRequest.newBuilder(server.address().resolve("/packs/clues/../index.html")))
+                .statusCode(), "only clue photo paths");
         var debug = send(HttpRequest.newBuilder(server.address().resolve("/api/debug")));
         assertNotEquals(200, debug.statusCode(), "debug info is off unless explicitly enabled");
         assertFalse(debug.body().contains("zone"));

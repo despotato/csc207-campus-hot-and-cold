@@ -122,6 +122,10 @@ out geom;
    Then run `python3 -I tools/retarget_dailies.py tools/campuses/<id>.json src/main/resources/campus/packs/<id>.json
    <tomorrow>` so future dailies only target those landmarks too (past and today's puzzles never change), and
    run the repair step again.
+   Label the unnamed buildings (most OSM buildings have no name) with
+   `python3 tools/apply_building_labels.py src/main/resources/campus/packs/<id>.json`: it adds `label` (another OSM
+   name or a business inside) and `address` ("123 Street", else "House on Street"), which the guess tooltip shows.
+   Then pick the clue views with `python3 tools/fetch_clue_photos.py <pack>` (docs/CLUE_PHOTOS.md).
 5. Add the campus to `src/main/resources/campus/packs/index.json` (`file` must match `[a-z0-9-]+\.json`). Order
    matters: the first entry is the default campus.
 6. Keep the pack around 1 MB or less (St. George is about 1 MB). If it's much bigger, shrink the bounds.

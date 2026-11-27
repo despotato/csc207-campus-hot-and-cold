@@ -18,9 +18,9 @@ class PlayerRecordTest {
                                          boolean won, HintLevel hint) {
         GeoPoint point = new GeoPoint(43.66, -79.39);
         var result = new ExploreResponse.Result(won, "Target", "Library", 1, point,
-                400, 0.8, 250, 100, 50, 1.5, score, 400, 320, 60L, 3, 1, hint,
+                400, 0.8, 250, 100, 50, 0, null, 1.5, score, 400, 320, 60L, 3, 1, hint,
                 new ExploreResponse.ZoneView(point, 90), List.of(point), List.of(point),
-                List.of(), null);
+                List.of(), List.of(), null);
         return new SavedExpedition(UUID.randomUUID(), campus, Instant.parse("2026-11-21T10:00:00Z"),
                 "normal", mode, date, result);
     }

@@ -1,5 +1,6 @@
 package campus.application.explore;
 
+import campus.domain.explore.Achievement;
 import campus.domain.explore.Expedition;
 import campus.domain.explore.GeoPoint;
 
@@ -10,8 +11,13 @@ import java.util.UUID;
 /** Output data for the explore use cases. Nothing here leaks the target or zone before they're found. */
 public sealed interface ExploreResponse {
     /** {@code date} is set for the daily puzzle. */
+    /**
+     * {@code clueBuilding}: the building in the start-of-round photo, or null when the zone has none.
+     * {@code clueText}: the clue in words (that building, or another ordinary one), or null when there's none.
+     */
     record Started(UUID roundId, String campusId, String campus, GeoPoint start, int checksRemaining, int guessLimit,
-                   String difficulty, String mode, String date) implements ExploreResponse { }
+                   String difficulty, String mode, String date, Integer clueBuilding,
+                   String clueText) implements ExploreResponse { }
 
     record Moved(double metresWalked, long elapsedSeconds) implements ExploreResponse { }
 
@@ -71,7 +77,8 @@ public sealed interface ExploreResponse {
     record Resumed(UUID roundId, String campusId, String campus, String date, String stage, GeoPoint position,
                    double metresWalked, long elapsedSeconds, Long zoneElapsedSeconds, int checksRemaining,
                    List<CheckView> checks, List<GeoPoint> trail, ZoneView zone, HintView hint,
-                   List<Integer> zoneBuildings, List<Integer> guesses, int guessLimit) implements ExploreResponse {
+                   List<Integer> zoneBuildings, List<Integer> guesses, int guessLimit,
+                   Integer clueBuilding, String clueText) implements ExploreResponse {
         public Resumed {
             checks = List.copyOf(checks);
             trail = List.copyOf(trail);
@@ -90,13 +97,17 @@ public sealed interface ExploreResponse {
     /** The end of a round: the reveal, plus {@code saveError} when saving it failed. */
     record Finished(Result result, String saveError) { }
 
-    /** {@code hintLevel} and {@code secondsToZone} are null when the zone was never found. */
+    /**
+     * {@code hintLevel} and {@code secondsToZone} are null when the zone was never found; {@code metresShort}
+     * (how close the nearest check came) is null when it was.
+     */
     record Result(boolean won, String targetName, String category, int targetBuildingId, GeoPoint targetCentre,
                   int routePoints, double efficiency, int guessPoints, int hintBonus, int checkBonus,
-                  double multiplier, int score,
+                  int nearMissPoints, Double metresShort, double multiplier, int score,
                   double metresWalked, double shortestMetres, Long secondsToZone, int checksUsed,
                   int guessesUsed, Expedition.HintLevel hintLevel, ZoneView zone, List<GeoPoint> route,
-                  List<GeoPoint> shortestRoute, List<Expedition.Check> checks, LandmarkSummary summary) { }
+                  List<GeoPoint> shortestRoute, List<Expedition.Check> checks, List<Achievement> achievements,
+                  LandmarkSummary summary) { }
 
     /** Optional extra information about the target from an external source. */
     record LandmarkSummary(String title, String extract, String imageUrl, String pageUrl) { }

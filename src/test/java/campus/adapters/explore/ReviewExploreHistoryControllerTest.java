@@ -21,9 +21,9 @@ class ReviewExploreHistoryControllerTest {
     private static ExploreResponse.Result result(int score) {
         GeoPoint point = new GeoPoint(43.66, -79.39);
         return new ExploreResponse.Result(true, "Robarts Library", "Library", 10, point,
-                400, 1, 250, 100, 50, 1.5, score, 400, 320, 60L, 3, 1,
+                400, 1, 250, 100, 50, 0, null, 1.5, score, 400, 320, 60L, 3, 1,
                 Expedition.HintLevel.NORMAL, new ExploreResponse.ZoneView(point, 90),
-                List.of(point), List.of(point), List.of(), null);
+                List.of(point), List.of(point), List.of(), List.of(), null);
     }
 
     private static CampusCatalog catalog() {
