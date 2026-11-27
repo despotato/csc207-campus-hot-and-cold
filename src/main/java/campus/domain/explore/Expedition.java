@@ -497,12 +497,12 @@ public final class Expedition {
     }
 
     /**
-     * The building shown in the start-of-round photo: an ordinary building (not a landmark, so never the target) with a
-     * stored photo, 10 m or more inside the zone. Chosen from the zone's centre, so a daily's photo is the same for
-     * everyone. Empty when the zone has no photographed building. The page mirrors this (LocalRules clueBuilding).
+     * The building shown in the start-of-round photo: a photographed one among the {@link #clueCandidates()}.
+     * Chosen from the zone's centre, so a daily's photo is the same for everyone. Empty when none of them has a
+     * stored photo. The page mirrors this (LocalRules clueBuilding).
      */
     public Optional<Integer> clueBuilding() {
-        return pickClue(ordinaryBuildingsInZone().stream().filter(building -> map.hasCluePhoto(building.id()))
+        return pickClue(clueCandidates().stream().filter(building -> map.hasCluePhoto(building.id()))
                 .toList()).map(Building::id);
     }
 
@@ -510,14 +510,14 @@ public final class Expedition {
      * The start-of-round clue in words, for when there's no photo (or it can't load): a piece of recorded history
      * about an ordinary building in the zone, or failing that a deliberately vague look. With a photo it's about the
      * photographed building. Never its current name (names are labelled on the map) and never where it is. Empty
-     * only when the zone has no ordinary building. The page mirrors this (LocalRules clueText).
+     * only when the zone holds no building but the target. The page mirrors this (LocalRules clueText).
      */
     public Optional<String> clueText() {
         Optional<Building> described = clueBuilding().map(id -> map.building(id).orElseThrow());
         if (described.isEmpty()) {
-            List<Building> ordinary = ordinaryBuildingsInZone();
-            described = pickClue(ordinary.stream().filter(Expedition::hasHistory).toList())
-                    .or(() -> pickClue(ordinary));
+            List<Building> candidates = clueCandidates();
+            described = pickClue(candidates.stream().filter(Expedition::hasHistory).toList())
+                    .or(() -> pickClue(candidates));
         }
         return described.map(Expedition::describe);
     }
@@ -531,11 +531,23 @@ public final class Expedition {
                 && (building.name() == null || !LandmarkNames.givesAway(building.formerName(), building.name()));
     }
 
-    private List<Building> ordinaryBuildingsInZone() {
+    /**
+     * Buildings the start-of-round clue may be about, never the target: ordinary buildings 10 m or more inside the
+     * zone; else, where every building there is a landmark, the other landmarks there; else any other building in the
+     * whole zone. The first two keep clear of the edge so every copy of the rules agrees on them.
+     */
+    private List<Building> clueCandidates() {
         Set<Integer> landmarkBuildings = map.landmarks().stream().map(CampusLandmark::buildingId)
                 .collect(Collectors.toSet());
-        return map.buildingsIn(new Zone(zone.centre(), zone.radiusMetres() - CLUE_INSET)).stream()
-                .filter(building -> !landmarkBuildings.contains(building.id())).toList();
+        List<Building> inner = map.buildingsIn(new Zone(zone.centre(), zone.radiusMetres() - CLUE_INSET));
+        List<Building> ordinary = inner.stream().filter(building -> !landmarkBuildings.contains(building.id()))
+                .toList();
+        if (!ordinary.isEmpty()) {
+            return ordinary;
+        }
+        List<Building> others = inner.stream().filter(building -> building.id() != target.buildingId()).toList();
+        return others.isEmpty() ? map.buildingsIn(zone).stream()
+                .filter(building -> building.id() != target.buildingId()).toList() : others;
     }
 
     /** The same pick for everyone: an index taken from the zone's centre. */

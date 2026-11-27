@@ -415,6 +415,37 @@ class ExpeditionTest {
         assertTrue(onlyLandmark.clueText().isEmpty(), "Far Hall is a landmark");
     }
 
+    /** Target Hall plus {@code others}, all landmarks except the unnamed ones. */
+    private static CampusMap allLandmarks(Set<Integer> cluePhotos, Building... others) {
+        List<Building> buildings = new ArrayList<>(List.of(new Building(1, "Target Hall", at(1000, 75), 22)));
+        buildings.addAll(List.of(others));
+        List<CampusLandmark> landmarks = new ArrayList<>(List.of(
+                new CampusLandmark(1, 1, "Target Hall", "Library", "Target Hall")));
+        for (Building other : others) {
+            if (other.name() != null) {
+                landmarks.add(new CampusLandmark(other.id(), other.id(), other.name(), "Teaching", null));
+            }
+        }
+        OpenSpace ground = new OpenSpace(at(-20, -20), at(1300, 200), 1.5, List.of(square(1000, 75, 10)));
+        return new CampusMap("campus", "Test campus", java.time.ZoneOffset.UTC, java.util.Map.of(), buildings,
+                landmarks, ground, cluePhotos);
+    }
+
+    @Test void aZoneOfLandmarksUsesAnotherLandmarkForTheClue() {
+        CampusMap map = allLandmarks(Set.of(1, 2), new Building(2, "North Hall", at(1010, 130), 11),
+                new Building(3, "Edge Hall", at(1080, 75), 7));
+        Expedition round = new Expedition(map, map.landmarks().getFirst(), new Zone(at(1000, 75), 90), START, T0);
+        assertEquals(2, round.clueBuilding().orElseThrow(), "the photographed landmark, never the target");
+        assertEquals("One building in the zone is 3 storeys, brick.", round.clueText().orElseThrow());
+
+        CampusMap edgeOnly = allLandmarks(Set.of(1), new Building(3, "Edge Hall", at(1085, 75), 7));
+        Expedition edge = new Expedition(edgeOnly, edgeOnly.landmarks().getFirst(), new Zone(at(1000, 75), 90), START,
+                T0);
+        assertTrue(edge.clueBuilding().isEmpty(), "the target's photo is never used");
+        assertEquals("One building in the zone is 2 storeys, brick.", edge.clueText().orElseThrow(),
+                "Edge Hall, 85 m out: the whole zone when nothing else is 10 m inside");
+    }
+
     @Test void historyComesFirstAndNeverRepeatsTheCurrentName() {
         assertEquals("One building in the zone used to be called the Physics Building.", Expedition.describe(
                 new Building(9, "Sandford Fleming", at(0, 0), 15, "stone", true, 1907, "Darling", "the Physics Building")));

@@ -2540,20 +2540,25 @@ const LocalRules = (() => {
   const ok = body => ({ status: 200, body });
   const fail = (error, status = 400) => ({ status, body: { type: 'error', error } });
   const inZone = (z, p) => distOf(z.centre, p) <= z.radius;
-  /** Mirrors Expedition's clue choices: ordinary buildings 10 m inside the zone, picked by an index from its centre. */
-  function ordinaryInZone(zone) {
+  /**
+   * Mirrors Expedition.clueCandidates, never the target: ordinary buildings 10 m inside the zone; else the other
+   * landmarks there; else any other building in the whole zone. Picked by an index from the zone's centre.
+   */
+  function clueCandidates(zone, targetId) {
     const landmarkIds = new Set(pack.landmarks.map(l => l.building)), inner = { centre: zone.centre, radius: zone.radius - 10 };
-    return pack.buildings.filter(b => !landmarkIds.has(b.id) && inZone(inner, b.center)).sort((a, b) => a.id - b.id);
+    const inside = z => pack.buildings.filter(b => b.id !== targetId && inZone(z, b.center)).sort((a, b) => a.id - b.id);
+    const near = inside(inner), ordinary = near.filter(b => !landmarkIds.has(b.id));
+    return ordinary.length ? ordinary : near.length ? near : inside(zone);
   }
   function pickClue(zone, pool) {
     if (!pool.length) return null;
     const seed = Math.round(zone.centre[1] * 1e6) + Math.round(zone.centre[0] * 1e6);
     return pool[((seed % pool.length) + pool.length) % pool.length];
   }
-  /** Mirrors Expedition.clueBuilding: a photographed ordinary building. */
-  function clueBuilding(zone) {
+  /** Mirrors Expedition.clueBuilding: a photographed clue candidate. */
+  function clueBuilding(zone, targetId) {
     const photographed = new Set((pack.cluePhotos || []).map(p => p.building));
-    return pickClue(zone, ordinaryInZone(zone).filter(b => photographed.has(b.id)))?.id ?? null;
+    return pickClue(zone, clueCandidates(zone, targetId).filter(b => photographed.has(b.id)))?.id ?? null;
   }
   /** Mirrors Expedition.clueText and describe: recorded history first, else storeys and facade; never a name. */
   const usableFormerName = b => !!b.formerName && (!b.name || !givesAway(b.formerName, b.name));
@@ -2564,10 +2569,10 @@ const LocalRules = (() => {
     const floors = Math.max(1, Math.round(b.height / 3.66));
     return `One building in the zone is ${floors} ${floors === 1 ? 'storey' : 'storeys'}, ${b.material || 'brick'}.`;
   }
-  function clueText(zone) {
-    const photoId = clueBuilding(zone), ordinary = ordinaryInZone(zone);
+  function clueText(zone, targetId) {
+    const photoId = clueBuilding(zone, targetId), candidates = clueCandidates(zone, targetId);
     const b = photoId != null ? buildings.get(photoId)
-      : pickClue(zone, ordinary.filter(o => usableFormerName(o) || o.architect || o.built != null)) || pickClue(zone, ordinary);
+      : pickClue(zone, candidates.filter(o => usableFormerName(o) || o.architect || o.built != null)) || pickClue(zone, candidates);
     return b ? describeClue(b) : null;
   }
   const playerInZone = (z, p) => distOf(z.centre, p) <= z.radius + PLAYER_RADIUS;
@@ -2660,7 +2665,7 @@ const LocalRules = (() => {
       start: startPoint, walked: 0, track: [startPoint], checks: [], guesses: [], stage: 'find', hint: null,
       startedAt: Date.now(), zoneAt: null, shortest: route, won: false, fact: null };
     return ok({ type: 'started', roundId: round.id, campusId: pack.id, campus: pack.campus, point: startPoint,
-      checksRemaining: CHECKS, guessLimit: GUESSES, difficulty: 'normal', mode, date, clueBuilding: clueBuilding(round.zone), clueText: clueText(round.zone),
+      checksRemaining: CHECKS, guessLimit: GUESSES, difficulty: 'normal', mode, date, clueBuilding: clueBuilding(round.zone, building.id), clueText: clueText(round.zone, building.id),
       message: `Find the zone. Check inside it to know you're there. ${CHECKS} checks.` });
   }
 
