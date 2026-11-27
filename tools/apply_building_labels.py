@@ -9,6 +9,10 @@ This script fetches the campus area from Overpass (cached outside the repo) and 
   address  where it is: "123 Street Name" (building or address-point tags), else "House on Street Name" from the
            building's OSM type and the nearest named street, else "Shed near Hart House".
 
+It also gives each landmark `services`: what students go there for, from the businesses and services OSM maps
+inside it ("coffee", "the pharmacy"). The normal hint uses them when there is no reviewed campus-life fact. Only the
+kind of service is used, never its name, so they can't give the building's name away.
+
 The page shows name, else label, else address. `name` itself is untouched (zone and daily rules count real names),
 and so are IDs, outlines, dailies and targets. Former names are never used: they are the zone clue's history.
 
@@ -51,6 +55,26 @@ STREETS = {"primary", "secondary", "tertiary", "residential", "unclassified", "l
            "service", "trunk", "primary_link", "secondary_link", "tertiary_link"}
 STREET_REACH = 80   # metres: further than this from any named street, the address names a nearby building instead
 NAMED_REACH = 400
+# What students go there for, by OSM tag, in the order they are listed (first three kept). Anything else (ATMs,
+# offices, artwork, parking, vacant shops) isn't something students would know the building for.
+SERVICES = [("amenity=library", "the library"), ("shop=books", "the bookstore"), ("amenity=cafe", "coffee"),
+            ("amenity=food_court", "the food court"), ("amenity=fast_food", "a quick meal"),
+            ("amenity=restaurant", "a sit-down meal"), ("amenity=pub", "a drink at the pub"),
+            ("amenity=bar", "a drink at the bar"), ("amenity=theatre", "shows in its theatre"),
+            ("amenity=cinema", "films"), ("tourism=museum", "its museum"), ("tourism=gallery", "its art gallery"),
+            ("amenity=arts_centre", "the arts centre"), ("leisure=fitness_centre", "workouts"),
+            ("leisure=sports_centre", "sports and workouts"), ("amenity=pharmacy", "the pharmacy"),
+            ("healthcare=pharmacy", "the pharmacy"), ("amenity=clinic", "the health clinic"),
+            ("healthcare=clinic", "the health clinic"), ("amenity=doctors", "a doctor's appointment"),
+            ("amenity=dentist", "the dentist"), ("healthcare=dentist", "the dentist"), ("shop=optician", "eye care"),
+            ("amenity=bank", "banking"), ("amenity=post_office", "the post office"), ("shop=copyshop", "printing"),
+            ("shop=convenience", "snacks and groceries"), ("shop=supermarket", "groceries"),
+            ("shop=bakery", "baked goods"), ("amenity=ice_cream", "ice cream"), ("shop=bicycle", "bike repairs"),
+            ("amenity=place_of_worship", "worship services"), ("amenity=food_sharing", "free food"),
+            ("leisure=hackerspace", "the makerspace"), ("amenity=community_centre", "community events"),
+            ("amenity=events_venue", "events"), ("office=radio_station", "campus radio"),
+            ("office=newspaper", "the student newspaper"), ("office=union", "the student union")]
+
 KINDS = {"house": "House", "detached": "House", "semidetached_house": "House", "terrace": "Row houses",
          "bungalow": "House", "apartments": "Apartment building", "residential": "Residential building",
          "dormitory": "Residence", "garage": "Garage", "garages": "Garages", "carport": "Carport", "shed": "Shed",
@@ -192,6 +216,19 @@ def main():
                           and min(lats) <= p["lat"] <= max(lats) and inside_outline(b, p["lon"], p["lat"])]
         return found
 
+    by_id = {b["id"]: b for b in pack["buildings"]}
+    with_services = 0
+    for landmark in pack["landmarks"]:
+        tags = [f"{k}={v}" for p in points_in(by_id[landmark["building"]]) for k, v in p.get("tags", {}).items()]
+        services = []
+        for tag, phrase in SERVICES:
+            if tag in tags and phrase not in services:
+                services.append(phrase)
+        landmark.pop("services", None)
+        if services:
+            landmark["services"] = services[:3]
+            with_services += 1
+
     landmark_names = {l["name"].lower() for l in pack["landmarks"]}
     counts = {"label": 0, "address": 0, "street kind": 0, "near a named building": 0, "kind only": 0}
     for b in pack["buildings"]:
@@ -224,7 +261,7 @@ def main():
         b["address"] = where
     pack_path.write_text(json.dumps(pack, separators=(",", ":"), ensure_ascii=False), encoding="utf-8")
     unnamed = sum(1 for b in pack["buildings"] if not b.get("name"))
-    print(f"{pack['id']}: {unnamed} unnamed buildings: {counts}")
+    print(f"{pack['id']}: {unnamed} unnamed buildings: {counts}; {with_services} landmarks with services")
 
 
 if __name__ == "__main__":
