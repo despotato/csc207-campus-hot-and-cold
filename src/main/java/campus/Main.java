@@ -8,6 +8,7 @@ import campus.adapters.SubmitGuessController;
 import campus.adapters.SubmitGuessPresenter;
 import campus.adapters.explore.ExploreController;
 import campus.adapters.explore.ExplorePresenter;
+import campus.adapters.explore.PlayerStatsPresenter;
 import campus.application.GameSession;
 import campus.application.SavedResultsInteractor;
 import campus.application.StartRoundInteractor;
@@ -19,6 +20,7 @@ import campus.application.explore.DailyRunInteractor;
 import campus.application.explore.ExpeditionSession;
 import campus.application.explore.GuessBuildingInteractor;
 import campus.application.explore.MoveInteractor;
+import campus.application.explore.PlayerStatsInteractor;
 import campus.application.explore.ReviewExploreHistoryInteractor;
 import campus.application.explore.RoundFinisher;
 import campus.application.explore.StartExpeditionInteractor;
@@ -114,6 +116,8 @@ public final class Main {
                 new GuessBuildingInteractor(session, finisher, presenter),
                 presenter);
         controller.withHistory(new ReviewExploreHistoryInteractor(campuses, results, presenter));
+        var statsPresenter = new PlayerStatsPresenter();
+        controller.withStats(new PlayerStatsInteractor(campuses, results, statsPresenter, clock), statsPresenter);
         var dailyRun = new DailyRunInteractor(campuses, dailyAttempts, dailyRuns, session, finisher, clock, presenter);
         controller.withDailyRuns(dailyRun, dailyRun);
         controller.withTraffic(new CampusTrafficInteractor(trails, presenter));

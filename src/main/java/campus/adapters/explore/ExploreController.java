@@ -8,6 +8,7 @@ import campus.application.explore.ChooseHintInputBoundary;
 import campus.application.explore.GuessBuildingInputBoundary;
 import campus.application.explore.MoveInputBoundary;
 import campus.application.explore.ReviewExploreHistoryInputBoundary;
+import campus.application.explore.PlayerStatsInputBoundary;
 import campus.application.explore.StartExpeditionInputBoundary;
 import campus.application.explore.StartRequest;
 import campus.application.explore.TravelInputBoundary;
@@ -40,6 +41,8 @@ public final class ExploreController {
     private CampusTrafficInputBoundary traffic;
     private ResumeDailyInputBoundary resumeDaily;
     private ReviewExploreHistoryInputBoundary history;
+    private PlayerStatsInputBoundary stats;
+    private PlayerStatsPresenter statsPresenter;
 
     public ExploreController(StartExpeditionInputBoundary start, MoveInputBoundary move, TravelInputBoundary travel,
                              CheckTemperatureInputBoundary check, ChooseHintInputBoundary hint,
@@ -75,6 +78,13 @@ public final class ExploreController {
                 }
                 case "history" -> requireHistory().history(campus(fields));
                 case "recap" -> requireHistory().recap(round(fields));
+                case "stats" -> {
+                    if (stats == null || statsPresenter == null) {
+                        throw new IllegalArgumentException("Player statistics aren't available here.");
+                    }
+                    stats.stats(campus(fields));
+                    return statsViewModel();
+                }
                 default -> {
                     return new ExploreViewModel(404, Map.of("type", "error", "error", "Unknown action."));
                 }
@@ -102,6 +112,19 @@ public final class ExploreController {
     public ExploreController withHistory(ReviewExploreHistoryInputBoundary reviewHistory) {
         this.history = Objects.requireNonNull(reviewHistory);
         return this;
+    }
+
+    /** Adds player statistics (optional for simpler setups and tests). */
+    public ExploreController withStats(PlayerStatsInputBoundary playerStats,
+                                       PlayerStatsPresenter presenter) {
+        this.stats = Objects.requireNonNull(playerStats);
+        this.statsPresenter = Objects.requireNonNull(presenter);
+        return this;
+    }
+
+    private ExploreViewModel statsViewModel() {
+        PlayerStatsViewModel statsModel = statsPresenter.viewModel();
+        return new ExploreViewModel(statsModel.status(), statsModel.body());
     }
 
     private DailyStatusInputBoundary requireDaily() {

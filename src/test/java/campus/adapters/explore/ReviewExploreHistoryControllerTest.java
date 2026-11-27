@@ -3,10 +3,13 @@ package campus.adapters.explore;
 import campus.application.explore.*;
 import campus.domain.explore.Expedition;
 import campus.domain.explore.GeoPoint;
+import campus.domain.explore.TestCampus;
 import org.junit.jupiter.api.Test;
 
+import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -77,5 +80,34 @@ class ReviewExploreHistoryControllerTest {
 
         assertEquals(400, controller.handle("recap", Map.of()).status());
         assertEquals(400, controller.handle("history", Map.of("campus", "nowhere")).status());
+    }
+
+    @Test void controllerPresentsStatsFromTheSavedRoundRepository() {
+        var saved = new SavedExpedition(UUID.randomUUID(), "test", Instant.parse("2026-11-25T10:00:00Z"),
+                "normal", "daily", LocalDate.parse("2026-11-25"), result(800));
+        ExpeditionResultRepository repository = new ExpeditionResultRepository() {
+            @Override public void save(SavedExpedition round) { }
+            @Override public Optional<SavedExpedition> find(UUID id) { return Optional.empty(); }
+            @Override public List<SavedExpedition> all() { return List.of(saved); }
+        };
+        CampusCatalog campuses = new CampusCatalog() {
+            @Override public List<String> campusIds() { return List.of("test"); }
+            @Override public Optional<campus.domain.explore.CampusMap> campus(String id) {
+                return "test".equals(id) ? Optional.of(TestCampus.withDaily()) : Optional.empty();
+            }
+        };
+        var explorePresenter = new ExplorePresenter();
+        var statsPresenter = new PlayerStatsPresenter();
+        var controller = new ExploreController(request -> { }, (id, path) -> { }, (id, point) -> { },
+                id -> { }, (id, level) -> { }, (id, building) -> { }, explorePresenter)
+                .withStats(new PlayerStatsInteractor(campuses, repository, statsPresenter,
+                        Clock.fixed(Instant.parse("2026-11-25T12:00:00Z"), ZoneOffset.UTC)), statsPresenter);
+
+        var stats = controller.handle("stats", Map.of());
+        assertEquals(200, stats.status());
+        assertEquals("stats", stats.body().get("type"));
+        assertEquals(1, stats.body().get("roundsPlayed"));
+        assertEquals(800, stats.body().get("bestScore"));
+        assertEquals(1, stats.body().get("currentDailyStreak"));
     }
 }
