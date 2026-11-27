@@ -34,6 +34,7 @@ public final class ExplorePresenter implements ExploreOutputBoundary {
                 body.put("checksRemaining", started.checksRemaining());
                 body.put("guessLimit", started.guessLimit());
                 body.put("difficulty", started.difficulty());
+                putClue(body, started.clueBuilding(), started.clueText());
                 body.put("message", "Find the zone. Check inside it to know you're there. "
                         + started.checksRemaining() + " checks.");
             }
@@ -166,6 +167,15 @@ public final class ExplorePresenter implements ExploreOutputBoundary {
         }
     }
 
+    private static void putClue(Map<String, Object> body, Integer clueBuilding, String clueText) {
+        if (clueBuilding != null) {
+            body.put("clueBuilding", clueBuilding);
+        }
+        if (clueText != null) {
+            body.put("clueText", clueText);
+        }
+    }
+
     private static void resumed(ExploreResponse.Resumed r, Map<String, Object> body) {
         body.put("type", "resumed");
         body.put("roundId", r.roundId().toString());
@@ -174,6 +184,7 @@ public final class ExplorePresenter implements ExploreOutputBoundary {
         body.put("mode", "daily");
         body.put("date", r.date());
         body.put("stage", r.stage());
+        putClue(body, r.clueBuilding(), r.clueText());
         body.put("point", point(r.position()));
         body.put("metresWalked", round(r.metresWalked()));
         body.put("elapsedSeconds", r.elapsedSeconds());
@@ -220,6 +231,7 @@ public final class ExplorePresenter implements ExploreOutputBoundary {
         score.put("guess", result.guessPoints());
         score.put("hintBonus", result.hintBonus());
         score.put("checkBonus", result.checkBonus());
+        score.put("nearMiss", result.nearMissPoints());
         score.put("multiplier", result.multiplier());
         score.put("total", result.score());
         score.put("max", Expedition.MAX_SCORE);
@@ -227,6 +239,9 @@ public final class ExplorePresenter implements ExploreOutputBoundary {
         body.put("metresWalked", round(result.metresWalked()));
         body.put("shortestMetres", round(result.shortestMetres()));
         body.put("secondsToZone", result.secondsToZone());
+        body.put("achievements", result.achievements().stream().map(a -> Map.of("id", a.name().toLowerCase(Locale.ROOT),
+                "title", a.title(), "subtitle", a.subtitle(), "description", a.description())).toList());
+        body.put("metresShort", result.metresShort() == null ? null : round(result.metresShort()));
         body.put("zone", Map.of("centre", point(result.zone().centre()), "radius", result.zone().radiusMetres()));
         body.put("checksUsed", result.checksUsed());
         body.put("guessesUsed", result.guessesUsed());

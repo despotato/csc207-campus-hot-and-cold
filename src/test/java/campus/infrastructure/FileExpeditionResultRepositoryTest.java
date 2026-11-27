@@ -2,6 +2,7 @@ package campus.infrastructure;
 
 import campus.application.explore.ExploreResponse;
 import campus.application.explore.SavedExpedition;
+import campus.domain.explore.Achievement;
 import campus.domain.explore.Expedition;
 import campus.domain.explore.Expedition.HintLevel;
 import campus.domain.explore.GeoPoint;
@@ -27,11 +28,11 @@ class FileExpeditionResultRepositoryTest {
         var route = List.of(start, zone);
         var shortest = List.of(start, new GeoPoint(43.661, -79.391), zone);
         var result = new ExploreResponse.Result(true, target, "Library", 10, zone, 400, 0.8,
-                250, 100, 50, 1.5, score, 420, 336, 75L, 3, 1, HintLevel.NORMAL,
+                250, 100, 50, 0, null, 1.5, score, 420, 336, 75L, 3, 1, HintLevel.NORMAL,
                 new ExploreResponse.ZoneView(zone, 90), route, shortest, List.of(
                         new Expedition.Check(start, Expedition.Heat.WARM, Expedition.Trend.FIRST, 200, false),
                         new Expedition.Check(zone, Expedition.Heat.HOT, Expedition.Trend.WARMER, 0, true)),
-                null);
+                List.of(Achievement.BETA_PLAYER), null);
         return new SavedExpedition(UUID.randomUUID(), campus, Instant.parse(time),
                 "NORMAL", "daily", LocalDate.parse(time.substring(0, 10)), result);
     }
@@ -45,6 +46,7 @@ class FileExpeditionResultRepositoryTest {
         assertEquals(List.of(saved.result().route().getFirst(), saved.result().route().getLast()),
                 reopened.result().route());
         assertEquals(2, reopened.result().checks().size());
+        assertEquals(List.of(Achievement.BETA_PLAYER), reopened.result().achievements());
     }
 
     @Test void sortsNewestFirstAndRejectsDuplicateWithDifferentData() throws IOException {

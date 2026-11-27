@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -33,6 +34,11 @@ class ExpeditionTest {
      * so walking east means going around its north end. Target Hall stands at (1000, 75).
      */
     static CampusMap campus() {
+        return campus(Set.of());
+    }
+
+    /** The same campus, with stored clue photos of {@code cluePhotos}. */
+    static CampusMap campus(Set<Integer> cluePhotos) {
         List<List<List<GeoPoint>>> solid = new ArrayList<>(List.of(
                 square(1000, 75, 10), square(1010, 130, 10), square(1060, 75, 10), square(950, 75, 10),
                 square(100, 140, 10), square(1000, 20, 10)));
@@ -45,7 +51,8 @@ class ExpeditionTest {
         List<CampusLandmark> landmarks = List.of(
                 new CampusLandmark(1, 1, "Target Hall", "Library", "Target Hall"),
                 new CampusLandmark(2, 5, "Far Hall", "Residence", null));
-        return new CampusMap("Test campus", buildings, landmarks, ground);
+        return new CampusMap("campus", "Test campus", java.time.ZoneOffset.UTC, java.util.Map.of(), buildings, landmarks,
+                ground, cluePhotos);
     }
 
     static Expedition round() {
@@ -338,6 +345,8 @@ class ExpeditionTest {
         assertEquals(250, best.hintBonus(), "hard doubles it");
         assertEquals(100, best.checkBonus(), "only the finding check used");
         assertEquals(Expedition.MAX_SCORE, best.total(), "a perfect round scores exactly 1000");
+        assertEquals(List.of(Achievement.BETA_PLAYER, Achievement.ABSOLUTE_ZERO, Achievement.SUPERNOVA),
+                direct.achievements());
 
         Expedition detour = round();
         Instant time = walk(detour, List.of(at(200, 75), at(0, 75)), T0); // 400 m wasted
@@ -354,6 +363,148 @@ class ExpeditionTest {
         assertEquals(200, worse.guessPoints(), "second guess");
         assertEquals(100, worse.hintBonus(), "normal adds half");
         assertEquals(60, worse.checkBonus(), "3 of 5 saveable checks saved");
+        assertEquals(List.of(Achievement.BETA_PLAYER), detour.achievements(), "checks spent, short of 1000");
+    }
+
+    @Test void missingTheZoneNarrowlyEarnsNearMissPoints() {
+        Expedition close = round();
+        Instant time = walk(close, List.of(at(490, 126), at(510, 126), at(845, 75)), T0); // 50 m beyond a check's reach of the zone edge
+        while (close.checksRemaining() > 0) {
+            close.check(time);
+        }
+        assertFalse(close.finalSearch(time));
+        assertEquals(50, close.metresShortOfZone().orElseThrow(), 1);
+        Expedition.Score score = close.score();
+        assertEquals(67, score.nearMissPoints(), "two thirds of the way inside the 150 m near-miss band");
+        assertEquals(67, score.total(), "nothing else is earned without the zone");
+        assertEquals(List.of(Achievement.BETA_PLAYER, Achievement.ALMOST_ALMOST), close.achievements());
+
+        Expedition far = round();
+        far.check(T0);
+        assertEquals(0, far.score().nearMissPoints(), "checking 1 km away is no near miss");
+        assertEquals(List.of(Achievement.BETA_PLAYER), far.achievements());
+
+        Expedition found = round();
+        reachZone(found);
+        assertTrue(found.metresShortOfZone().isEmpty());
+        assertEquals(0, found.score().nearMissPoints());
+    }
+
+    @Test void theClueIsAPhotographedOrdinaryBuildingInsideTheZone() {
+        // In the zone: Target Hall (target, landmark), North/East/West Hall and an unnamed shed. Far Hall is outside.
+        CampusMap map = campus(Set.of(1, 2, 3, 5));
+        Expedition round = new Expedition(map, map.landmarks().getFirst(), new Zone(at(1000, 75), 90), START, T0);
+        int clue = round.clueBuilding().orElseThrow();
+        assertTrue(clue == 2 || clue == 3, "photographed, in the zone and not a landmark: " + clue);
+        Expedition again = new Expedition(map, map.landmarks().getFirst(), new Zone(at(1000, 75), 90), START, T0);
+        assertEquals(clue, again.clueBuilding().orElseThrow(), "the same zone always shows the same photo");
+    }
+
+    @Test void theWrittenClueIsAboutThePhotographedBuildingOrAnotherOrdinaryOne() {
+        CampusMap map = campus(Set.of(2));
+        Expedition photographed = new Expedition(map, map.landmarks().getFirst(), new Zone(at(1000, 75), 90), START,
+                T0);
+        assertEquals(2, photographed.clueBuilding().orElseThrow());
+        assertEquals("One building in the zone is 3 storeys, brick.", photographed.clueText().orElseThrow(),
+                "North Hall: 11 m, no recorded history");
+        String words = round().clueText().orElseThrow();
+        for (String name : List.of("Hall", "Target")) {
+            assertFalse(words.contains(name), "never a name: " + words);
+        }
+        Expedition onlyLandmark = new Expedition(map, map.landmarks().get(1), new Zone(at(100, 140), 30), START, T0);
+        assertTrue(onlyLandmark.clueText().isEmpty(), "Far Hall is a landmark");
+    }
+
+    /** Target Hall plus {@code others}, all landmarks except the unnamed ones; North Hall has {@code northFacts}. */
+    private static CampusMap allLandmarks(Set<Integer> cluePhotos, List<String> northFacts, Building... others) {
+        List<Building> buildings = new ArrayList<>(List.of(new Building(1, "Target Hall", at(1000, 75), 22)));
+        buildings.addAll(List.of(others));
+        List<CampusLandmark> landmarks = new ArrayList<>(List.of(
+                new CampusLandmark(1, 1, "Target Hall", "Library", "Target Hall")));
+        for (Building other : others) {
+            if (other.name() != null) {
+                landmarks.add(new CampusLandmark(other.id(), other.id(), other.name(), "Teaching", null,
+                        other.name().equals("North Hall") ? northFacts : List.of()));
+            }
+        }
+        OpenSpace ground = new OpenSpace(at(-20, -20), at(1300, 200), 1.5, List.of(square(1000, 75, 10)));
+        return new CampusMap("campus", "Test campus", java.time.ZoneOffset.UTC, java.util.Map.of(), buildings,
+                landmarks, ground, cluePhotos);
+    }
+
+    private static CampusMap allLandmarks(Set<Integer> cluePhotos, Building... others) {
+        return allLandmarks(cluePhotos, List.of(), others);
+    }
+
+    private static Expedition targetHallRound(CampusMap map) {
+        return new Expedition(map, map.landmarks().getFirst(), new Zone(at(1000, 75), 90), START, T0);
+    }
+
+    @Test void aZoneOfLandmarksGetsAnotherLandmarksObscureHistoryAndNoPhoto() {
+        Building north = new Building(2, "North Hall", at(1010, 130), 11, "stone", false, 1907, "Darling & Pearson",
+                null);
+        Expedition round = targetHallRound(allLandmarks(Set.of(1, 2), List.of("It is where first-years live.",
+                "It was moved here brick by brick in 1931."), north));
+        assertTrue(round.clueBuilding().isEmpty(), "a landmark photo would give the zone away");
+        assertEquals("About one building in the zone: it was moved here brick by brick in 1931.",
+                round.clueText().orElseThrow(), "the hard hint's fact, not the well-known one");
+
+        assertEquals("One building in the zone was designed by Darling & Pearson.",
+                targetHallRound(allLandmarks(Set.of(), north)).clueText().orElseThrow(),
+                "no reviewed facts: what OpenStreetMap records");
+        assertEquals("One building in the zone was designed by Darling & Pearson.", targetHallRound(allLandmarks(
+                Set.of(), List.of("It was built beside Target Hall in 1920."), north)).clueText().orElseThrow(),
+                "a fact naming the target is skipped");
+        assertEquals("One building in the zone was designed by Darling & Pearson.", targetHallRound(allLandmarks(
+                Set.of(), List.of("It houses the registrar."), north)).clueText().orElseThrow(),
+                "an undated fact is what students know, not history");
+        assertEquals("One building in the zone is 3 storeys, brick.", targetHallRound(allLandmarks(Set.of(),
+                new Building(2, "North Hall", at(1010, 130), 11))).clueText().orElseThrow(), "no history: the look");
+
+        Expedition alone = targetHallRound(allLandmarks(Set.of(1)));
+        assertTrue(alone.clueBuilding().isEmpty(), "the target's photo is never used");
+        assertTrue(alone.clueText().isEmpty(), "nothing but the target");
+    }
+
+    @Test void factsReadOnAfterTheColon() {
+        assertEquals("it opened in 1978.", ZoneClue.startOfSentence("It opened in 1978."));
+        assertEquals("Queen Victoria opened it.", ZoneClue.startOfSentence("Queen Victoria opened it."));
+    }
+
+    @Test void anOrdinaryBuildingNearTheEdgeComesBeforeLandmarks() {
+        CampusMap map = allLandmarks(Set.of(6), new Building(2, "North Hall", at(1010, 130), 11),
+                new Building(6, null, at(1085, 75), 7));
+        Expedition round = new Expedition(map, map.landmarks().getFirst(), new Zone(at(1000, 75), 90), START, T0);
+        assertEquals(6, round.clueBuilding().orElseThrow(), "the unnamed shed 85 m out, not North Hall");
+        assertEquals("One building in the zone is 2 storeys, brick.", round.clueText().orElseThrow());
+    }
+
+    @Test void historyComesFirstAndNeverRepeatsTheCurrentName() {
+        assertEquals("One building in the zone used to be called the Physics Building.", ZoneClue.describe(
+                new Building(9, "Sandford Fleming", at(0, 0), 15, "stone", true, 1907, "Darling", "the Physics Building")));
+        assertEquals("One building in the zone was designed by Darling & Pearson.", ZoneClue.describe(
+                new Building(9, "Old Hall", at(0, 0), 15, "stone", true, 1892, "Darling & Pearson", "Old Hall Annex")),
+                "a former name that contains the current one is skipped");
+        assertEquals("One building in the zone dates from the 1890s.", ZoneClue.describe(
+                new Building(9, null, at(0, 0), 15, "stone", true, 1892, null, null)));
+        assertEquals("One building in the zone is 1 storey, glass.", ZoneClue.describe(
+                new Building(9, null, at(0, 0), 3, "glass", false, null, null, null)));
+    }
+
+    @Test void noPhotoNoClue() {
+        assertTrue(round().clueBuilding().isEmpty(), "no stored photos");
+        CampusMap map = campus(Set.of(1, 5));
+        Expedition round = new Expedition(map, map.landmarks().getFirst(), new Zone(at(1000, 75), 90), START, T0);
+        assertTrue(round.clueBuilding().isEmpty(), "only landmarks are photographed");
+    }
+
+    @Test void betaPlayerOnlyBeforeLaunch() {
+        CampusMap map = campus();
+        Expedition later = new Expedition(map, map.landmarks().getFirst(), new Zone(at(1000, 75), 90), START,
+                Achievement.BETA_ENDS);
+        later.check(Achievement.BETA_ENDS);
+        assertFalse(later.achievements().contains(Achievement.BETA_PLAYER));
+        assertTrue(round().achievements().contains(Achievement.BETA_PLAYER));
     }
 
     @Test void spendingTheOnlyCheckToFindTheZoneEarnsNoCheckBonus() {

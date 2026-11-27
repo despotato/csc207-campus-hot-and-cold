@@ -11,9 +11,11 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalDouble;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.random.RandomGenerator;
+import java.util.stream.DoubleStream;
 
 /**
  * One two-stage round. Stage one: walk freely around campus and use limited hot/cold checks to reach
@@ -74,9 +76,10 @@ public final class Expedition {
      * Out of {@link #MAX_SCORE}: route (400 at {@link #FULL_ROUTE_EFFICIENCY} or better, scaled below; the shortest
      * route assumes you already knew where the zone was) + identification (250/200/150 for guess 1/2/3) + hint bonus
      * (+0%, +50% or +100% of identification) + checks saved (up to 100; the check that finds the zone is free).
+     * A round that never finds the zone can still earn near-miss points (up to 100) for how close it came.
      */
     public record Score(int routePoints, double efficiency, int guessPoints, int hintBonus, int checkBonus,
-                        double multiplier, int total) {
+                        int nearMissPoints, double multiplier, int total) {
         public int identifyPoints() {
             return guessPoints + hintBonus;
         }
@@ -87,6 +90,9 @@ public final class Expedition {
     static final double FULL_ROUTE_EFFICIENCY = 0.8;
     static final int[] GUESS_POINTS = {250, 200, 150};
     static final int CHECK_POINTS = 100;
+    static final int NEAR_MISS_POINTS = 100;
+    /** Near-miss points fall from 100 just outside a check's reach of the zone to 0 this far out. */
+    static final double NEAR_MISS_METRES = 150;
 
     private final UUID id;
     private final Difficulty difficulty;
@@ -479,8 +485,57 @@ public final class Expedition {
         int saveable = difficulty.checks() - 1;
         int checkBonus = found && saveable > 0
                 ? (int) Math.round(CHECK_POINTS * (double) Math.min(saveable, checksRemaining()) / saveable) : 0;
-        return new Score(routePoints, efficiency, guessPoints, hintBonus, checkBonus, multiplier,
-                routePoints + guessPoints + hintBonus + checkBonus);
+        double shortBy = metresShortOfZone().orElse(Double.POSITIVE_INFINITY);
+        int nearMiss = (int) Math.round(NEAR_MISS_POINTS * Math.max(0, 1 - shortBy / NEAR_MISS_METRES));
+        return new Score(routePoints, efficiency, guessPoints, hintBonus, checkBonus, nearMiss, multiplier,
+                routePoints + guessPoints + hintBonus + checkBonus + nearMiss);
+    }
+
+    /**
+     * The building shown in the start-of-round photo, never the target; empty when the zone's clue candidates have no
+     * stored photo. The same for everyone on a daily. See {@link ZoneClue}.
+     */
+    public Optional<Integer> clueBuilding() {
+        return new ZoneClue(map, zone, target.buildingId()).building();
+    }
+
+    /** The start-of-round clue in words, about the photographed building if there is one. See {@link ZoneClue}. */
+    public Optional<String> clueText() {
+        return new ZoneClue(map, zone, target.buildingId()).text();
+    }
+
+    /** The badges this round has earned so far, in {@link Achievement} order. */
+    public List<Achievement> achievements() {
+        Score score = score();
+        List<Achievement> earned = new ArrayList<>();
+        if (startedAt.isBefore(Achievement.BETA_ENDS)) {
+            earned.add(Achievement.BETA_PLAYER);
+        }
+        if (score.nearMissPoints() > 0) {
+            earned.add(Achievement.ALMOST_ALMOST);
+        }
+        if (zoneReachedAt != null && checks.size() == 1) {
+            earned.add(Achievement.ABSOLUTE_ZERO);
+        }
+        if (score.total() == MAX_SCORE) {
+            earned.add(Achievement.SUPERNOVA);
+        }
+        return earned;
+    }
+
+    /**
+     * When the zone was never found: how far beyond a check's reach the zone was at the closest check (or the
+     * final search). Empty once the zone is found, or before anything has been checked.
+     */
+    public OptionalDouble metresShortOfZone() {
+        if (zoneReachedAt != null) {
+            return OptionalDouble.empty();
+        }
+        DoubleStream spots = checks.stream().mapToDouble(Check::metresToZone);
+        if (stage == Stage.FINISHED) {
+            spots = DoubleStream.concat(spots, DoubleStream.of(position.distanceTo(zone.centre())));
+        }
+        return spots.map(metres -> Math.max(0, metres - zone.radiusMetres() - PLAYER_RADIUS)).min();
     }
 
     /** Easy: only what anyone standing in the zone can see. */

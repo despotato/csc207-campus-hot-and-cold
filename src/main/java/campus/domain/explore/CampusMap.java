@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -15,6 +16,7 @@ public final class CampusMap {
     private final Map<java.time.LocalDate, DailyPuzzle> daily;
     private final Map<Integer, Building> buildings;
     private final List<CampusLandmark> landmarks;
+    private final Set<Integer> cluePhotos;
     private final OpenSpace openSpace;
 
     /**
@@ -82,6 +84,13 @@ public final class CampusMap {
 
     public CampusMap(String id, String name, java.time.ZoneId timezone, Map<java.time.LocalDate, DailyPuzzle> daily,
                      List<Building> buildings, List<CampusLandmark> landmarks, OpenSpace openSpace) {
+        this(id, name, timezone, daily, buildings, landmarks, openSpace, Set.of());
+    }
+
+    /** {@code cluePhotos}: buildings with a stored street photo, shown as the start-of-round clue. */
+    public CampusMap(String id, String name, java.time.ZoneId timezone, Map<java.time.LocalDate, DailyPuzzle> daily,
+                     List<Building> buildings, List<CampusLandmark> landmarks, OpenSpace openSpace,
+                     Set<Integer> cluePhotos) {
         if (id == null || id.isBlank() || name == null || name.isBlank() || landmarks.isEmpty()) {
             throw new IllegalArgumentException("A campus needs an ID, a name and landmarks.");
         }
@@ -92,6 +101,7 @@ public final class CampusMap {
         this.buildings = buildings.stream().collect(Collectors.toUnmodifiableMap(Building::id, Function.identity()));
         this.landmarks = List.copyOf(landmarks);
         this.openSpace = Objects.requireNonNull(openSpace);
+        this.cluePhotos = Set.copyOf(cluePhotos);
         for (CampusLandmark landmark : landmarks) {
             if (!this.buildings.containsKey(landmark.buildingId())) {
                 throw new IllegalArgumentException("Landmark " + landmark.name() + " has no building.");
@@ -144,6 +154,11 @@ public final class CampusMap {
     public double metresFromCampus(GeoPoint point) {
         return landmarks.stream().mapToDouble(landmark -> buildingOf(landmark).centre().distanceTo(point))
                 .min().orElse(Double.POSITIVE_INFINITY);
+    }
+
+    /** Whether the building has a stored street photo for the start-of-round clue. */
+    public boolean hasCluePhoto(int buildingId) {
+        return cluePhotos.contains(buildingId);
     }
 
     /** Buildings whose centre lies inside the zone: the choices for stage two. */

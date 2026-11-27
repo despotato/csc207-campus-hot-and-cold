@@ -3,6 +3,7 @@ package campus.infrastructure;
 import campus.application.explore.ExpeditionResultRepository;
 import campus.application.explore.ExploreResponse;
 import campus.application.explore.SavedExpedition;
+import campus.domain.explore.Achievement;
 import campus.domain.explore.Expedition;
 import campus.domain.explore.Expedition.HintLevel;
 import campus.domain.explore.GeoPoint;
@@ -187,6 +188,7 @@ public record FileExpeditionResultRepository(Path directory) implements Expediti
     private static boolean validScore(ExploreResponse.Result result) {
         return !negative(result.routePoints()) && !negative(result.guessPoints())
                 && !negative(result.hintBonus()) && !negative(result.checkBonus())
+                && !negative(result.nearMissPoints())
                 && !negative(result.score()) && result.score() <= 1000;
     }
 
@@ -194,7 +196,8 @@ public record FileExpeditionResultRepository(Path directory) implements Expediti
         return finiteRange(result.efficiency(), 0, 1)
                 && finiteRange(result.multiplier(), 0, Double.MAX_VALUE)
                 && finiteAtLeastZero(result.metresWalked())
-                && finiteAtLeastZero(result.shortestMetres());
+                && finiteAtLeastZero(result.shortestMetres())
+                && (result.metresShort() == null || finiteAtLeastZero(result.metresShort()));
     }
 
     private static boolean textMissing(String value) {
@@ -238,6 +241,8 @@ public record FileExpeditionResultRepository(Path directory) implements Expediti
         saved.put("guessPoints", result.guessPoints());
         saved.put("hintBonus", result.hintBonus());
         saved.put("checkBonus", result.checkBonus());
+        saved.put("nearMissPoints", result.nearMissPoints());
+        saved.put("metresShort", result.metresShort());
         saved.put("multiplier", result.multiplier());
         saved.put("score", result.score());
         saved.put("metresWalked", result.metresWalked());
@@ -251,6 +256,7 @@ public record FileExpeditionResultRepository(Path directory) implements Expediti
         saved.put("route", points(result.route()));
         saved.put("shortestRoute", points(result.shortestRoute()));
         saved.put("checks", result.checks().stream().map(FileExpeditionResultRepository::checkJson).toList());
+        saved.put("achievements", result.achievements().stream().map(Enum::name).toList());
         if (result.summary() != null) {
             saved.put("summary", Map.of("title", result.summary().title(), "extract", result.summary().extract(),
                     "imageUrl", result.summary().imageUrl() == null ? "" : result.summary().imageUrl(),
@@ -285,15 +291,22 @@ public record FileExpeditionResultRepository(Path directory) implements Expediti
         }
         Object seconds = saved.get("secondsToZone");
         Object hint = saved.get("hintLevel");
+        Object metresShort = saved.get("metresShort");
+        List<Achievement> achievements = saved.containsKey("achievements")
+                ? Json.array(saved.get("achievements")).stream()
+                .map(item -> Achievement.valueOf(asText(item))).toList()
+                : List.of();
         return new ExploreResponse.Result(bool(saved, "won"), text(saved, "targetName"), text(saved, "category"),
                 integer(saved, "targetBuildingId"), point(saved.get("targetCentre")),
                 integer(saved, "routePoints"), number(saved, "efficiency"), integer(saved, "guessPoints"),
-                integer(saved, "hintBonus"), integer(saved, "checkBonus"), number(saved, "multiplier"),
+                integer(saved, "hintBonus"), integer(saved, "checkBonus"),
+                saved.containsKey("nearMissPoints") ? integer(saved, "nearMissPoints") : 0,
+                metresShort == null ? null : Json.number(metresShort), number(saved, "multiplier"),
                 integer(saved, "score"), number(saved, "metresWalked"), number(saved, "shortestMetres"),
                 seconds == null ? null : asLong(seconds), integer(saved, "checksUsed"), integer(saved, "guessesUsed"),
                 hint == null ? null : HintLevel.valueOf(asText(hint)),
                 new ExploreResponse.ZoneView(point(zone.get("centre")), number(zone, "radius")),
-                points(saved.get("route")), points(saved.get("shortestRoute")), checks, summary);
+                points(saved.get("route")), points(saved.get("shortestRoute")), checks, achievements, summary);
     }
 
     private static List<Double> point(GeoPoint point) {
