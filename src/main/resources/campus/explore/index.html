@@ -2942,6 +2942,20 @@ const LocalRules = (() => {
     const name = round.target.name.trim(), words = name.split(/\s+/).length;
     return `Its name starts with "${name[0].toUpperCase()}" and is ${words === 1 ? 'one word' : words + ' words'} long.`;
   }
+  /** Normal's fallback (mirrors Expedition.campusLife): what students go there for, never a spelling clue. */
+  const CAMPUS_LIFE = {
+    Library: 'Students go there to study and borrow books.',
+    Residence: 'Students live there during the school year.',
+    College: 'Students belong to it as members of a college, with its own common rooms and events.',
+    Athletics: 'Students go there to work out, train, or watch a game.',
+    'Campus life': 'Students go there for services, food, or clubs rather than classes.',
+  };
+  const listed = items => items.length === 1 ? items[0]
+    : items.slice(0, -1).join(', ') + (items.length > 2 ? ',' : '') + ' and ' + items[items.length - 1];
+  function campusLife(t) {
+    if ((t.services || []).length) return `Students go there for ${listed(t.services)}.`;
+    return CAMPUS_LIFE[t.category] || 'Students go there for lectures, labs, and tutorials.';
+  }
   async function hint(body) {
     if (round.stage === 'finished') return fail('This round is over.');
     if (round.stage !== 'identify') return fail('Check inside the zone to find it first.');
@@ -2957,7 +2971,7 @@ const LocalRules = (() => {
       // Keep levels distinct: normal uses the best-known fact only when another is left for hard.
       const fact = level === 'hard' ? (list.length === 1 ? list[0] : list[1] || null) : list.length >= 2 ? list[0] : null;
       text = level === 'normal' ? `It's ${article}${category} building. `
-        + (fact || `Its name starts with "${t.name[0].toUpperCase()}".`)
+        + (fact || campusLife(t))
         : (fact || history());
     }
     round.hint = level;

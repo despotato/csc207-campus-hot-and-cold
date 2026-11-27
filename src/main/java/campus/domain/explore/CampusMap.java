@@ -42,13 +42,23 @@ public final class CampusMap {
      * A building that can be the hidden target. {@code facts} are reviewed facts about it (name blanked), best known
      * first then historical, stored in the campus pack so every player sees the same hints.
      */
+    /**
+     * A possible target. {@code facts}: reviewed hint facts, best known first. {@code services}: what students go
+     * there for, from the services mapped inside it (e.g. "coffee", "the bookstore"), never naming them.
+     */
     public record CampusLandmark(int id, int buildingId, String name, String category, String wikipediaTitle,
-                                 List<String> facts) {
+                                 List<String> facts, List<String> services) {
         public CampusLandmark {
             if (id <= 0 || name == null || name.isBlank() || category == null || category.isBlank()) {
                 throw new IllegalArgumentException("A landmark needs an ID, name, and category.");
             }
             facts = facts == null ? List.of() : List.copyOf(facts);
+            services = services == null ? List.of() : List.copyOf(services);
+        }
+
+        public CampusLandmark(int id, int buildingId, String name, String category, String wikipediaTitle,
+                              List<String> facts) {
+            this(id, buildingId, name, category, wikipediaTitle, facts, List.of());
         }
 
         public CampusLandmark(int id, int buildingId, String name, String category, String wikipediaTitle) {

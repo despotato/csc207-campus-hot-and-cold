@@ -114,7 +114,7 @@ out geom;
 4. **Hint facts (required for good hints).** Hard hints must be campus history and normal hints what students
    know, never a size or location clue. For each landmark, add `"facts": [...]` in the config: up to two
    sentences, the well-known one first (normal hint), then a historical one (hard hint). With one fact, hard uses
-   it and normal falls back to the first letter. Draw them from the building's Wikipedia article or articles that
+   it and normal falls back to what students go there for (`services`, see below, else the category). Draw them from the building's Wikipedia article or articles that
    mention it by its full name; rewrite them to stand alone; never include the building's name or a distinctive
    word from it (write `____` instead); check every claim. Leave a landmark without facts rather than guess.
    Apply them with `python3 -I tools/apply_facts.py tools/campuses/<id>.json src/main/resources/campus/packs/<id>.json`.
@@ -124,7 +124,8 @@ out geom;
    run the repair step again.
    Label the unnamed buildings (most OSM buildings have no name) with
    `python3 tools/apply_building_labels.py src/main/resources/campus/packs/<id>.json`: it adds `label` (another OSM
-   name or a business inside) and `address` ("123 Street", else "House on Street"), which the guess tooltip shows.
+   name or a business inside) and `address` ("123 Street", else "House on Street"), which the guess tooltip shows,
+   and gives landmarks `services` (what students go there for: coffee, the bookstore...) for the normal hint.
    Then pick the clue views with `python3 tools/fetch_clue_photos.py <pack>` (docs/CLUE_PHOTOS.md).
 5. Add the campus to `src/main/resources/campus/packs/index.json` (`file` must match `[a-z0-9-]+\.json`). Order
    matters: the first entry is the default campus.

@@ -255,13 +255,36 @@ class ExpeditionTest {
                 "hard never falls back to a size clue");
         Expedition single = round();
         reachZone(single);
-        assertEquals("It's a library building. Its name starts with \"T\".",
+        assertEquals("It's a library building. Students go there to study and borrow books.",
                 single.chooseHint(HintLevel.NORMAL, target -> List.of("A film crew used its roof in 2009.")),
                 "a single fact is kept for hard, so normal and hard never repeat each other");
         Expedition student = round();
         reachZone(student);
-        assertEquals("It's a library building. Its name starts with \"T\".",
-                student.chooseHint(HintLevel.NORMAL, target -> List.of()), "normal fallback: what students know");
+        assertEquals("It's a library building. Students go there to study and borrow books.",
+                student.chooseHint(HintLevel.NORMAL, target -> List.of()), "normal fallback: what it's used for");
+    }
+
+    @Test void normalFallsBackToTheServicesInsideAndNeverToASpellingClue() {
+        CampusMap base = campus();
+        List<CampusMap.Building> buildings = java.util.stream.IntStream.rangeClosed(1, 6)
+                .mapToObj(id -> base.building(id).orElseThrow()).toList();
+        var landmarks = List.of(new CampusMap.CampusLandmark(1, 1, "Target Hall", "Teaching", null, List.of(),
+                List.of("coffee", "the bookstore", "printing")));
+        CampusMap map = new CampusMap("Test campus", buildings, landmarks, base.openSpace());
+        Expedition round = new Expedition(map, landmarks.getFirst(), new Zone(at(1000, 75), 90), START, T0);
+        reachZone(round);
+        assertEquals("It's a teaching building. Students go there for coffee, the bookstore, and printing.",
+                round.chooseHint(HintLevel.NORMAL, target -> List.of()));
+        assertEquals("coffee and printing", Expedition.listed(List.of("coffee", "printing")));
+        for (String category : List.of("Library", "Residence", "College", "Athletics", "Campus life", "Teaching")) {
+            var plain = new CampusMap.CampusLandmark(1, 1, "Target Hall", category, null);
+            CampusMap other = new CampusMap("Test campus", buildings, List.of(plain), base.openSpace());
+            Expedition r = new Expedition(other, plain, new Zone(at(1000, 75), 90), START, T0);
+            reachZone(r);
+            String hint = r.chooseHint(HintLevel.NORMAL, target -> List.of());
+            assertFalse(hint.contains("starts with") || hint.contains("words"), hint);
+            assertTrue(hint.contains("Students"), hint);
+        }
     }
 
     @Test void hardHintFallsBackToRecordedHistory() {

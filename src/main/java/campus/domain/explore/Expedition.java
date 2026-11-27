@@ -417,7 +417,7 @@ public final class Expedition {
                     .toList();
             if (!safe.isEmpty()) {
                 // Keep the levels distinct: normal uses the best-known fact only when another is left for hard;
-                // with a single fact, hard gets it and normal falls back to the first letter.
+                // with a single fact, hard gets it and normal falls back to what the building is used for.
                 if (level == HintLevel.HARD) {
                     outsideClue = safe.size() == 1 ? safe.getFirst() : safe.get(1);
                 } else if (safe.size() >= 2) {
@@ -438,13 +438,41 @@ public final class Expedition {
         return Optional.of(switch (hintLevel) {
             case EASY -> appearance() + " " + nameClue();
             // Normal is what students know: no location clue (only easy, which describes what you can see).
+            // Never a spelling clue (initials, word counts): that's not what students know a building by.
             case NORMAL -> "It's " + article + category + " building. " + (outsideClue != null ? outsideClue
-                    : "Its name starts with \"" + Character.toUpperCase(target.name().charAt(0)) + "\".");
+                    : campusLife());
             case HARD -> outsideClue != null ? outsideClue : recordedHistory();
         });
     }
 
-    /** A spatial clue for the easier hints, including when an encyclopedia fact is vague. */
+    /**
+     * Normal's fallback when there is no second reviewed fact: what students go there for, from the services mapped
+     * inside it, else what buildings of its kind are for.
+     */
+    private String campusLife() {
+        List<String> services = target.services();
+        if (!services.isEmpty()) {
+            return "Students go there for " + listed(services) + ".";
+        }
+        return switch (target.category()) {
+            case "Library" -> "Students go there to study and borrow books.";
+            case "Residence" -> "Students live there during the school year.";
+            case "College" -> "Students belong to it as members of a college, with its own common rooms and events.";
+            case "Athletics" -> "Students go there to work out, train, or watch a game.";
+            case "Campus life" -> "Students go there for services, food, or clubs rather than classes.";
+            default -> "Students go there for lectures, labs, and tutorials.";
+        };
+    }
+
+    /** "a", "a and b", "a, b, and c". */
+    static String listed(List<String> items) {
+        if (items.size() == 1) {
+            return items.getFirst();
+        }
+        return String.join(", ", items.subList(0, items.size() - 1)) + (items.size() > 2 ? "," : "") + " and "
+                + items.getLast();
+    }
+
     /** Easy's name clue: the first letter and how many words the name has (never where it is). */
     private String nameClue() {
         int words = target.name().trim().split("\\s+").length;

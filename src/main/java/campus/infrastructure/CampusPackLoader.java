@@ -73,9 +73,11 @@ public final class CampusPackLoader {
             Map<String, Object> landmark = Json.object(item);
             List<String> facts = landmark.get("facts") instanceof List<?> list
                     ? list.stream().map(String::valueOf).toList() : List.of();
+            List<String> services = landmark.get("services") instanceof List<?> list
+                    ? list.stream().map(String::valueOf).toList() : List.of();
             landmarks.add(new CampusLandmark((int) Json.number(landmark.get("id")),
                     (int) Json.number(landmark.get("building")), (String) landmark.get("name"),
-                    (String) landmark.get("category"), (String) landmark.get("wikipedia"), facts));
+                    (String) landmark.get("category"), (String) landmark.get("wikipedia"), facts, services));
         }
         Map<LocalDate, CampusMap.DailyPuzzle> daily = new HashMap<>();
         if (pack.get("daily") instanceof Map<?, ?> schedule) {
