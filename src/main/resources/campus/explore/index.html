@@ -74,6 +74,8 @@
   #toast { position: fixed; left: 50%; top: 22%; transform: translateX(-50%); text-align: center; pointer-events: none;
     font-size: 40px; text-shadow: 4px 4px 0 #000a; transition: opacity 300ms; }
   #toast small { display: block; font-size: 16px; margin-top: 6px; }
+  /* Check readings are sentences ("Cold · Search east from here"): smaller, and wrapped within the screen. */
+  #toast.long { font-size: clamp(18px, 4.2vw, 30px); width: min(720px, calc(100vw - 32px)); }
   #vignette { position: fixed; inset: 0; pointer-events: none; opacity: 0; transition: opacity 600ms; }
   #banner { position: fixed; top: 12px; left: 50%; transform: translateX(-50%); max-width: min(680px, 92vw); text-align: center; }
   #banner .hint { color: var(--gold); margin-top: 4px; }
@@ -3812,6 +3814,7 @@ function toast(title, heat, detail = '') {
   const t = $('toast');
   t.style.color = HEAT_COLORS[heat] || '#fff8e7';
   t.textContent = title;
+  t.classList.toggle('long', title.length > 16);
   const small = document.createElement('small');
   small.style.color = '#fff8e7';
   small.textContent = detail;
