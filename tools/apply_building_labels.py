@@ -50,7 +50,7 @@ NOT_A_PLACE = {"atm", "vending_machine", "bench", "bicycle_parking", "parking_en
 STREETS = {"primary", "secondary", "tertiary", "residential", "unclassified", "living_street", "pedestrian",
            "service", "trunk", "primary_link", "secondary_link", "tertiary_link"}
 STREET_REACH = 80   # metres: further than this from any named street, the address names a nearby building instead
-NAMED_REACH = 150
+NAMED_REACH = 400
 KINDS = {"house": "House", "detached": "House", "semidetached_house": "House", "terrace": "Row houses",
          "bungalow": "House", "apartments": "Apartment building", "residential": "Residential building",
          "dormitory": "Residence", "garage": "Garage", "garages": "Garages", "carport": "Carport", "shed": "Shed",
@@ -76,7 +76,7 @@ def overpass(query):
         try:
             with urllib.request.urlopen(request, timeout=300) as response:
                 return json.load(response)
-        except urllib.error.URLError as error:   # busy (429/504) or a dropped connection: back off, other server
+        except (urllib.error.URLError, TimeoutError, ConnectionError) as error:   # busy (429/504) or a dropped connection: back off, other server
             if "CERTIFICATE" in str(error):
                 sys.exit(f"{error}: pip install certifi")
             wait = 20 * (attempt + 1)
@@ -151,7 +151,7 @@ def main():
     streets = []
     for e in elements:
         tags = e.get("tags", {})
-        if e["type"] == "way" and tags.get("highway") in STREETS and "geometry" in e:
+        if e["type"] == "way" and tags.get("highway") in STREETS and tags.get("name") and "geometry" in e:
             line = [xy(p["lon"], p["lat"]) for p in e["geometry"]]
             streets.append((tags["name"], line))
 
