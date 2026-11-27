@@ -104,13 +104,16 @@
     z-index: 7; display: grid; gap: 4px; padding: 8px 12px; }
   body:has(#mapTitle:not(.hidden)) #coach { top: 112px; }
   #coach.hidden { display: none; }
+  /* Stage 2: the hint banner takes the top centre, so the coach moves to the bottom. */
+  #coach.low { top: auto; bottom: 16px; }
   #coach .head { display: flex; justify-content: space-between; align-items: center; color: var(--gold); font-size: 10px; }
   #coach p { margin: 0; font-size: 14px; line-height: 1.4; }
   #coachDone { justify-self: end; }
   #coachDone.hidden, #coachSkip.hidden { display: none; }
   /* Phones: under the HUD, so the compass, clue tab and buttons along the bottom stay in view. */
   @media (max-width: 640px) { #coach { top: 104px; padding: 6px 10px; } #coach p { font-size: 12px; }
-    body:has(#mapTitle:not(.hidden)) #coach { top: 104px; } }
+    body:has(#mapTitle:not(.hidden)) #coach, #coach.low { top: 104px; bottom: auto; }
+    body:has(#hintScreen:not(.hidden)) #coach { display: none; } }   /* the hint cards fill the screen and say the same */
   #pinTag { position: fixed; left: 0; top: 0; white-space: nowrap; font-size: 11px; padding: 4px 8px; z-index: 5;
     background: #1b1f3aee; border: 2px solid var(--gold); color: var(--gold); cursor: pointer; box-shadow: none; }
   #pinTag.hidden { display: none; }
@@ -2282,7 +2285,8 @@ function enterZone(zone) {
   hide('mapBtn');
   hide('checkBtn');
   game.phase = 'zone'; game.zone = zone; game.zoneAt = performance.now(); game.keys = {}; game.autopilot = null;
-  if ($('clueCard').classList.contains('pinned')) pinClue();
+  // The zone photo has done its job: put it away so it can't cover the hint banner (on phones it sat on top of it).
+  hide('clueCard'); hide('clueThumb');
   game.preview = null; drawPin(); setCompassHint(null); hide('controlsBtn'); hide('help');
   hide('help');
   map.getSource('zone').setData(fc([{ type: 'Feature', properties: {},
@@ -2556,8 +2560,8 @@ function pinClue() {
   if (!game.cluePhoto && !game.clueText) return;
   $('clueCard').classList.add('pinned');
   $('clueCard').setAttribute('aria-modal', 'false');
-  // Once the zone is found the photo has done its job: it folds into the corner there too.
-  if (PHONE.matches || game.phase !== 'walk') { hide('clueCard'); show('clueThumb'); } else { show('clueCard'); hide('clueThumb'); }
+  if (game.phase !== 'walk') { hide('clueCard'); hide('clueThumb'); }   // zone found: no longer needed
+  else if (PHONE.matches) { hide('clueCard'); show('clueThumb'); } else { show('clueCard'); hide('clueThumb'); }
 }
 function openClueCard() {
   if (!game.cluePhoto && !game.clueText) return Promise.resolve();
@@ -3628,15 +3632,18 @@ function restoreDailyRun(run) {
 // It runs on the browser's copy of the rules (LocalRules), so nothing reaches the Java app: no Daily attempt, no
 // saved result or history, and its badges aren't kept.
 const practice = { on: false };
+// Seen once it's finished or skipped (a new key: the earlier, unguided practice set 'practiced').
+const PRACTICE_SEEN = 'guidedPractice';
 /** First Start on this device opens the guided practice (it can be skipped); later Starts go straight in. */
 function play() {
-  if (!store.get('practiced') && !DEBUG) startRound(true); else startRound();
+  if (!store.get(PRACTICE_SEEN) && !DEBUG) startRound(true); else startRound();
 }
 function coach(step, text, done = false) {
   $('coachStep').textContent = `Practice · step ${step} of 7`;
   $('coachText').textContent = text;
   $('coachDone').classList.toggle('hidden', !done);
   $('coachSkip').classList.toggle('hidden', done);
+  $('coach').classList.toggle('low', game.phase !== 'walk');
   show('coach');
 }
 function coachEvent(event, b) {
@@ -3656,7 +3663,7 @@ function coachEvent(event, b) {
 }
 /** Leaves the practice: the page starts fresh and goes straight into a real round. */
 function endPractice() {
-  store.set('practiced', '1');
+  store.set(PRACTICE_SEEN, '1');
   try { sessionStorage.setItem('autostart', '1'); } catch (e) { /* storage blocked: back to the title screen */ }
   location.reload();
 }
@@ -3667,7 +3674,6 @@ $('practiceBtn').addEventListener('click', () => { if (game.phase === 'title') s
 async function startRound(practiceRound = false) {
   if (game.phase !== 'title' || $('startBtn').disabled) return;
   practice.on = practiceRound === true;
-  if (practice.on) store.set('practiced', '1');
   if (!practice.on && chosenMode === 'daily' && !STATIC && serverDaily?.status === 'inProgress') {
     game.phase = 'starting';   // Enter on the focused button also clicks it: only one resume may run
     const r = await api('resumeDaily', { campus: pack.id });
