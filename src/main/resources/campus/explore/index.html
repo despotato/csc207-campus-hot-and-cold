@@ -59,7 +59,7 @@
   #mapBtn { position: fixed; right: 12px; bottom: 150px; font-size: 16px; padding: 10px 14px; text-align: left; }
   #mapBtn small { display: block; font-size: 10px; margin-top: 2px; }
   #mapBtn.pulse { animation: pulse 900ms steps(2) infinite; }
-  #checkBtn { display: none; position: fixed; left: 12px; bottom: max(16px, env(safe-area-inset-bottom));
+  #checkBtn { display: block; position: fixed; left: 12px; bottom: max(16px, env(safe-area-inset-bottom));
     min-width: 116px; min-height: 52px; touch-action: manipulation; }
   @keyframes pulse { 50% { box-shadow: 0 0 0 6px #ffd23f99, 0 4px 0 var(--ink); } }
   #travelCursor { position: fixed; left: 0; top: 0; pointer-events: none; padding: 4px 8px; font-size: 11px;
@@ -99,16 +99,27 @@
   #stages { font-size: 9px; display: flex; gap: 4px; align-items: center; white-space: nowrap; }
   #stages b { opacity: .45; font-weight: normal; }
   #stages b.on { opacity: 1; color: var(--gold); font-weight: bold; }
-  #coach { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); width: min(480px, calc(100vw - 24px));
-    z-index: 7; display: grid; gap: 6px; }
+  /* Practice coach: one short line at a time, top centre (below the map panel when the map is open). */
+  #coach { position: fixed; left: 50%; top: 12px; transform: translateX(-50%); width: min(520px, calc(100vw - 24px));
+    z-index: 7; display: grid; gap: 4px; padding: 8px 12px; }
+  body:has(#mapTitle:not(.hidden)) #coach { top: 112px; }
   #coach.hidden { display: none; }
-  #coach small { color: var(--gold); font-size: 10px; }
-  #coach p { margin: 0; font-size: 14px; line-height: 1.45; }
-  #coach .buttons { display: flex; gap: 8px; justify-content: flex-end; }
-  #practiceMark { position: fixed; left: 0; top: 0; width: 34px; height: 34px; margin: -17px 0 0 -17px; border-radius: 50%;
-    border: 4px dashed var(--gold); pointer-events: none; animation: pulse 900ms steps(2) infinite; z-index: 4; }
-  #practiceMark.hidden { display: none; }
-  @media (max-width: 640px) { #coach { bottom: calc(max(16px, env(safe-area-inset-bottom)) + 84px); } #coach p { font-size: 12px; } }
+  #coach .head { display: flex; justify-content: space-between; align-items: center; color: var(--gold); font-size: 10px; }
+  #coach p { margin: 0; font-size: 14px; line-height: 1.4; }
+  #coachDone { justify-self: end; }
+  #coachDone.hidden, #coachSkip.hidden { display: none; }
+  /* Phones: under the HUD, so the compass, clue tab and buttons along the bottom stay in view. */
+  @media (max-width: 640px) { #coach { top: 104px; padding: 6px 10px; } #coach p { font-size: 12px; }
+    body:has(#mapTitle:not(.hidden)) #coach { top: 104px; } }
+  #pinTag { position: fixed; left: 0; top: 0; white-space: nowrap; font-size: 11px; padding: 4px 8px; z-index: 5;
+    background: #1b1f3aee; border: 2px solid var(--gold); color: var(--gold); cursor: pointer; box-shadow: none; }
+  #pinTag.hidden { display: none; }
+  #previewPin span:empty { display: none; }
+  #controlsBtn { position: fixed; right: 92px; bottom: 82px; font-size: 11px; padding: 6px 10px; }
+  #controlsBtn.hidden { display: none; }
+  #compassHint { position: absolute; left: 50%; top: 50%; width: 20px; margin: -10px 0 0 -10px; text-align: center; font-size: 11px;
+    line-height: 16px; color: var(--ink); background: var(--gold); border: 2px solid var(--ink); }
+  #compassHint.hidden { display: none; }
   #mapCheck:disabled { opacity: .5; }
   @keyframes fill { to { width: 100%; } }
 
@@ -272,7 +283,7 @@
     #results .buttons { margin-top: 8px; flex-wrap: nowrap; }
     #results .buttons button { flex: 1; padding: 8px 6px; font-size: 11px; }
   }
-  @media (pointer: coarse) { #checkBtn { display: block; } }
+  @media (pointer: coarse) { #checkBtn { display: block; } #controlsBtn { display: none; } }   /* no keys to explain on touch */
   /* Landscape phones: short screens keep Start in view and squeeze the score sheet. */
   @media (max-height: 500px) {
     #title .rules, #title .controls:not(#difficulty) { display: none; }
@@ -346,8 +357,8 @@
   <div class="row"><span>Checks</span><span id="pips"></span></div>
 </div>
 <div id="log" class="panel hidden"><h3>Checks</h3><ol id="checks"></ol><p id="nochecks">None yet. Press <kbd>Space</kbd>.</p></div>
-<div id="compass" class="hidden" title="North"><span id="needle">▲N</span></div>
-<button id="mapBtn" class="hidden" title="Open the campus map and travel">🗺 Travel <kbd>M</kbd><small>Open the map, click where to go</small></button>
+<div id="compass" class="hidden" title="North"><span id="needle">▲N</span><span id="compassHint" class="hidden"></span></div>
+<button id="mapBtn" class="hidden" title="Open the campus map">🗺 Map <kbd>M</kbd><small>For longer trips</small></button>
 <button id="checkBtn" class="hidden" type="button" aria-label="Check the temperature">Check</button>
 <div id="travelCursor" class="hidden"></div>
 <div id="checkLabels"></div>
@@ -356,9 +367,10 @@
 </div>
 <div id="mapTitle" class="panel hidden"><span>Campus map<small class="keys">Click a spot to preview it, click the pin again to move · scroll to zoom</small><small class="taps">Tap a spot to preview it, tap the pin again to move</small></span><span id="mapActions"><button id="mapCheck" type="button">Check this spot <kbd>Space</kbd></button><button id="mapBack" class="secondary" type="button">Look around</button></span></div>
 <div id="previewPin" class="hidden"><i></i><span></span></div>
-<div id="practiceMark" class="hidden"></div>
-<div id="coach" class="panel hidden" role="status"><small>Practice · not scored, not saved</small><p id="coachText"></p>
-  <div class="buttons"><button id="coachSkip" class="secondary" type="button">Skip practice</button><button id="coachPlay" class="hidden" type="button">Start the real round</button></div></div>
+<button id="pinTag" class="hidden" type="button"></button>
+<button id="controlsBtn" class="secondary hidden" type="button">Controls <kbd>Esc</kbd></button>
+<div id="coach" class="panel hidden" role="status"><div class="head"><span id="coachStep"></span><button id="coachSkip" class="link" type="button">Skip practice</button></div>
+  <p id="coachText"></p><button id="coachDone" class="hidden" type="button">Start a real round</button></div>
 <div id="toast"></div>
 <div id="banner" class="panel hidden"><div id="bannerText"></div><div class="hint" id="bannerHint"></div></div>
 <div id="tip" class="panel hidden"></div>
@@ -394,7 +406,7 @@
     </div>
     <!-- Difficulty selector: the start request already sends { difficulty }. See the team task "Difficulty levels". -->
     <div id="difficulty" data-value="normal" class="controls">Difficulty: Normal</div>
-    <div class="buttons"><button id="startBtn" autofocus>Start <kbd>Enter</kbd></button><button id="viewDailyResult" class="secondary hidden">View today's result</button><button id="historyBtn" class="secondary hidden">History</button><button id="tutorialBtn" class="secondary">How to play</button><button id="practiceBtn" class="secondary">Practice</button><button id="achievementsBtn" class="secondary">Achievements</button></div>
+    <div class="buttons"><button id="startBtn" autofocus>Start <kbd>Enter</kbd></button><button id="viewDailyResult" class="secondary hidden">View today's result</button><button id="historyBtn" class="secondary hidden">History</button><button id="tutorialBtn" class="secondary">How to play</button><button id="practiceBtn" class="secondary">Guided practice</button><button id="achievementsBtn" class="secondary">Achievements</button></div>
     <p id="loading">Loading campus…</p>
   </div>
 </section>
@@ -605,7 +617,7 @@ window.game = game;
 
 async function api(action, body = {}) {
   if (action !== 'start' && action !== 'history' && action !== 'recap') body = { ...body, round: game.roundId };
-  if (STATIC) return LocalRules.handle(action, body);
+  if (STATIC || practice.on) return LocalRules.handle(action, body);   // practice never reaches the Java app
   const response = await fetch('/api/' + action, { method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body) });
   let data = {};
@@ -1503,7 +1515,7 @@ function addGameLayers() {
     'fill-extrusion-height': ['get', 'h'], 'fill-extrusion-base': ['get', 'base'], 'fill-extrusion-opacity': 0 } });
   map.addLayer(buildingLayer());
 
-  for (const id of ['markers', 'beacon', 'avatar']) {
+  for (const id of ['markers', 'pin', 'beacon', 'avatar']) {
     map.addSource(id, { type: 'geojson', data: fc([]) });
     map.addLayer({ id, type: 'fill-extrusion', source: id, paint: {
       'fill-extrusion-color': ['get', 'color'], 'fill-extrusion-height': ['get', 'top'], 'fill-extrusion-base': ['get', 'base'],
@@ -2001,7 +2013,6 @@ function checkHeadline(b) {
 }
 async function doCheck() {
   if (game.phase !== 'walk' || game.travelling || game.checking) return;
-  if (practice.on) { practiceCheck(); return; }   // practice checks never run out or reach the server
   if (game.checksLeft <= 0 && !(game.armedSearch && performance.now() - game.armedSearch < 3000)) {
     game.armedSearch = performance.now();
     toast('FINAL SEARCH?', 'warm', 'Press Space or tap Check again. If the zone isn\'t here, the round ends.');
@@ -2024,6 +2035,7 @@ async function doCheck() {
       li.style.color = '#ffd23f'; li.textContent = `#${b.number} IN THE ZONE!`;
       flashVignette('#ffd23f');
       enterZone(b.zone);
+      coachEvent('zone');
     } else if (b.finalSearch) {
       li.style.color = '#6f8cff'; li.textContent = `#${b.number} FINAL SEARCH: NOT HERE`;
       toast('NOT HERE', 'cold', 'The zone was elsewhere.');
@@ -2035,6 +2047,8 @@ async function doCheck() {
       flashVignette(HEAT_COLORS[b.heat]);
       li.style.color = HEAT_COLORS[b.heat];
       li.textContent = `#${b.number} ${checkHeadline(b)} · ${b.temperature}°C${delta}`;
+      if (b.direction) setCompassHint(b.direction, b.point);
+      coachEvent('checked', b);
     }
     $('checks').append(li); $('nochecks').classList.add('hidden');
     if (game.mapView && game.phase === 'walk') drawMapOverlays();
@@ -2084,11 +2098,9 @@ function toggleMapView(force) {
     fitBounds([[Math.min(...lons), Math.min(...lats)], [Math.max(...lons), Math.max(...lats)]],
       () => ({ padding: mapPadding(), pitch: 0, bearing: 0, duration: 900 }));
   } else {
-    game.preview = null;
     map.getCanvas().style.cursor = '';
     map.getSource('routes').setData(fc([]));
     map.moveLayer('routes-casing', 'routes-shortest'); map.moveLayer('routes', 'routes-shortest');
-    show('help');
     drawAvatar();
     flyTo({ center: game.pos, zoom: LOOK_ZOOM, pitch: 55, bearing: game.camBearing, duration: 700 });
     lookAroundMode();
@@ -2117,64 +2129,86 @@ function drawAvatar() {
 }
 const pitchFor = zoom => 50 + (zoom - ZOOM_MIN) * 4;
 
-// ---------- travel: tap a spot to preview it, tap the pin again to move ----------
-const PIN_REACH_PX = 30;
-/** Open ground within a few metres of a spot on a roof, so a tap just beside a path still lands on it. */
+// ---------- travel: tap the ground to drop a pin, tap the pin again to walk there ----------
+const PIN_HEIGHT = 14;   // metres: a gold post with a diamond on top, taller than the mascot
+/** Open ground within a few metres of a spot on a roof (on the flat map, where taps can land on roofs). */
 function nearbyOpen(p, metres = 12) {
   for (let r = 1.5; r <= metres; r += 1.5) {
     for (let h = 0; h < 360; h += 20) { const q = offsetPt(p, h, r); if (isOpen(q)) return q; }
   }
   return null;
 }
+/** In 3D a tap on a wall lands on the ground behind it: step back towards you to the open ground in front. */
+function inFrontOf(p) {
+  const d = distOf(p, game.pos), back = bearingOf(p, game.pos);
+  for (let m = 1.5; m < d; m += 1.5) { const q = offsetPt(p, back, m); if (isOpen(q)) return q; }
+  return nearbyOpen(p);
+}
+const metresToPx = () => 512 * Math.pow(2, map.getZoom()) / (40075016.686 * Math.cos(map.getCenter().lat * Math.PI / 180));
+/** Screen positions of the pin's foot and top (the top rises with the camera's tilt). */
+function pinOnScreen() {
+  const foot = map.project(game.preview);
+  const lift = game.mapView ? 0 : PIN_HEIGHT * metresToPx() * Math.sin(map.getPitch() * Math.PI / 180);
+  return { x: foot.x, foot: foot.y, top: foot.y - lift };
+}
 function onPreviewPin(point) {
   if (!game.preview) return false;
-  const p = map.project(game.preview);
-  return Math.hypot(p.x - point.x, p.y - point.y) <= PIN_REACH_PX;
-}
-function placePreview() {
-  const mark = $('practiceMark');
-  if (practice.mark && game.mapView) {
-    const m = map.project(practice.mark);
-    mark.style.transform = `translate(${Math.round(m.x)}px, ${Math.round(m.y)}px)`;
-    mark.classList.remove('hidden');
-  } else mark.classList.add('hidden');
-  const pin = $('previewPin');
-  if (!game.preview || !game.mapView) { pin.classList.add('hidden'); return; }
-  const p = map.project(game.preview);
-  pin.style.transform = `translate(${Math.round(p.x)}px, ${Math.round(p.y)}px)`;
-  pin.querySelector('span').textContent = game.travelling ? 'Moving…' : TOUCH ? 'Tap again to move' : 'Click again to move';
-  pin.classList.remove('hidden');
+  const pin = pinOnScreen();
+  return Math.abs(point.x - pin.x) <= 32 && point.y >= pin.top - 32 && point.y <= pin.foot + 24;
 }
 /**
- * A tap on the map previews that spot; a tap on the preview pin (a quick double-tap works too) moves there. Taps
- * elsewhere replace the preview; drags and pinches are not taps, so they never move the mascot.
+ * The pin as a 3D object (a dark post, a gold diamond and a pale cap), and after the first missed check a gold arrow
+ * on the ground there, pointing the way the reading said to search.
+ */
+function drawPin() {
+  const p = game.preview, a = game.arrow, parts = [];
+  if (p) parts.push(box(p, 0, -0.5, 0.5, -0.5, 0.5, 0, PIN_HEIGHT - 2.5, '#1b1f3a'),
+    box(p, 45, -1.8, 1.8, -1.8, 1.8, PIN_HEIGHT - 3, PIN_HEIGHT + 0.6, '#ffd23f'),
+    box(p, 45, -1, 1, -1, 1, PIN_HEIGHT + 0.6, PIN_HEIGHT + 1.8, '#fff8e7'));
+  // Floating above head height, so walls and trees nearby can't hide it.
+  if (a) parts.push(box(a.point, a.bearing, -1.2, 1.2, 4, 18, 6, 7.2, '#ffd23f'),
+    ...[[5, 18, 21], [3.5, 21, 24], [2, 24, 27], [0.8, 27, 29]].map(([w, y0, y1]) => box(a.point, a.bearing, -w, w, y0, y1, 6, 7.2, '#ffd23f')));
+  map.getSource('pin').setData(fc(parts));
+  placePreview();
+}
+/** The pin's label floats above it ("Tap again to walk here"); on the flat map a diamond marks the spot too. */
+function placePreview() {
+  const tag = $('pinTag'), flat = $('previewPin');
+  if (!game.preview || game.phase !== 'walk') { tag.classList.add('hidden'); flat.classList.add('hidden'); return; }
+  const pin = pinOnScreen();
+  tag.textContent = game.travelling ? 'Walking…' : TOUCH ? 'Tap again to walk here' : 'Click again to walk here';
+  tag.style.transform = `translate(${Math.round(pin.x + 14)}px, ${Math.round(pin.top - 34)}px)`;
+  tag.classList.remove('hidden');
+  if (game.mapView) {
+    flat.style.transform = `translate(${Math.round(pin.x)}px, ${Math.round(pin.foot)}px)`;
+    flat.querySelector('span').textContent = '';
+    flat.classList.remove('hidden');
+  } else flat.classList.add('hidden');
+}
+/**
+ * In the 3D view (or on the map), a tap on the ground drops a pin there; a tap on the pin or its label (a quick
+ * double-tap works too) walks there. Taps elsewhere move the pin; drags and pinches are not taps, so they never move
+ * the mascot.
  */
 function onMapTap(e) {
-  if (!game.mapView || game.travelling || game.phase !== 'walk') return;
+  if (game.phase !== 'walk' || game.travelling) return;
   if (onPreviewPin(e.point)) { travelTo(game.preview); return; }
   let to = [e.lngLat.lng, e.lngLat.lat];
-  if (!isOpen(to)) to = nearbyOpen(to);   // on a roof: the nearest open ground beside it, marked by the pin
-  if (!to) { toast("Can't go there", 'cold', 'Pick a spot on a path or open ground.'); return; }
+  if (distOf(to, game.pos) > 1500) { toast('Tap the ground', 'cold', 'Tap somewhere on the ground to drop a pin.'); return; }
+  if (!isOpen(to)) to = game.mapView ? nearbyOpen(to) : inFrontOf(to);
+  if (!to || distOf(to, game.pos) < 3) { toast("Can't go there", 'cold', 'Tap a path or open ground.'); return; }
   game.preview = to;
   $('travelCursor').classList.add('hidden');
-  placePreview();
-  if (practice.on) practiceStep('previewed');
+  drawPin();
+  coachEvent('previewed');
 }
+$('pinTag').addEventListener('click', () => { if (game.preview) travelTo(game.preview); });
 /** Keeps the map clear of its own panel (at the top, or along the bottom on phones) so no pin hides under it. */
 function mapPadding() {
   const r = $('mapTitle').getBoundingClientRect(), pad = { top: 40, bottom: 40, left: 40, right: 40 };
   if (r.height && r.top < innerHeight / 2) pad.top = Math.round(r.bottom + 30);
   else if (r.height) pad.bottom = Math.round(innerHeight - r.top + 30);
   return pad;
-}
-/** After a move, pans the map if the mascot ended up near an edge or under a panel. */
-function keepInView(p) {
-  const pad = mapPadding(), at = map.project(p), coachBox = $('coach').getBoundingClientRect();
-  const bottom = innerHeight - pad.bottom - (coachBox.height ? coachBox.height + 10 : 0);
-  if (at.x < pad.left || at.x > innerWidth - pad.right || at.y < pad.top || at.y > bottom) {
-    // An offset, not padding: MapLibre keeps padding for every later camera move.
-    easeTo({ center: p, offset: [(pad.left - pad.right) / 2, (pad.top - (innerHeight - bottom)) / 2], duration: 600 });
-  }
 }
 /** What the map shows: the check dots, your route so far, and the mascot's dot at {@code at}. */
 function drawMapOverlays(at = game.pos) {
@@ -2183,8 +2217,8 @@ function drawMapOverlays(at = game.pos) {
   map.getSource('routes').setData(fc(game.trail.length > 1 ? [{ type: 'Feature', properties: { color: '#ff5fa2', scale: 0.6 },
     geometry: { type: 'LineString', coordinates: game.trail } }] : []));
 }
-/** Slides the mascot's dot along the walked path. */
-function animateMarker(path, ms) {
+/** Walks the mascot along the path: in 3D the camera follows it; on the map its dot slides. */
+function animateWalk(path, ms) {
   const legs = path.slice(1).map((p, i) => distOf(path[i], p)), total = legs.reduce((a, b) => a + b, 0);
   if (!total) return Promise.resolve();
   const began = performance.now();
@@ -2193,46 +2227,50 @@ function animateMarker(path, ms) {
       let left = Math.min(1, (now - began) / ms) * total, i = 0;
       while (i < legs.length - 1 && left > legs[i]) left -= legs[i++];
       const a = path[i], b = path[i + 1], f = legs[i] ? Math.min(1, left / legs[i]) : 1;
-      drawMapOverlays([a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f]);
+      const at = [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f];
+      if (game.mapView) drawMapOverlays(at);
+      else {
+        game.pos = at;
+        if (legs[i] > 0.5) game.heading = bearingOf(a, b);
+        drawAvatar();
+        map.jumpTo({ center: at });
+      }
       if (now - began < ms) requestAnimationFrame(step); else done();
     };
     requestAnimationFrame(step);
   });
 }
-/** Moves to a previewed spot: Java charges the shortest walk there. The map stays open. */
+/** Walks to the pin: Java (or LocalRules) charges the shortest walk there. */
 async function travelTo(to) {
-  if (!game.mapView || game.travelling || game.phase !== 'walk') return;
+  if (game.travelling || game.phase !== 'walk') return;
   game.travelling = true;
-  $('mapCheck').disabled = true;   // a check always happens where the mascot has arrived, never mid-move
+  $('mapCheck').disabled = true; $('checkBtn').disabled = true;   // a check happens where you arrive, never mid-walk
   placePreview();
   try {
-    if (practice.on) { await practiceTravel(to); return; }
     while (game.sending) await new Promise(r => setTimeout(r, 20));
     if (game.lastPushed !== game.pos) push(game.pos);
     await syncPosition();
     const r = await api('travel', { to });
     if (r.status !== 200) { toast('Not there', 'cold', r.body.error || 'Could not travel.'); return; }
-    const from = game.pos;
-    game.pos = r.body.point; game.lastPushed = game.pos; game.prevPos = game.pos; game.pending = [];
+    const from = game.pos, end = r.body.point;
+    game.preview = null; drawPin();
     // The trip costs the time walking it would take.
     game.startedAt -= (r.body.metresWalked - game.walked) / WALK_SPEED * 1000;
     game.walked = r.body.metresWalked;
-    game.heading = r.body.path.length ? bearingOf(r.body.path.at(-1), game.pos) || game.heading : game.heading;
-    game.camBearing = game.heading;
-    game.confirmedPos = game.pos;
-    game.preview = null;
-    placePreview();
-    await animateMarker([from, ...r.body.path, game.pos], 800);
-    game.trail.push(...r.body.path, game.pos);
-    drawMapOverlays();
+    await animateWalk([from, ...r.body.path, end], Math.max(700, Math.min(2200, distOf(from, end) * 6)));
+    game.pos = end; game.lastPushed = end; game.prevPos = end; game.pending = []; game.confirmedPos = end;
+    game.heading = r.body.path.length ? bearingOf(r.body.path.at(-1), end) || game.heading : game.heading;
+    game.camBearing = map.getBearing();
+    game.trail.push(...r.body.path, end);
+    if (game.mapView) drawMapOverlays();
     drawAvatar();
     renderHud();
-    keepInView(game.pos);
     saveDailyRun();
-    if (!game.checkCount) toast('ARRIVED', 'warm', TOUCH ? 'Tap Check this spot to take a reading.' : 'Press Space or Check this spot to take a reading.');
+    if (!game.checkCount && !practice.on) toast('NOW CHECK', 'warm', TOUCH ? 'Tap Check to read the temperature here.' : 'Press Space or Check to read the temperature here.');
+    coachEvent('moved');
   } finally {
     game.travelling = false;
-    $('mapCheck').disabled = false;
+    $('mapCheck').disabled = false; $('checkBtn').disabled = false;
     placePreview();
   }
 }
@@ -2245,6 +2283,7 @@ function enterZone(zone) {
   hide('checkBtn');
   game.phase = 'zone'; game.zone = zone; game.zoneAt = performance.now(); game.keys = {}; game.autopilot = null;
   if ($('clueCard').classList.contains('pinned')) pinClue();
+  game.preview = null; drawPin(); setCompassHint(null); hide('controlsBtn'); hide('help');
   hide('help');
   map.getSource('zone').setData(fc([{ type: 'Feature', properties: {},
     geometry: { type: 'Polygon', coordinates: [circle(zone.centre, zone.radius, 64)] } }]));
@@ -2274,6 +2313,7 @@ async function chooseHint(level, card) {
   $('toGuess').classList.remove('hidden');
   $('toGuess').focus();
   saveDailyRun();
+  coachEvent('hint');
 }
 
 function startGuessing() {
@@ -2284,6 +2324,7 @@ function startGuessing() {
   $('bannerHint').textContent = game.hint.hint;
   show('banner');
   saveDailyRun();
+  coachEvent('guessing');
 }
 
 function setHover(id) {
@@ -2345,7 +2386,7 @@ async function finish(result, saveError) {
     store.set(dailyResultKey(date), JSON.stringify(result));
     store.remove(dailyRunKey(date));
   }
-  hide('banner'); hide('log'); hide('help'); hide('clueThumb'); hide('clueCard');
+  hide('banner'); hide('log'); hide('help'); hide('clueThumb'); hide('clueCard'); hide('controlsBtn'); setCompassHint(null);
   const t = result.target;
   game.target = t.buildingId;
   if (!game.zone && result.zone) {
@@ -2365,6 +2406,7 @@ async function finish(result, saveError) {
   lookAroundMode();
   fillResults(result, saveError);
   show('results');
+  coachEvent('done');
 }
 
 function orbit(centre) {
@@ -2379,7 +2421,8 @@ function orbit(centre) {
 }
 
 function fillResults(r, saveError) {
-  $('modeLabel').textContent = game.mode === 'daily' ? `Daily · ${game.date} · ${$('campusName').textContent}` : 'Unlimited';
+  $('modeLabel').textContent = game.mode === 'daily' ? `Daily · ${game.date} · ${$('campusName').textContent}`
+    : game.mode === 'practice' ? 'Practice · not saved' : 'Unlimited';
   const fmt = m => m >= 1000 ? (m / 1000).toFixed(2) + ' km' : m + ' m';
   $('outcome').textContent = r.won ? `Identified in ${r.guessesUsed} ${r.guessesUsed === 1 ? 'guess' : 'guesses'}`
     : r.secondsToZone == null ? (r.score.nearMiss ? 'Ahh almost almost' : 'Zone not found') : 'Out of guesses';
@@ -2395,7 +2438,9 @@ function fillResults(r, saveError) {
   ];
   if (r.secondsToZone == null) lines.push(['Near miss', r.metresShort == null ? 'No checks made'
     : `Closest check was ${r.metresShort} m short of the zone (points within 150 m)`, sc.nearMiss || 0]);
-  showBadges(r.achievements || []);
+  showBadges(game.mode === 'practice' ? [] : r.achievements || []);   // practice badges aren't kept
+  $('shareBtn').classList.toggle('hidden', game.mode === 'practice');
+  $('againBtn').classList.toggle('hidden', game.mode === 'practice');   // the coach offers the real round instead
   const tally = $('tally');
   tally.innerHTML = '';
   for (const [title, why, points] of lines) {
@@ -2752,10 +2797,10 @@ async function replay() {
 const TUTORIAL = [
   ['Find the zone, then the building', '1. Find the zone → 2. Guess the building',
     "Somewhere 450 to 900 m from you is a hidden zone around one building. Stage 1: find the zone. The temperature tells you how close you are to the zone, not to the building. Stage 2: inside the zone, pick a hint and guess the building. A photo taken inside the zone is pinned to the side; recognise it and you can head straight there."],
-  ['Move with the map', 'Click a spot → a pin · click the pin again → move there',
-    "Stage 1 starts on the campus map. Click a spot to preview it, then click the pin again (or double-click) to move. Clicking somewhere else just moves the pin; dragging and scrolling never move you. Each move counts as the shortest walk there. Look around opens the 3D view; M brings the map back."],
+  ['Drop a pin, walk there', 'Click the ground → a pin · click the pin again → walk there',
+    "Click the ground to drop a gold pin, then click the pin again (or double-click) to walk there. Clicking somewhere else just moves the pin; dragging to look around never moves you. Each walk counts as the shortest route there. For longer trips, open the map (M) and do the same. Esc shows the camera controls."],
   ['Check the temperature', '<kbd>Space</kbd> or Check this spot<br><span style="color:#6f8cff">Cold · Search east from here</span><br><span style="color:#ff9f1c">Warmer · Closer to the zone</span>',
-    "You have 6 checks. Your first miss points the way, with an arrow on its pin. After that each check says warmer (closer to the zone) or colder (farther), and the warmest is starred on the map. A check reaches 15 m around you. Out of checks? Your next check is a final search."],
+    "You have 6 checks. Your first miss points the way: a gold arrow floats over that spot and the compass marks the direction. After that each check says warmer (closer to the zone) or colder (farther), and the warmest is starred on the map. A check reaches 15 m around you. Out of checks? Your next check is a final search."],
   ['Pick a hint blind', 'EASY ×1 what you can see<br>NORMAL ×1.5 what students know<br>HARD ×2 campus history',
     "In the zone, choose a face-down hint card. Harder hints are worth more. Then click the building you think it is. You get 3 guesses."],
   ['Score out of 1000', 'Route up to 400 (full at 80% efficiency) · guess 250/200/150<br>hint bonus up to +250 · checks saved up to 100',
@@ -2764,10 +2809,10 @@ const TUTORIAL = [
 // Phones and tablets have no keyboard: the same steps, told with taps and pinches.
 const TOUCH = matchMedia('(pointer: coarse)').matches;
 const TUTORIAL_TOUCH = {
-  1: ['Tap a spot → a pin · tap the pin again → move there',
-    "Stage 1 starts on the campus map. Tap a spot to preview it, then tap the pin again (or double-tap) to move. Tapping somewhere else just moves the pin; dragging and pinching never move you. Each move counts as the shortest walk there. Look around opens the 3D view."],
+  1: ['Tap the ground → a pin · tap the pin again → walk there',
+    "Tap the ground to drop a gold pin, then tap the pin again (or double-tap) to walk there. Tapping somewhere else just moves the pin; dragging and pinching never move you. Each walk counts as the shortest route there. For longer trips, open the map and do the same."],
   2: ['Check this spot<br><span style="color:#6f8cff">Cold · Search east from here</span><br><span style="color:#ff9f1c">Warmer · Closer to the zone</span>',
-    "You have 6 checks. Your first miss points the way, with an arrow on its pin. After that each check says warmer (closer to the zone) or colder (farther), and the warmest is starred on the map. A check reaches 15 m around you. Out of checks? Your next check is a final search."],
+    "You have 6 checks. Your first miss points the way: a gold arrow floats over that spot and the compass marks the direction. After that each check says warmer (closer to the zone) or colder (farther), and the warmest is starred on the map. A check reaches 15 m around you. Out of checks? Your next check is a final search."],
 };
 let tutorialStep = 0;
 function showTutorial(step) {
@@ -2968,26 +3013,28 @@ const LocalRules = (() => {
 
   function start(body = {}) {
     if (body.mode === 'daily') return startDaily();
+    // Practice: a normal round, but a short walk (150 to 300 m) to a zone around a landmark with real hints.
+    const practising = body.mode === 'practice', nearest = practising ? 150 : MIN_START, farthest = practising ? 300 : MAX_START;
     const open = cells();
     // Prefer buildings with a real fact or recorded history (the hard hint is then history; mirrors CampusMap.targets).
     // On sparse campuses those may never fit a valid zone, so later attempts fall back to every landmark.
     const good = pack.landmarks.filter(l => (l.facts || []).length || hasHistory(buildings.get(l.building)));
     // Valid zones are rare on sparse campuses (e.g. Laval), but the zone check is cheap, so try many.
     for (let attempt = 0; attempt < 5000; attempt++) {
-      const pool = good.length && attempt < 3500 ? good : pack.landmarks;
+      const pool = good.length && (attempt < 3500 || practising) ? good : pack.landmarks;
       const target = pool[Math.floor(Math.random() * pool.length)];
       const building = buildings.get(target.building);
       const zone = { centre: offsetPt(building.center, Math.random() * 360, Math.random() * 50), radius: RADIUS };
       const choices = zoneBuildings(zone).filter(b => b.height >= 4);
       if (choices.length < 5 || choices.filter(b => b.name).length < 3) continue;
-      const ring = open.filter(p => { const d = distOf(p, zone.centre); return d >= MIN_START && d <= MAX_START; });
+      const ring = open.filter(p => { const d = distOf(p, zone.centre); return d >= nearest && d <= farthest; });
       if (!ring.length) continue;
       const starts = onCampus(ring);
       const startPoint = starts[Math.floor(Math.random() * starts.length)];
       const route = shortestRoute(startPoint, p => playerInZone(zone, p),
         p => Math.max(0, distOf(p, zone.centre) - zone.radius - PLAYER_RADIUS), 300000);
       if (!route) continue;
-      return begin(target, building, zone, startPoint, route, 'unlimited', null);
+      return begin(target, building, zone, startPoint, route, practising ? 'practice' : 'unlimited', null);
     }
     return fail('Could not set up a round. Please retry.');
   }
@@ -3540,6 +3587,7 @@ function restoreDailyRun(run) {
     if (c.finalSearch && !c.zoneFound) continue;
     addCheckMarker(c.point, c.zoneFound ? 'zone' : c.heat, c.number,
       c.zoneFound ? 'ZONE' : `${c.temperature}°`, c.direction, c.zoneFound ? null : c.temperature);
+    if (c.direction && game.phase === 'walk') setCompassHint(c.direction, c.point);
     const li = document.createElement('li');
     li.textContent = c.zoneFound ? `#${c.number} IN THE ZONE!`
       : `#${c.number} ${checkHeadline(c)} · ${c.temperature}°C`;
@@ -3548,7 +3596,7 @@ function restoreDailyRun(run) {
   if (game.checkHistory.length) $('nochecks').classList.add('hidden');
   renderHud();
   if (run.phase === 'walk') {
-    for (const id of ['hud', 'log', 'compass', 'help', 'mapBtn', 'checkBtn']) show(id);
+    for (const id of ['hud', 'log', 'compass', 'mapBtn', 'checkBtn', 'controlsBtn']) show(id);
     drawAvatar();
     map.jumpTo({ center: game.pos, zoom: LOOK_ZOOM, pitch: 55, bearing: game.camBearing });
     lookAroundMode();
@@ -3576,128 +3624,51 @@ function restoreDailyRun(run) {
   return true;
 }
 
-// ---------- practice: preview, move, check, twice; outside the Daily attempt, the score and history ----------
-const practice = { on: false, step: '', zone: null, mark: null };
-/** First Start on this device runs the practice first (it can be skipped); later Starts go straight in. */
+// ---------- practice: a normal round, close by, coached one step at a time ----------
+// It runs on the browser's copy of the rules (LocalRules), so nothing reaches the Java app: no Daily attempt, no
+// saved result or history, and its badges aren't kept.
+const practice = { on: false };
+/** First Start on this device opens the guided practice (it can be skipped); later Starts go straight in. */
 function play() {
-  if (!store.get('practiced') && !DEBUG) startPractice(); else startRound();
+  if (!store.get('practiced') && !DEBUG) startRound(true); else startRound();
 }
-function coach(text, done = false) {
+function coach(step, text, done = false) {
+  $('coachStep').textContent = `Practice · step ${step} of 7`;
   $('coachText').textContent = text;
+  $('coachDone').classList.toggle('hidden', !done);
   $('coachSkip').classList.toggle('hidden', done);
-  $('coachPlay').classList.toggle('hidden', !done);
   show('coach');
 }
-function startPractice() {
-  if (game.phase !== 'title') return;
-  // Start on open ground near the middle of campus; the practice zone is around a landmark 250 to 450 m away.
-  const lms = pack.landmarks.map(l => buildings.get(l.building)).filter(Boolean);
-  const mid = [lms.reduce((a, b) => a + b.center[0], 0) / lms.length, lms.reduce((a, b) => a + b.center[1], 0) / lms.length];
-  const start = isOpen(mid) ? mid : nearbyOpen(mid, 80);
-  const far = lms.filter(b => { const d = distOf(start, b.center); return d > 250 && d < 450; });
-  if (!start || !far.length) { store.set('practiced', '1'); startRound(); return; }
-  practice.on = true;
-  practice.zone = { centre: far[Math.floor(far.length / 2)].center, radius: 90 };
-  // A suggested first spot, 120 m off to one side of the zone, so the first check misses and points the way.
-  const side = (bearingOf(start, practice.zone.centre) + 90) % 360;
-  practice.mark = nearbyOpen(offsetPt(start, side, 120), 40) || nearbyOpen(offsetPt(start, side + 180, 120), 40);
-  hide('title');
-  game.orbiting = false;
-  game.pos = start; game.confirmedPos = start; game.trail = [start]; game.walked = 0;
-  game.checksLeft = 6; game.checkCount = 0; game.startedAt = performance.now();
-  game.heading = openestHeading(start); game.camBearing = game.heading;
-  game.phase = 'walk';
-  for (const id of ['hud', 'log']) show(id);
-  renderHud();
-  drawAvatar();
-  toggleMapView(true);
-  practiceStep('begin');
-}
-function practiceStep(event) {
-  const tap = TOUCH ? 'Tap' : 'Click', check = TOUCH ? 'Check this spot' : 'Check this spot (or Space)';
-  if (event === 'begin' && practice.step === '') {
-    practice.step = 'preview';
-    coach(`1. Find the zone → 2. Guess the building. Stage 1 is a search for a hidden zone. ${tap} the marked spot (or anywhere on a path) to preview it.`);
-  } else if (event === 'previewed' && practice.step === 'preview') {
-    practice.step = 'move';
-    coach(`${tap} the pin again to move there. ${TOUCH ? 'Tapping' : 'Clicking'} somewhere else just moves the pin, and dragging never moves you.`);
-  } else if (event === 'moved' && practice.step === 'move') {
-    practice.step = 'check';
-    practice.mark = null;
-    coach(`You moved. Now take a reading: ${check}. The temperature tells you how close you are to the zone.`);
-  } else if (event === 'checked' && practice.step === 'check') {
-    practice.step = 'second';
-    coach(`A first miss points the way (see the arrow on its pin). Pick a second spot that way, ${tap.toLowerCase()} the pin again to move, and check again.`);
-  } else if (event === 'warmer' && practice.step === 'second') {
-    practice.step = 'done';
-    coach('Warmer means closer to the zone, not to the building. Find the zone first; inside it you pick a hint and guess the building. In a real round you have 6 checks.', true);
-  } else if (event === 'colder' && practice.step === 'second') {
-    coach('Colder: that spot is farther from the zone. Try going the way the arrow points, then check again.');
-  } else if (event === 'zone') {
-    practice.step = 'done';
-    coach("That's the zone! In a real round the camera now flies up, the zone's buildings light up, and you pick a hint and guess the building.", true);
-  }
-}
-async function practiceTravel(to) {
-  const from = game.pos;
-  game.preview = null;
-  placePreview();
-  await animateMarker([from, to], 700);
-  game.pos = to; game.confirmedPos = to; game.walked += distOf(from, to);
-  game.trail.push(to);
-  drawMapOverlays(); drawAvatar(); renderHud();
-  keepInView(game.pos);
-  practiceStep('moved');
-}
-/** The same reading a real check gives (LocalRules), worked out here: nothing is sent or saved. */
-function practiceCheck() {
-  const d = distOf(game.pos, practice.zone.centre), last = game.checkHistory[game.checkHistory.length - 1];
-  game.checkCount++; game.checksLeft = Math.max(0, 6 - game.checkCount);
-  const number = game.checkCount;
-  if (d <= practice.zone.radius + 15) {
-    addCheckMarker(game.pos, 'zone', number, 'ZONE');
-    toast('ZONE FOUND!', 'warm', 'In a real round: pick a hint, then guess.');
-    drawMapOverlays(); renderHud();
-    practiceStep('zone');
-    return;
-  }
-  const heat = d < 150 ? 'hot' : d < 300 ? 'warm' : d < 500 ? 'cool' : 'cold';
-  const temperature = Math.max(-10, Math.min(40, Math.round(40 - d / 20)));
-  const trend = !last ? 'first' : Math.abs(d - last.metres) < 5 ? 'same' : d < last.metres ? 'warmer' : 'colder';
-  const direction = last ? undefined : ['north', 'east', 'south', 'west'][Math.round(bearingOf(game.pos, practice.zone.centre) / 90) % 4];
-  const b = { point: game.pos, heat, trend, temperature, direction, number, metres: d, change: last ? temperature - last.temperature : null };
-  game.checkHistory.push(b);
-  addCheckMarker(b.point, heat, number, `${temperature}°`, direction, temperature);
-  const delta = b.change == null ? '' : ` ${b.change > 0 ? '▲ +' : b.change < 0 ? '▼ ' : '■ '}${b.change}°`;
-  toast(checkHeadline(b), heat, `#${number} · ${temperature}°C${delta}`);
-  const li = document.createElement('li');
-  li.style.color = HEAT_COLORS[heat];
-  li.textContent = `#${number} ${checkHeadline(b)} · ${temperature}°C${delta}`;
-  $('checks').append(li); $('nochecks').classList.add('hidden');
-  drawMapOverlays(); renderHud();
-  practiceStep(trend === 'first' ? 'checked' : trend === 'warmer' ? 'warmer' : 'colder');
-}
-/** Clears everything the practice drew, then starts the real round. */
-function endPractice() {
+function coachEvent(event, b) {
   if (!practice.on) return;
-  practice.on = false; practice.mark = null; practice.step = '';
+  const tap = TOUCH ? 'Tap' : 'Click', check = TOUCH ? 'tap Check' : 'press Space (or the Check button)';
+  if (event === 'started') coach(1, `You're the mascot. A hidden zone is nearby, and ${PHONE.matches ? 'the clue button in the corner shows' : 'the card pinned on the left is'} a clue from inside it. ${tap} the ground ahead to drop a pin.`);
+  else if (event === 'previewed') coach(game.checkCount ? 4 : 2, `${tap} the pin again to walk there. (${tap} somewhere else to move the pin.)`);
+  else if (event === 'moved') coach(game.checkCount ? 4 : 3, game.checkCount ? `Now ${check} again: warmer or colder?`
+    : `Now ${check}. The temperature says how close you are to the zone.`);
+  else if (event === 'checked' && b.direction) coach(4, `${b.heat[0].toUpperCase() + b.heat.slice(1)}: still far from the zone. Search ${b.direction}: follow the gold arrow over the check spot (the gold "${b.direction[0].toUpperCase()}" on the compass shows it too). Drag to turn that way, drop a pin and walk there.`);
+  else if (event === 'checked') coach(4, b.trend === 'warmer' ? 'Warmer: closer to the zone. Keep going that way, then check again.'
+    : 'Colder: farther from the zone. Head back past your warmest check (★) and try another way.');
+  else if (event === 'zone') coach(5, 'Zone found! The temperature led you to the zone, not to the building. Now pick a hint card: harder hints score more.');
+  else if (event === 'hint') coach(6, 'Read your hint, then press the button under the cards to start guessing.');
+  else if (event === 'guessing') coach(6, `${tap} the highlighted building that matches the hint. You have 3 guesses.`);
+  else if (event === 'done') coach(7, "That's a whole round! Your score is broken down here. Ready for a real one?", true);
+}
+/** Leaves the practice: the page starts fresh and goes straight into a real round. */
+function endPractice() {
   store.set('practiced', '1');
-  hide('coach');
-  toggleMapView(false);
-  markerFeatures.length = 0; ringFeatures.length = 0; checkDots.length = 0; checkList.length = 0;
-  map.getSource('markers').setData(fc([])); map.getSource('check-rings').setData(fc([]));
-  $('checks').innerHTML = ''; $('nochecks').classList.remove('hidden');
-  game.checkHistory = []; game.checkCount = 0; game.walked = 0; game.trail = [];
-  game.phase = 'title';
-  startRound();
+  try { sessionStorage.setItem('autostart', '1'); } catch (e) { /* storage blocked: back to the title screen */ }
+  location.reload();
 }
 $('coachSkip').addEventListener('click', endPractice);
-$('coachPlay').addEventListener('click', endPractice);
-$('practiceBtn').addEventListener('click', () => { if (game.phase === 'title') startPractice(); });
+$('coachDone').addEventListener('click', endPractice);
+$('practiceBtn').addEventListener('click', () => { if (game.phase === 'title') startRound(true); });
 
-async function startRound() {
+async function startRound(practiceRound = false) {
   if (game.phase !== 'title' || $('startBtn').disabled) return;
-  if (chosenMode === 'daily' && !STATIC && serverDaily?.status === 'inProgress') {
+  practice.on = practiceRound === true;
+  if (practice.on) store.set('practiced', '1');
+  if (!practice.on && chosenMode === 'daily' && !STATIC && serverDaily?.status === 'inProgress') {
     game.phase = 'starting';   // Enter on the focused button also clicks it: only one resume may run
     const r = await api('resumeDaily', { campus: pack.id });
     game.phase = 'title';
@@ -3706,7 +3677,7 @@ async function startRound() {
     $('loading').textContent = r.body.error || 'Could not resume today\'s daily.';
     return;
   }
-  if (chosenMode === 'daily') {
+  if (!practice.on && chosenMode === 'daily') {
     const saved = storedDailyRun();
     if (saved) {
       if (restoreDailyRun(saved)) return;
@@ -3722,7 +3693,7 @@ async function startRound() {
     }
   }
   game.phase = 'starting';
-  const r = await api('start', { campus: pack.id, mode: chosenMode, difficulty: $('difficulty').dataset.value || 'normal' });
+  const r = await api('start', { campus: pack.id, mode: practice.on ? 'practice' : chosenMode, difficulty: $('difficulty').dataset.value || 'normal' });
   if (r.status !== 200) { game.phase = 'title'; $('loading').textContent = r.body.error || 'Could not start. Retry.'; return; }
   hide('title');
   game.orbiting = false;
@@ -3742,19 +3713,17 @@ async function startRound() {
   const photo = findClue(game.clueBuilding);
   saveDailyRun();
   renderHud();
-  for (const id of ['hud', 'log', 'compass', 'help', 'mapBtn', 'checkBtn']) show(id);
+  for (const id of ['hud', 'log', 'compass', 'mapBtn', 'checkBtn', 'controlsBtn']) show(id);
   $('mapBtn').classList.add('pulse');
   drawAvatar();
   await flyTo({ center: game.pos, zoom: LOOK_ZOOM, pitch: 55, bearing: game.heading, duration: 3200 });
   lookAroundMode();
   // The clue pins itself to the side once it loads (a phone opens it once, then folds it into the corner).
-  Promise.race([photo, new Promise(res => setTimeout(() => res(null), 6000))]).then(p => showClue(p, PHONE.matches))
+  Promise.race([photo, new Promise(res => setTimeout(() => res(null), 6000))]).then(p => showClue(p, PHONE.matches && !practice.on))
     .then(() => { if (!game.cluePhoto && !game.clueText) toast('NO ZONE CLUE', 'warm', 'No photo or clue for this zone. Use your checks.'); });
-  // Stage 1 happens on the map: pick a spot, move, check.
-  if (game.phase === 'walk') toggleMapView(true);
-  toast('1. FIND THE ZONE', 'warm', TOUCH ? 'Tap a spot, tap the pin again to move, then check the temperature.'
-    : 'Click a spot, click the pin again to move, then check the temperature.');
   $('mapBtn').classList.remove('pulse');
+  if (practice.on) coachEvent('started');
+  else toast('1. FIND THE ZONE', 'warm', `${TOUCH ? 'Tap' : 'Click'} the ground to drop a pin, ${TOUCH ? 'tap' : 'click'} it again to walk there, then check.`);
 }
 
 /** Face the direction with the most open ground ahead, so the first step isn't into a wall. */
@@ -3790,6 +3759,10 @@ function frame(now) {
     }
   }
   if (map) $('needle').style.transform = `rotate(${-map.getBearing()}deg)`;
+  if (map && game.compassHint != null) {   // the gold letter sits on the compass rim, in that direction
+    const a = (game.compassHint - map.getBearing()) * Math.PI / 180;
+    $('compassHint').style.transform = `translate(${Math.round(Math.sin(a) * 24)}px, ${Math.round(-Math.cos(a) * 24)}px)`;
+  }
   if (scene3d.layer?.students) map.triggerRepaint();   // students keep walking
   requestAnimationFrame(frame);
 }
@@ -3809,6 +3782,16 @@ function renderHud() {
 const clock = s => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
 
 // ---------- UI helpers ----------
+/** The way the first missed check pointed, marked on the compass until the zone is found. */
+function setCompassHint(direction, from) {
+  game.compassHint = direction ? COMPASS[direction] : null;
+  game.arrow = direction && from ? { point: from, bearing: COMPASS[direction] } : null;
+  drawPin();
+  $('compassHint').textContent = direction ? direction[0].toUpperCase() : '';
+  $('compassHint').classList.toggle('hidden', !direction);
+}
+function toggleControls() { $('help').classList.toggle('hidden'); }
+$('controlsBtn').addEventListener('click', toggleControls);
 let toastTimer;
 function toast(title, heat, detail = '') {
   const t = $('toast');
@@ -3898,7 +3881,7 @@ addEventListener('keydown', e => {
   if (e.code === 'Enter' && game.phase === 'title' && $('tutorial').classList.contains('hidden')) { play(); return; }
   if (game.phase === 'walk') {
     if (e.code === 'KeyM' && !e.repeat) { toggleMapView(); e.preventDefault(); return; }
-    if (e.code === 'Escape') { toggleMapView(false); return; }
+    if (e.code === 'Escape') { if (game.mapView) toggleMapView(false); else toggleControls(); return; }
     if (e.code === 'Space' && !e.repeat) { doCheck(); e.preventDefault(); return; }
     if (game.mapView) return;
   }
@@ -3992,6 +3975,9 @@ for (const card of document.querySelectorAll('.hintcard')) {
   if (!params.get('campus') && !homeCampus() && campusIndex.length > 6) showCanada('home', true);
   $('loading').textContent = '';
   setInterval(syncPosition, 150);
+  try {   // back from a practice: straight into a real round
+    if (sessionStorage.getItem('autostart')) { sessionStorage.removeItem('autostart'); setTimeout(() => startRound(), 300); }
+  } catch (e) { /* storage blocked: the title screen is fine */ }
   requestAnimationFrame(frame);
 
   if (DEBUG) {
