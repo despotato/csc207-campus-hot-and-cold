@@ -34,6 +34,7 @@ public final class ExplorePresenter implements ExploreOutputBoundary {
                 body.put("checksRemaining", started.checksRemaining());
                 body.put("guessLimit", started.guessLimit());
                 body.put("difficulty", started.difficulty());
+                putClue(body, started.clueBuilding(), started.clueText());
                 body.put("message", "Find the zone. Check inside it to know you're there. "
                         + started.checksRemaining() + " checks.");
             }
@@ -58,21 +59,10 @@ public final class ExplorePresenter implements ExploreOutputBoundary {
             }
             case ExploreResponse.Checked checked -> checked(checked, body);
             case ExploreResponse.HintChosen hint -> {
-                body.put("type", "hint");
-                body.put("level", name(hint.level()));
-                body.put("multiplier", hint.multiplier());
-                body.put("hint", hint.hint());
-                body.put("zoneBuildings", hint.zoneBuildings());
+                hint(hint, body);
             }
             case ExploreResponse.Guessed guessed -> {
-                body.put("type", "guessed");
-                body.put("buildingId", guessed.buildingId());
-                body.put("correct", guessed.correct());
-                body.put("guessesRemaining", guessed.guessesRemaining());
-                body.put("message", guessed.correct() ? "That's it!"
-                        : guessed.result().isPresent() ? "Out of guesses."
-                        : "Not this one. " + guessed.guessesRemaining() + " guesses left.");
-                guessed.result().ifPresent(finished -> putFinished(body, finished));
+                guessed(guessed, body);
             }
             case ExploreResponse.DailyStatus daily -> {
                 body.put("type", "dailyStatus");
@@ -90,6 +80,12 @@ public final class ExplorePresenter implements ExploreOutputBoundary {
                 body.put("trails", traffic.trails().stream().map(trail -> trail.stream().map(ExplorePresenter::point)
                         .toList()).toList());
             }
+            case ExploreResponse.History history -> {
+                history(history, body);
+            }
+            case ExploreResponse.Recap recap -> {
+                recap(recap, body);
+            }
             case ExploreResponse.Failed failed -> {
                 status = 400;
                 body.put("type", "error");
@@ -97,6 +93,53 @@ public final class ExplorePresenter implements ExploreOutputBoundary {
             }
         }
         viewModel = new ExploreViewModel(status, body);
+    }
+
+    private static void history(ExploreResponse.History history, Map<String, Object> body) {
+        body.put("type", "history");
+        body.put("rounds", history.rounds().stream().map(round -> {
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("roundId", round.id().toString());
+            item.put("campusId", round.campusId());
+            item.put("finishedAt", round.finishedAt().toString());
+            item.put("dailyDate", round.dailyDate() == null ? null : round.dailyDate().toString());
+            item.put("mode", round.mode());
+            item.put("difficulty", round.difficulty());
+            item.put("target", round.result().targetName());
+            item.put("score", round.result().score());
+            return item;
+        }).toList());
+    }
+
+    private static void recap(ExploreResponse.Recap recap, Map<String, Object> body) {
+        var round = recap.round();
+        body.put("type", "recap");
+        body.put("roundId", round.id().toString());
+        body.put("campusId", round.campusId());
+        body.put("finishedAt", round.finishedAt().toString());
+        body.put("dailyDate", round.dailyDate() == null ? null : round.dailyDate().toString());
+        body.put("mode", round.mode());
+        body.put("difficulty", round.difficulty());
+        body.put("result", result(round.result()));
+    }
+
+    private static void hint(ExploreResponse.HintChosen hint, Map<String, Object> body) {
+        body.put("type", "hint");
+        body.put("level", name(hint.level()));
+        body.put("multiplier", hint.multiplier());
+        body.put("hint", hint.hint());
+        body.put("zoneBuildings", hint.zoneBuildings());
+    }
+
+    private static void guessed(ExploreResponse.Guessed guessed, Map<String, Object> body) {
+        body.put("type", "guessed");
+        body.put("buildingId", guessed.buildingId());
+        body.put("correct", guessed.correct());
+        body.put("guessesRemaining", guessed.guessesRemaining());
+        body.put("message", guessed.correct() ? "That's it!"
+                : guessed.result().isPresent() ? "Out of guesses."
+                : "Not this one. " + guessed.guessesRemaining() + " guesses left.");
+        guessed.result().ifPresent(finished -> putFinished(body, finished));
     }
 
     private static void checked(ExploreResponse.Checked checked, Map<String, Object> body) {
@@ -124,6 +167,15 @@ public final class ExplorePresenter implements ExploreOutputBoundary {
         }
     }
 
+    private static void putClue(Map<String, Object> body, Integer clueBuilding, String clueText) {
+        if (clueBuilding != null) {
+            body.put("clueBuilding", clueBuilding);
+        }
+        if (clueText != null) {
+            body.put("clueText", clueText);
+        }
+    }
+
     private static void resumed(ExploreResponse.Resumed r, Map<String, Object> body) {
         body.put("type", "resumed");
         body.put("roundId", r.roundId().toString());
@@ -132,6 +184,7 @@ public final class ExplorePresenter implements ExploreOutputBoundary {
         body.put("mode", "daily");
         body.put("date", r.date());
         body.put("stage", r.stage());
+        putClue(body, r.clueBuilding(), r.clueText());
         body.put("point", point(r.position()));
         body.put("metresWalked", round(r.metresWalked()));
         body.put("elapsedSeconds", r.elapsedSeconds());
@@ -178,6 +231,7 @@ public final class ExplorePresenter implements ExploreOutputBoundary {
         score.put("guess", result.guessPoints());
         score.put("hintBonus", result.hintBonus());
         score.put("checkBonus", result.checkBonus());
+        score.put("nearMiss", result.nearMissPoints());
         score.put("multiplier", result.multiplier());
         score.put("total", result.score());
         score.put("max", Expedition.MAX_SCORE);
@@ -185,6 +239,9 @@ public final class ExplorePresenter implements ExploreOutputBoundary {
         body.put("metresWalked", round(result.metresWalked()));
         body.put("shortestMetres", round(result.shortestMetres()));
         body.put("secondsToZone", result.secondsToZone());
+        body.put("achievements", result.achievements().stream().map(a -> Map.of("id", a.name().toLowerCase(Locale.ROOT),
+                "title", a.title(), "subtitle", a.subtitle(), "description", a.description())).toList());
+        body.put("metresShort", result.metresShort() == null ? null : round(result.metresShort()));
         body.put("zone", Map.of("centre", point(result.zone().centre()), "radius", result.zone().radiusMetres()));
         body.put("checksUsed", result.checksUsed());
         body.put("guessesUsed", result.guessesUsed());

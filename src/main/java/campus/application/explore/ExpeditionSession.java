@@ -81,4 +81,10 @@ public final class ExpeditionSession {
     public Optional<Expedition> currentDaily(String campusId, LocalDate date) {
         return campusId.equals(dailyCampus) && date.equals(dailyDate) ? current() : Optional.empty();
     }
+
+    /** The local puzzle date for the currently active daily, if this is its round ID. */
+    public Optional<LocalDate> dailyDate(UUID roundId) {
+        return current != null && current.id().equals(roundId) && dailyCampus != null
+                ? Optional.of(dailyDate) : Optional.empty();
+    }
 }

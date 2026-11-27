@@ -135,6 +135,7 @@ public final class DailyRunInteractor implements DailyStatusInputBoundary, Resum
         return new ExploreResponse.Resumed(round.id(), map.id(), map.name(), today.toString(), stage,
                 round.position(), round.metresWalked(), round.secondsElapsed(clock.instant()), zoneElapsed,
                 round.checksRemaining(), checks, trail, zone, hint, zoneBuildings, round.guesses(),
-                Expedition.GUESS_LIMIT);
+                Expedition.GUESS_LIMIT, round.clueBuilding().orElse(null),
+                round.clueText().orElse(null));
     }
 }

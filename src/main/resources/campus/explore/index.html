@@ -121,6 +121,51 @@
   #results.hidden { display: none; }
   #results > * { flex-shrink: 0; }
   #resultsBody { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+  #badges { display: flex; flex-wrap: wrap; gap: 6px; margin: 2px 0 6px; }
+  #badges:empty { display: none; }
+  .badge { position: relative; display: flex; align-items: center; gap: 8px; padding: 5px 10px 5px 8px; border: 3px solid var(--gold);
+    background: #0005; animation: badgeIn 520ms cubic-bezier(.3, 1.6, .5, 1) both; }
+  .badge { cursor: pointer; }
+  .ico { display: inline-block; flex-shrink: 0; width: 22px; height: 22px; }
+  .ico svg { display: block; width: 100%; height: 100%; }
+  .cluePhoto { display: block; width: 100%; aspect-ratio: 16 / 10; background: #000 no-repeat center / cover; image-rendering: auto; }
+  #clueCard { z-index: 20; background: #0b0d1ed9; }
+  #clueCard .card { max-width: 560px; width: 100%; }
+  #clueCard .cluePhoto { border: 3px solid var(--paper); margin: 8px 0 2px; }
+  .cluePhoto { position: relative; overflow: hidden; }
+  /* Google's place card (top-left) could name the street, so the embed sits 80 px higher and that strip is cut off;
+     Google's logo, credit and terms along the bottom stay in view. */
+  .cluePhoto iframe { position: absolute; left: 0; top: -80px; width: 100%; height: calc(100% + 80px); border: 0; }
+  .cluePhoto .shield { position: absolute; left: 0; right: 0; top: 0; bottom: 26px; cursor: default; }
+  #clueThumb.icon .cluePhoto { aspect-ratio: auto; height: 44px; background: #0b0d1e no-repeat center / 32px 32px
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 11 11' shape-rendering='crispEdges'%3E%3Cpath fill='%23fff8e7' d='M1 3h9v6H1zM3 2h3v1H3z'/%3E%3Cpath fill='%231b1f3a' d='M4 4h3v4H4z'/%3E%3Cpath fill='%234cf0d4' d='M5 5h1v2H5z'/%3E%3Cpath fill='%23ffd23f' d='M8 4h1v1H8z'/%3E%3C/svg%3E"); }
+  #clueWords { font-size: 18px; line-height: 1.5; color: var(--gold); margin: 12px 0 4px; }
+  button.link { background: none; border: 0; box-shadow: none; padding: 2px 0; color: var(--paper); opacity: .75;
+    text-decoration: underline; font-size: 11px; cursor: pointer; }
+  #clueThumb.words .cluePhoto { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 11 11' shape-rendering='crispEdges'%3E%3Cpath fill='%23fff8e7' d='M2 1h6v1h1v8H2z'/%3E%3Cpath fill='%231b1f3a' d='M3 3h5v1H3zM3 5h5v1H3zM3 7h3v1H3z'/%3E%3C/svg%3E"); }
+  #clueCredit { display: block; font-size: 10px; opacity: .7; text-align: right; }
+  #clueThumb { position: fixed; left: 12px; bottom: 12px; width: 190px; padding: 0; border: 3px solid var(--paper);
+    background: #1b1f3a; color: var(--paper); cursor: zoom-in; box-shadow: var(--shadow); }
+  #clueThumb small { display: block; font-size: 10px; padding: 2px 6px; text-align: left; }
+  #achievements { z-index: 20; background: #0b0d1ed9; }
+  #achievements .card { max-width: 460px; width: 100%; max-height: calc(100dvh - 32px); overflow-y: auto; }
+  #achList { list-style: none; margin: 10px 0; padding: 0; display: grid; gap: 8px; }
+  #achList li { display: flex; gap: 12px; align-items: flex-start; padding: 8px 10px; border: 3px solid var(--gold); background: #0004; }
+  #achList li .ico { width: 44px; height: 44px; }
+  #achList b { display: block; color: var(--gold); font-weight: normal; }
+  #achList small { display: block; font-size: 10px; opacity: .8; margin-top: 2px; }
+  #achList p { margin: 6px 0 2px; font-size: 13px; }
+  #achList i { font-style: normal; font-size: 10px; opacity: .7; }
+  #achList li.locked { border-color: #fff8e733; }
+  #achList li.locked .ico, #achList li.locked b { filter: grayscale(1); opacity: .45; }
+  #achList li.locked b { color: var(--paper); }
+  #achList li.locked small, #achList li.locked p { opacity: .5; }
+  .badge b { display: block; color: var(--gold); font-size: 12px; font-weight: normal; }
+  .badge small { display: block; font-size: 10px; opacity: .8; }
+  .badge em { position: absolute; top: -9px; right: -6px; font-style: normal; font-size: 9px; padding: 1px 4px;
+    background: var(--hot); color: var(--paper); }
+  @keyframes badgeIn { from { transform: scale(.3) rotate(-8deg); opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .badge { animation: none; } }
   #results .big { font-size: 34px; color: var(--gold); margin: 4px 0; }
   #tally td { padding: 4px 0; border-bottom: 2px dashed #fff8e733; }
   #tally td small { display: block; font-size: 10px; opacity: .7; }
@@ -137,9 +182,30 @@
   #tutArt { font-size: 15px; line-height: 1.6; margin: 10px 0; padding: 12px; background: #fff8e714; border: 2px dashed #fff8e744; min-height: 92px; }
   #tutArt kbd { margin: 2px; }
   #legend { position: fixed; left: 12px; bottom: 44px; font-size: 12px; }
-  #legend span { display: inline-block; width: 18px; height: 6px; margin-right: 6px; vertical-align: middle; }
+  #legend { display: grid; gap: 4px; padding: 8px 10px; }
+  #legend span { display: inline-block; width: 26px; height: 6px; margin-right: 8px; vertical-align: middle;
+    outline: 2px solid #1b1f3a; }
+  #legend span.you { background: #ff5fa2; }
+  #legend span.short { background: repeating-linear-gradient(90deg, #4cf0d4 0 7px, transparent 7px 12px); }
+  #legend b { color: var(--gold); font-weight: normal; margin-left: 4px; }
+  #legend small { font-size: 9px; opacity: .7; }
+  .routeTag { padding: 2px 6px; font: 11px var(--font); color: #1b1f3a; border: 2px solid #1b1f3a; white-space: nowrap;
+    box-shadow: 2px 2px 0 #1b1f3a; pointer-events: none; }
+  .routeTag.you { background: #ff5fa2; } .routeTag.short { background: #4cf0d4; }
+  .routeTag.start { background: var(--paper); } .routeTag.zone { background: var(--gold); }
+  .routeHead { width: 14px; height: 14px; border-radius: 50%; background: #ff5fa2; border: 3px solid #1b1f3a; }
   #wiki:has(#wikiImg.hidden) { grid-template-columns: 1fr; }   /* no photo: the text takes the full width */
   #resultsHead { display: contents; }
+  #history { position: fixed; inset: 12px; z-index: 20; max-width: 640px; width: calc(100% - 24px); max-height: calc(100dvh - 24px);
+    margin: auto; display: flex; flex-direction: column; }
+  #history.hidden { display: none; }
+  #historyHead { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  #historyList { min-height: 120px; overflow-y: auto; margin: 10px 0; }
+  .historyRow { width: 100%; display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; text-align: left;
+    margin: 0 0 8px; background: var(--paper); }
+  .historyRow small { grid-column: 1; font-size: 10px; opacity: .75; }
+  .historyRow b { grid-column: 2; grid-row: 1 / 3; color: var(--hot); }
+  #historyEmpty { padding: 24px 8px; text-align: center; opacity: .85; }
   @media (max-width: 640px) {
     #log { display: none; } #help { display: none; } #cards { grid-template-columns: 1fr; } .hintcard { aspect-ratio: auto; min-height: 90px; }
     #checkBtn { display: block; }
@@ -154,6 +220,8 @@
     #targetCat, #modeLabel, #outcome { font-size: 10px; }
     #bigScore { font-size: 34px; margin: 0; text-shadow: 3px 3px 0 var(--hot); white-space: nowrap; }
     #bigScore small { font-size: 12px; }
+    #badges { margin: 2px 0 4px; } .badge { padding: 3px 8px 3px 6px; gap: 6px; } .badge .ico { width: 16px; height: 16px; }
+    .badge b { font-size: 10px; } .badge small { font-size: 9px; }
     #tally { margin: 4px 0; }
     #tally td { padding: 2px 0; font-size: 11px; }
     #tally td small { display: none; }
@@ -186,6 +254,10 @@
     #mapBtn { bottom: max(16px, env(safe-area-inset-bottom)); min-height: 52px; font-size: 14px; }
     #mapBtn kbd, #mapBtn small { display: none; }
     #compass { bottom: calc(max(16px, env(safe-area-inset-bottom)) + 64px); right: 14px; width: 48px; height: 48px; }
+    #clueThumb { width: 112px; left: 8px; bottom: calc(max(16px, env(safe-area-inset-bottom)) + 66px); }
+    #legend { left: 8px; right: 8px; bottom: max(12px, env(safe-area-inset-bottom)); }
+    #legendBack { margin-top: 4px; }
+    #clueThumb small { font-size: 8px; padding: 1px 4px; }
     #needle { font-size: 14px; }
     #banner { top: auto; bottom: calc(max(16px, env(safe-area-inset-bottom)) + 64px); max-width: min(560px, calc(100vw - 90px));
       left: 8px; transform: none; font-size: 11px; padding: 6px 8px; text-align: left; }
@@ -248,8 +320,10 @@
 <div id="banner" class="panel hidden"><div id="bannerText"></div><div class="hint" id="bannerHint"></div></div>
 <div id="tip" class="panel hidden"></div>
 <div id="legend" class="panel hidden">
-  <div><span style="background:#ff5fa2"></span>Your route</div>
-  <div><span style="background:#4cf0d4"></span>Shortest route</div>
+  <div><span class="you"></span>Your route <b id="legendYou"></b></div>
+  <div><span class="short"></span>Shortest route <b id="legendShort"></b></div>
+  <small>Shortest = straight to the zone, if you'd known where it was</small>
+  <button id="legendBack" class="secondary hidden">Back to results</button>
 </div>
 
 <div id="pickerBar" class="panel hidden">
@@ -277,7 +351,7 @@
     </div>
     <!-- Difficulty selector: the start request already sends { difficulty }. See the team task "Difficulty levels". -->
     <div id="difficulty" data-value="normal" class="controls">Difficulty: Normal</div>
-    <div class="buttons"><button id="startBtn" autofocus>Start <kbd>Enter</kbd></button><button id="viewDailyResult" class="secondary hidden">View today's result</button><button id="tutorialBtn" class="secondary">How to play</button></div>
+    <div class="buttons"><button id="startBtn" autofocus>Start <kbd>Enter</kbd></button><button id="viewDailyResult" class="secondary hidden">View today's result</button><button id="historyBtn" class="secondary hidden">History</button><button id="tutorialBtn" class="secondary">How to play</button><button id="achievementsBtn" class="secondary">Achievements</button></div>
     <p id="loading">Loading campus…</p>
   </div>
 </section>
@@ -289,6 +363,28 @@
     <div id="tutArt" aria-hidden="true"></div>
     <p id="tutText" class="lead"></p>
     <div class="buttons"><button id="tutBack" class="secondary">Back</button><button id="tutNext">Next</button><button id="tutClose" class="secondary">Close</button></div>
+  </div>
+</section>
+
+<section id="clueCard" class="screen hidden" role="dialog" aria-modal="true" aria-labelledby="clueTitle">
+  <div class="card panel">
+    <h2 id="clueTitle">Somewhere in the zone</h2>
+    <div class="cluePhoto" id="cluePhoto" role="img" aria-label="Street photo of a building in the hidden zone"></div>
+    <small id="clueCredit"></small>
+    <button id="clueSwap" class="link hidden">Photo didn't load? Read a written clue instead</button>
+    <p id="clueWords" class="hidden"></p>
+    <p id="clueLead" class="lead"></p>
+    <div class="buttons"><button id="clueClose">Find the zone</button></div>
+  </div>
+</section>
+<button id="clueThumb" class="hidden" aria-label="Show the photo of a building in the zone"><span class="cluePhoto" id="clueThumbPhoto"></span><small>Zone photo</small></button>
+
+<section id="achievements" class="screen hidden" role="dialog" aria-modal="true" aria-labelledby="achTitle">
+  <div class="card panel">
+    <h2 id="achTitle">Achievements</h2>
+    <div class="title-sm" id="achCount"></div>
+    <ul id="achList"></ul>
+    <div class="buttons"><button id="achClose" class="secondary">Close</button></div>
   </div>
 </section>
 
@@ -312,6 +408,7 @@
     <div><div class="big" id="targetName"></div><div id="targetCat"></div></div>
     <div id="bigScore"><span id="total">0</span><small> / 1000</small></div>
   </div>
+  <div id="badges"></div>
   <div id="resultsBody">
   <table id="tally"></table>
   <table id="stats">
@@ -327,6 +424,11 @@
   <div class="buttons"><button id="replayBtn" class="secondary">Replay route</button><button id="shareBtn" class="secondary">Share</button><button id="againBtn">Play again</button></div>
 </aside>
 
+<aside id="history" class="panel hidden" aria-label="Explore history">
+  <div id="historyHead"><h2>History</h2><button id="historyClose" class="secondary" type="button">Close</button></div>
+  <div id="historyList"></div>
+</aside>
+
 <script>
 "use strict";
 const params = new URLSearchParams(location.search);
@@ -335,6 +437,11 @@ const DEBUG = params.get('debug') === '1';
 // Without the Java server (e.g. on GitHub Pages) the page plays with an in-browser copy of the rules.
 const STATIC = params.get('static') === '1' || !['127.0.0.1', 'localhost'].includes(location.hostname);
 const $ = id => document.getElementById(id);
+if (!STATIC) {
+  $('historyBtn').classList.remove('hidden');
+  $('historyBtn').addEventListener('click', openHistory);
+  $('historyClose').addEventListener('click', () => hide('history'));
+}
 const HEAT_COLORS = { hot: '#ff4d2e', warm: '#ff9f1c', cool: '#4cc9f0', cold: '#6f8cff' };
 const TREND_TEXT = { first: '', warmer: '▲ Warmer', same: '■ Same', colder: '▼ Colder' };
 // About 30 seconds from one edge of campus to the other. Java's Expedition.TRAVEL_SPEED matches WALK_SPEED.
@@ -439,7 +546,11 @@ function segmentClear(a, b) {
 }
 
 // ---------- state ----------
-let pack, map, buildings = new Map(), named = [], landmarkBuildings = [];
+let pack, map, buildings = new Map(), named = [], labelled = [], landmarkBuildings = [];
+/** What a building is called on the map: its name, else a pack label (another OSM name, a business inside). */
+const labelOf = b => b.name || b.label;
+/** The guess tooltip: the name, else the label and address ("123 College Street", "House on Huron Street"). */
+const tipOf = b => b?.name || [b?.label, b?.address].filter(Boolean).join(' · ') || 'Building';
 const game = {
   phase: 'loading', pos: null, heading: 0, camBearing: 0, keys: {}, walked: 0, startedAt: 0, zoneAt: 0,
   checksLeft: 0, checkCount: 0, zone: null, zoneBuildings: new Set(), guessed: new Set(), hover: null, target: null,
@@ -449,7 +560,7 @@ const game = {
 window.game = game;
 
 async function api(action, body = {}) {
-  if (action !== 'start') body = { ...body, round: game.roundId };
+  if (action !== 'start' && action !== 'history' && action !== 'recap') body = { ...body, round: game.roundId };
   if (STATIC) return LocalRules.handle(action, body);
   const response = await fetch('/api/' + action, { method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body) });
@@ -1324,8 +1435,15 @@ function addGameLayers() {
     paint: { 'line-color': '#d6d1c4', 'line-width': ['interpolate', ['exponential', 2], ['zoom'], 15, 1.5, 19, 12], 'line-opacity': 0.95 } });
 
   map.addSource('routes', { type: 'geojson', data: fc([]) });
+  // Your route: solid. Shortest route (kind 'shortest'): dashed, on top, so both show where they overlap.
+  // Both get a dark outline so they stand out from paving and grass.
+  map.addLayer({ id: 'routes-casing', type: 'line', source: 'routes', layout: { 'line-cap': 'round', 'line-join': 'round' },
+    paint: { 'line-color': '#1b1f3a', 'line-width': lineWidth(6, 22) } });
   map.addLayer({ id: 'routes', type: 'line', source: 'routes', layout: { 'line-cap': 'round', 'line-join': 'round' },
-    paint: { 'line-color': ['get', 'color'], 'line-width': lineWidth(3, 14) } });
+    filter: ['!=', ['get', 'kind'], 'shortest'], paint: { 'line-color': ['get', 'color'], 'line-width': lineWidth(3, 14) } });
+  map.addLayer({ id: 'routes-shortest', type: 'line', source: 'routes', layout: { 'line-cap': 'butt', 'line-join': 'round' },
+    filter: ['==', ['get', 'kind'], 'shortest'],
+    paint: { 'line-color': ['get', 'color'], 'line-width': lineWidth(2.5, 10), 'line-dasharray': [1.4, 1.1] } });
 
   map.addSource('zone', { type: 'geojson', data: fc([]) });
   map.addLayer({ id: 'zone-floor', type: 'fill', source: 'zone', paint: { 'fill-color': '#ffd23f', 'fill-opacity': 0.18 } });
@@ -1357,6 +1475,7 @@ function addGameLayers() {
   map.on('mouseleave', 'buildings', () => setHover(null));
   map.on('click', 'buildings', onBuildingClick);
   map.on('render', placeLabels);
+  map.on('resize', reaimFlight);
   map.on('click', e => { if (game.mapView) travelTo(e.lngLat); });
   map.on('mousemove', e => {
     if (!game.mapView || game.travelling) return;
@@ -1415,9 +1534,9 @@ function placeLabels() {
     const centre = map.getCenter();
     const ppm = 512 * Math.pow(2, zoom) / (40075016.686 * Math.cos(centre.lat * Math.PI / 180));
     const here = [centre.lng, centre.lat];
-    // On the overview map: landmarks first, then other named buildings as you zoom in.
+    // On the overview map: landmarks first, then other named buildings as you zoom in. In the zone, labels too.
     const pool = game.phase === 'guess' || game.phase === 'hint' || game.phase === 'zone'
-      ? named.filter(b => game.zoneBuildings.has(b.id))
+      ? labelled.filter(b => game.zoneBuildings.has(b.id))
       : game.mapView && zoom < 16.3 ? landmarkBuildings : named;
     const limit = game.mapView ? 70 : game.phase === 'walk' ? 14 : 40;
     const reach = game.mapView ? Infinity : 700;
@@ -1429,13 +1548,13 @@ function placeLabels() {
       const p = map.project(b.center);
       const y = p.y - b.height * ppm * Math.sin(pitch) - (game.mapView ? -8 : 6);
       if (p.x < -50 || p.x > width + 50 || y < 20 || y > height - 10) continue;
-      const w = b.name.length * 7.2 + 12, h = 16;
+      const text = labelOf(b), w = text.length * 7.2 + 12, h = 16;
       const rect = [p.x - w / 2, y - h, p.x + w / 2, y];
       if (placed.some(r => rect[0] < r[2] && rect[2] > r[0] && rect[1] < r[3] && rect[3] > r[1])) continue;
       placed.push(rect);
       let el = labelPool[used];
       if (!el) { el = document.createElement('div'); labelPool.push(el); layer.append(el); }
-      if (el.textContent !== b.name) el.textContent = b.name;
+      if (el.textContent !== text) el.textContent = text;
       el.className = b.id === game.target ? 'target' : game.zoneBuildings.has(b.id) && game.phase === 'guess' ? 'zone' : '';
       el.style.transform = `translate(${Math.round(rect[0])}px, ${Math.round(rect[1])}px)`;
       el.style.display = '';
@@ -1891,12 +2010,12 @@ function toggleMapView(force) {
     map.getSource('routes').setData(fc(game.trail.length > 1 ? [{ type: 'Feature', properties: { color: '#ff5fa2', scale: 0.6 },
       geometry: { type: 'LineString', coordinates: game.trail } }] : []));
     const b = pack.bounds;
-    map.fitBounds([[b.west, b.south], [b.east, b.north]], { padding: 40, pitch: 0, bearing: 0, duration: 900 });
+    fitBounds([[b.west, b.south], [b.east, b.north]], () => ({ padding: 40, pitch: 0, bearing: 0, duration: 900 }));
   } else {
     map.getCanvas().style.cursor = '';
     map.getSource('routes').setData(fc([]));
     drawAvatar();
-    map.flyTo({ center: game.pos, zoom: LOOK_ZOOM, pitch: 55, bearing: game.camBearing, duration: 700 });
+    flyTo({ center: game.pos, zoom: LOOK_ZOOM, pitch: 55, bearing: game.camBearing, duration: 700 });
     lookAroundMode();
   }
 }
@@ -2013,7 +2132,7 @@ function onHover(e) {
   setHover(f.id);
   map.getCanvas().style.cursor = 'pointer';
   const tip = $('tip');
-  tip.textContent = buildings.get(f.id)?.name || 'Unnamed building';
+  tip.textContent = tipOf(buildings.get(f.id));
   tip.style.left = e.point.x + 'px'; tip.style.top = e.point.y + 'px';
   tip.classList.remove('hidden');
 }
@@ -2059,7 +2178,7 @@ async function finish(result, saveError) {
     store.set(dailyResultKey(date), JSON.stringify(result));
     store.remove(dailyRunKey(date));
   }
-  hide('banner'); hide('log'); hide('help');
+  hide('banner'); hide('log'); hide('help'); hide('clueThumb'); hide('clueCard');
   const t = result.target;
   game.target = t.buildingId;
   if (!game.zone && result.zone) {
@@ -2096,7 +2215,7 @@ function fillResults(r, saveError) {
   $('modeLabel').textContent = game.mode === 'daily' ? `Daily · ${game.date} · ${$('campusName').textContent}` : 'Unlimited';
   const fmt = m => m >= 1000 ? (m / 1000).toFixed(2) + ' km' : m + ' m';
   $('outcome').textContent = r.won ? `Identified in ${r.guessesUsed} ${r.guessesUsed === 1 ? 'guess' : 'guesses'}`
-    : r.secondsToZone == null ? 'Zone not found' : 'Out of guesses';
+    : r.secondsToZone == null ? (r.score.nearMiss ? 'Ahh almost almost' : 'Zone not found') : 'Out of guesses';
   $('targetName').textContent = r.target.name;
   $('targetCat').textContent = r.target.category;
   const sc = r.score, ordinal = ['1st', '2nd', '3rd'][r.guessesUsed - 1];
@@ -2107,6 +2226,9 @@ function fillResults(r, saveError) {
     ['Hint bonus', r.hintLevel ? `${r.hintLevel[0].toUpperCase() + r.hintLevel.slice(1)} hint ×${sc.multiplier}` : 'No hint', sc.hintBonus],
     ['Checks saved', r.secondsToZone == null ? 'Zone not found' : `${Math.max(0, 6 - r.checksUsed)} of 5 saveable (the finding check is free)`, sc.checkBonus],
   ];
+  if (r.secondsToZone == null) lines.push(['Near miss', r.metresShort == null ? 'No checks made'
+    : `Closest check was ${r.metresShort} m short of the zone (points within 150 m)`, sc.nearMiss || 0]);
+  showBadges(r.achievements || []);
   const tally = $('tally');
   tally.innerHTML = '';
   for (const [title, why, points] of lines) {
@@ -2138,6 +2260,181 @@ function fillResults(r, saveError) {
   }
 }
 
+// ---------- start-of-round photo clue ----------
+/**
+ * Views are chosen ahead of time (tools/fetch_clue_photos.py) and listed in the campus pack: either a stored photo
+ * (file) or a Street View camera (pano, heading, pitch, fov). Street View is shown through Google's Maps Embed API,
+ * which Google provides at no charge with unlimited use. Restrict this key to the Maps Embed API and this site's
+ * addresses (docs/CLUE_PHOTOS.md), so it can never be billed. Empty = Street View views are skipped.
+ */
+const GOOGLE_EMBED_KEY = 'AIzaSyAvsJIlICraSRUOjO3RickZQwiCvsHWzuw';
+const loadImage = src => new Promise(res => { const img = new Image(); img.onload = () => res(true); img.onerror = () => res(false); img.src = src; });
+async function findClue(buildingId) {
+  const stored = (pack.cluePhotos || []).find(p => p.building === buildingId);
+  if (buildingId == null || !stored) return null;
+  if (stored.pano) {
+    if (!GOOGLE_EMBED_KEY) return null;
+    const q = new URLSearchParams({ key: GOOGLE_EMBED_KEY, pano: stored.pano, heading: stored.heading, pitch: stored.pitch,
+      fov: stored.fov, location: `${stored.location[1]},${stored.location[0]}` });
+    return { embed: 'https://www.google.com/maps/embed/v1/streetview?' + q,
+      credit: 'Google Street View' + (stored.taken ? ' · ' + stored.taken : '') };
+  }
+  const photo = { src: 'packs/' + stored.file, credit: stored.credit };
+  return await loadImage(photo.src) ? photo : null;
+}
+function paintPhoto(el, photo) {
+  el.innerHTML = '';
+  el.style.backgroundImage = photo.src ? `url("${photo.src}")` : '';
+}
+/**
+ * A Street View embed, locked to its camera angle: a clear shield stops players walking off to read street signs,
+ * leaving Google's credit and terms links along the bottom visible and clickable.
+ */
+function embedView(el, photo) {
+  el.innerHTML = ''; el.style.backgroundImage = '';
+  const frame = document.createElement('iframe');
+  frame.src = photo.embed; frame.loading = 'eager'; frame.title = 'Street View of a building in the zone';
+  frame.referrerPolicy = 'strict-origin-when-cross-origin';
+  const shield = document.createElement('span'); shield.className = 'shield';
+  el.append(frame, shield);
+}
+let closeClueCard = () => {};
+/** Resolves true once the frame has loaded, false after `ms` (offline, blocked, or Google not answering). */
+const frameLoaded = (frame, ms) => new Promise(res => {
+  const timer = setTimeout(() => res(false), ms);
+  frame.addEventListener('load', () => { clearTimeout(timer); res(true); }, { once: true });
+});
+/** Photo mode, or the written clue (no photo, or it didn't load). */
+function clueMode(words) {
+  const text = words && !!game.clueText;
+  $('cluePhoto').classList.toggle('hidden', text); $('clueCredit').classList.toggle('hidden', text);
+  $('clueSwap').classList.toggle('hidden', text || !game.clueText);
+  $('clueWords').classList.toggle('hidden', !text);
+  $('clueWords').textContent = game.clueText || '';
+  $('clueTitle').textContent = text ? 'A clue to the zone' : 'Somewhere in the zone';
+  $('clueLead').textContent = text
+    ? "It isn't the building you're looking for, but it's in the zone. The clue stays in the corner."
+    : "This building stands in the hidden zone. It isn't the one you're looking for, but find it and you've found the zone. The photo stays in the corner.";
+  $('clueThumb').classList.toggle('icon', text || !!game.cluePhoto?.embed);
+  $('clueThumb').classList.toggle('words', text);
+  $('clueThumb').querySelector('small').textContent = text ? 'Zone clue' : 'Zone photo';
+  game.clueWords = text;
+}
+/**
+ * Shows the clue card (resolves when closed) and keeps a corner button for the rest of the round. A photo is used
+ * when there is one and it loads; otherwise the written clue; with neither, nothing is shown.
+ */
+async function showClue(photo, open) {
+  game.cluePhoto = photo;
+  if (photo?.embed) {
+    embedView($('cluePhoto'), photo); paintPhoto($('clueThumbPhoto'), {});
+    if (!await frameLoaded($('cluePhoto').querySelector('iframe'), 8000)) game.cluePhoto = null;
+  } else if (photo) {
+    paintPhoto($('cluePhoto'), photo); paintPhoto($('clueThumbPhoto'), photo);
+  }
+  if (!game.cluePhoto && !game.clueText) return;
+  if (game.cluePhoto) $('clueCredit').textContent = game.cluePhoto.credit;
+  clueMode(!game.cluePhoto);
+  show('clueThumb');
+  if (open) await openClueCard();
+}
+function openClueCard() {
+  if (!game.cluePhoto && !game.clueText) return Promise.resolve();
+  show('clueCard');
+  $('clueClose').focus();
+  return new Promise(res => { closeClueCard = () => { hide('clueCard'); closeClueCard = () => {}; res(); }; });
+}
+$('clueSwap').addEventListener('click', () => clueMode(true));
+$('clueClose').addEventListener('click', () => closeClueCard());
+$('clueCard').addEventListener('click', e => { if (e.target.id === 'clueCard') closeClueCard(); });
+$('clueThumb').addEventListener('click', openClueCard);
+
+// ---------- achievements ----------
+/** Same catalogue and order as the Java Achievement enum; icons are 11×11 pixel art (palette letters below). */
+const BETA_ENDS = Date.parse('2027-01-01T05:00:00Z');   // midnight in Toronto
+const ACHIEVEMENTS = [
+  // once: a milestone, not a feat; shown with a result only the round it's first unlocked.
+  { id: 'beta_player', title: 'Beta Player', subtitle: 'Here before launch', share: '🧪', once: true,
+    description: 'Finish a round while the game is in beta (before 2027).',
+    pixels: ['...........', '...bbbb....', '..bb..bb...', '..bb..bb...', '..bbbbb....', '..bb..bb...',
+      '..bb...bb..', '..bb...bb..', '..bbbbbb...', '..bb.......', '..bb.......'] },
+  { id: 'almost_almost', title: 'Ahh almost almost', subtitle: '', share: '🤏',
+    description: 'Miss the zone, but get a check within 150 m of finding it.',
+    pixels: ['....ppp....', '....pgp....', '....prp....', '....prp....', '....prp....', '....prp....',
+      '....prp....', '...prrrp...', '..prrrrrp..', '..prrrrrp..', '...ppppp...'] },
+  { id: 'absolute_zero', title: 'Absolute Zero', subtitle: 'Too cold', share: '🧊',
+    description: 'Find the zone with your very first check.',
+    pixels: ['.....c.....', '.c...c...c.', '..c..c..c..', '...c.c.c...', '....ccc....', 'cccccwccccc',
+      '....ccc....', '...c.c.c...', '..c..c..c..', '.c...c...c.', '.....c.....'] },
+  { id: 'supernova', title: 'Supernova', subtitle: 'Too hot to handle', share: '💥',
+    description: 'Score a perfect 1000.',
+    pixels: ['.....r.....', '.r...o...r.', '..o..y..o..', '...oyyyo...', '...yywyy...', 'royywwwyyor',
+      '...yywyy...', '...oyyyo...', '..o..y..o..', '.r...o...r.', '.....r.....'] },
+];
+const PIXEL_COLOURS = { b: '#4cf0d4', p: '#fff8e7', g: '#5a5f7a', r: '#ff4d2e', c: '#9fe8ff', w: '#ffffff', y: '#ffd23f', o: '#ff8a2e' };
+function pixelIcon(id) {
+  const rows = ACHIEVEMENTS.find(a => a.id === id)?.pixels || [];
+  let rects = '';
+  rows.forEach((row, y) => [...row].forEach((ch, x) => {
+    if (PIXEL_COLOURS[ch]) rects += `<rect x="${x}" y="${y}" width="1" height="1" fill="${PIXEL_COLOURS[ch]}"/>`;
+  }));
+  return `<svg viewBox="0 0 11 11" shape-rendering="crispEdges" aria-hidden="true">${rects}</svg>`;
+}
+function unlockedAchievements() {
+  try { return JSON.parse(store.get('achievements') || '{}') || {}; } catch (e) { return {}; }
+}
+function badgeElement(a) {
+  const el = document.createElement('div');
+  el.className = 'badge';
+  el.innerHTML = `<span class="ico">${pixelIcon(a.id)}</span><span><b></b>${a.subtitle ? '<small></small>' : ''}</span>`;
+  el.querySelector('b').textContent = a.title;
+  if (a.subtitle) el.querySelector('small').textContent = a.subtitle;
+  return el;
+}
+/** This round's achievements; ones never earned before on this device are marked NEW. Click one for the full list. */
+function showBadges(earned) {
+  const seen = unlockedAchievements();
+  const box = $('badges');
+  box.innerHTML = '';
+  // Feats show every time they're earned; one-time milestones only when new. Share uses the same list.
+  const shown = earned.filter(a => !(ACHIEVEMENTS.find(x => x.id === a.id)?.once && seen[a.id]));
+  game.shownBadges = shown;
+  shown.forEach((a, i) => {
+    const el = badgeElement(a);
+    el.style.animationDelay = (600 + i * 250) + 'ms';
+    el.title = 'See all achievements';
+    el.addEventListener('click', showAchievements);
+    if (!seen[a.id]) {
+      const tag = document.createElement('em'); tag.textContent = 'NEW'; el.append(tag);
+      seen[a.id] = game.date || new Date().toISOString().slice(0, 10);
+    }
+    box.append(el);
+  });
+  store.set('achievements', JSON.stringify(seen));
+}
+/** Every achievement, how to earn it, and when it was unlocked; locked ones are greyed out. */
+function showAchievements() {
+  const seen = unlockedAchievements(), list = $('achList');
+  list.innerHTML = '';
+  for (const a of ACHIEVEMENTS) {
+    const li = document.createElement('li');
+    li.className = seen[a.id] ? 'unlocked' : 'locked';
+    li.innerHTML = `<span class="ico">${pixelIcon(a.id)}</span><div><b></b>${a.subtitle ? '<small></small>' : ''}<p></p><i></i></div>`;
+    li.querySelector('b').textContent = a.title;
+    if (a.subtitle) li.querySelector('small').textContent = a.subtitle;
+    li.querySelector('p').textContent = a.description;
+    li.querySelector('i').textContent = seen[a.id] ? `Unlocked ${seen[a.id]}` : 'Locked';
+    list.append(li);
+  }
+  $('achCount').textContent = `${ACHIEVEMENTS.filter(a => seen[a.id]).length} of ${ACHIEVEMENTS.length} unlocked`;
+  show('achievements');
+  $('achClose').focus();
+}
+const closeAchievements = () => hide('achievements');
+$('achClose').addEventListener('click', closeAchievements);
+$('achievements').addEventListener('click', e => { if (e.target.id === 'achievements') closeAchievements(); });
+$('achievementsBtn').addEventListener('click', showAchievements);
+
 function countUp(el, target) {
   const t0 = performance.now(), duration = 1400;
   const tick = now => {
@@ -2148,26 +2445,124 @@ function countUp(el, target) {
   requestAnimationFrame(tick);
 }
 
+async function openHistory() {
+  show('history');
+  const list = $('historyList');
+  list.textContent = 'Loading…';
+  const response = await api('history', { campus: pack.id }).catch(() => null);
+  if (!response || response.status !== 200) {
+    list.textContent = 'Could not load history.';
+    return;
+  }
+  const rounds = response.body.rounds || [];
+  list.innerHTML = '';
+  if (!rounds.length) {
+    const empty = document.createElement('p');
+    empty.id = 'historyEmpty';
+    empty.textContent = 'No Explore rounds saved yet. Finish a round to start your history!';
+    list.append(empty);
+    return;
+  }
+  for (const round of rounds) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'historyRow';
+    const date = document.createElement('span');
+    date.textContent = round.dailyDate || round.finishedAt.slice(0, 10);
+    const target = document.createElement('small');
+    target.textContent = `${round.campusId} · ${round.target} · ${round.difficulty.toLower ? round.difficulty.toLower() : round.difficulty}`;
+    const score = document.createElement('b');
+    score.textContent = `${round.score}/1000`;
+    button.append(date, target, score);
+    button.addEventListener('click', () => openRecap(round.roundId));
+    list.append(button);
+  }
+}
+
+async function openRecap(roundId) {
+  const response = await api('recap', { round: roundId }).catch(() => null);
+  if (!response || response.status !== 200) {
+    $('historyList').textContent = response?.body?.error || 'Could not read this saved round.';
+    return;
+  }
+  const recap = response.body;
+  hide('history');
+  hide('title');
+  game.phase = 'done';
+  game.mode = recap.mode;
+  game.date = recap.dailyDate;
+  game.result = recap.result;
+  game.zone = recap.result.zone;
+  game.orbiting = false;
+  fillResults(recap.result, null);
+  show('results');
+  replay();
+}
+
+/** The point `share` (0-1) of the way along a line, by distance. */
+function alongLine(points, share) {
+  const legs = points.slice(1).map((p, i) => distOf(points[i], p)), total = legs.reduce((a, b) => a + b, 0);
+  let left = total * share;
+  for (let i = 0; i < legs.length; i++) {
+    if (left <= legs[i] && legs[i] > 0) {
+      const k = left / legs[i];
+      return [points[i][0] + (points[i + 1][0] - points[i][0]) * k, points[i][1] + (points[i + 1][1] - points[i][1]) * k];
+    }
+    left -= legs[i];
+  }
+  return points[points.length - 1];
+}
+const fmtDistance = m => m >= 1000 ? (m / 1000).toFixed(2) + ' km' : Math.round(m) + ' m';
+let replayMarkers = [];
+$('legendBack').addEventListener('click', () => { hide('legend'); show('results'); });
+/**
+ * Replays the round from above: your route (solid pink, traced by a moving dot) against the shortest route (dashed
+ * cyan), labelled on the map with their lengths, from START to the ZONE. Drawn above the 3D buildings.
+ */
 async function replay() {
   const r = game.result;
   if (!r) return;
   game.orbiting = false;
+  for (const m of replayMarkers) m.remove();
+  replayMarkers = [];
   const z = game.zone;
   const all = [...r.route, ...r.shortestRoute, ...(z ? [0, 90, 180, 270].map(b => offsetPt(z.centre, b, z.radius)) : [])];
   const lons = all.map(p => p[0]), lats = all.map(p => p[1]);
-  map.fitBounds([[Math.min(...lons), Math.min(...lats)], [Math.max(...lons), Math.max(...lats)]],
-    { padding: { top: 60, bottom: 90, left: 60, right: Math.min(420, innerWidth / 2) }, pitch: 35, bearing: 0, duration: 1800 });
-  await new Promise(res => map.once('moveend', res));
+  const phone = matchMedia('(max-width: 640px)').matches;
+  // Phones: the results sheet would cover the map, so it steps aside until "Back to results".
+  $('legendBack').classList.toggle('hidden', !phone);
+  if (phone) hide('results');
+  await fitBounds([[Math.min(...lons), Math.min(...lats)], [Math.max(...lons), Math.max(...lats)]],
+    () => ({ padding: phone ? { top: 70, bottom: 170, left: 40, right: 40 }
+      : { top: 70, bottom: 170, left: 70, right: Math.min(430, innerWidth / 2) }, pitch: 0, bearing: 0, duration: 1800 }));
+  if (z) map.getSource('zone').setData(fc([{ type: 'Feature', properties: {},
+    geometry: { type: 'Polygon', coordinates: [circle(z.centre, z.radius, 64)] } }]));
+  for (const id of ['zone-floor', 'zone-ring', 'routes-casing', 'routes', 'routes-shortest']) map.moveLayer(id);   // above the buildings
+  $('legendYou').textContent = fmtDistance(r.metresWalked);
+  $('legendShort').textContent = fmtDistance(r.shortestMetres);
   show('legend');
-  // Drawn wider underneath, so it shows as an outline where your route matches it.
-  const shortest = { type: 'Feature', properties: { color: '#4cf0d4', scale: 2.2 }, geometry: { type: 'LineString', coordinates: r.shortestRoute } };
+  const tag = (text, cls, at, anchor = 'bottom') => {
+    const el = document.createElement('div'); el.className = 'routeTag ' + cls; el.textContent = text;
+    const marker = new maplibregl.Marker({ element: el, anchor, offset: anchor === 'bottom' ? [0, -8] : [0, 8] }).setLngLat(at).addTo(map);
+    replayMarkers.push(marker);
+  };
+  tag('START', 'start', r.route[0]);
+  if (z) tag('ZONE', 'zone', offsetPt(z.centre, 0, z.radius));
+  tag('Shortest · ' + fmtDistance(r.shortestMetres), 'short', alongLine(r.shortestRoute, 0.5), 'top');
+  const head = document.createElement('div'); head.className = 'routeHead';
+  const headMarker = new maplibregl.Marker({ element: head }).setLngLat(r.route[0]).addTo(map);
+  replayMarkers.push(headMarker);
+  const shortest = { type: 'Feature', properties: { color: '#4cf0d4', kind: 'shortest', scale: 1.2 },
+    geometry: { type: 'LineString', coordinates: r.shortestRoute } };
   const t0 = performance.now(), duration = 4500;
   const draw = now => {
     const k = Math.min(1, (now - t0) / duration);
     const n = Math.max(2, Math.ceil(r.route.length * k));
-    map.getSource('routes').setData(fc([shortest, { type: 'Feature', properties: { color: '#ff5fa2' },
-      geometry: { type: 'LineString', coordinates: r.route.slice(0, n) } }]));
+    map.getSource('routes').setData(fc([{ type: 'Feature', properties: { color: '#ff5fa2' },
+      geometry: { type: 'LineString', coordinates: r.route.slice(0, n) } }, shortest]));
+    headMarker.setLngLat(r.route[n - 1]);
     if (k < 1) requestAnimationFrame(draw);
+    else tag('You · ' + fmtDistance(r.metresWalked), 'you', alongLine(r.route, 0.5));
   };
   requestAnimationFrame(draw);
 }
@@ -2223,6 +2618,65 @@ const LocalRules = (() => {
   const ok = body => ({ status: 200, body });
   const fail = (error, status = 400) => ({ status, body: { type: 'error', error } });
   const inZone = (z, p) => distOf(z.centre, p) <= z.radius;
+  /**
+   * Mirrors ZoneClue.candidates, never the target: ordinary buildings 10 m inside the zone; else ordinary ones anywhere
+   * in it; else the other landmarks (10 m inside first). Picked by an index from the zone's centre. Measured like
+   * GeoPoint.distanceTo (haversine), not distOf, so the server and the page agree on buildings at the boundaries.
+   */
+  function haversine(a, b) {
+    const rad = Math.PI / 180, lat = Math.sin((b[1] - a[1]) * rad / 2), lon = Math.sin((b[0] - a[0]) * rad / 2);
+    const h = lat * lat + Math.cos(a[1] * rad) * Math.cos(b[1] * rad) * lon * lon;
+    return 2 * 6371000 * Math.asin(Math.sqrt(Math.min(1, h)));
+  }
+  const isLandmark = b => pack.landmarks.some(l => l.building === b.id);
+  function clueCandidates(zone, targetId) {
+    const inside = r => pack.buildings.filter(b => b.id !== targetId && haversine(zone.centre, b.center) <= r).sort((a, b) => a.id - b.id);
+    const inner = inside(zone.radius - 10), whole = inside(zone.radius);
+    return [inner.filter(b => !isLandmark(b)), whole.filter(b => !isLandmark(b)), inner].find(p => p.length) || whole;
+  }
+  function pickClue(zone, pool) {
+    if (!pool.length) return null;
+    const seed = Math.round(zone.centre[1] * 1e6) + Math.round(zone.centre[0] * 1e6);
+    return pool[((seed % pool.length) + pool.length) % pool.length];
+  }
+  /** Mirrors ZoneClue.building: a photographed ordinary candidate, never a landmark (it would give the zone away). */
+  function clueBuilding(zone, targetId) {
+    const photographed = new Set((pack.cluePhotos || []).map(p => p.building));
+    return pickClue(zone, clueCandidates(zone, targetId).filter(b => !isLandmark(b) && photographed.has(b.id)))?.id ?? null;
+  }
+  /** Mirrors ZoneClue.text, describe and look: recorded history first (a landmark's obscure fact), else the look. */
+  const usableFormerName = b => !!b.formerName && (!b.name || !givesAway(b.formerName, b.name));
+  function lookClue(b) {
+    const floors = Math.max(1, Math.round(b.height / 3.66));
+    return `One building in the zone is ${floors} ${floors === 1 ? 'storey' : 'storeys'}, ${b.material || 'brick'}.`;
+  }
+  function describeClue(b) {
+    if (usableFormerName(b)) return `One building in the zone used to be called ${b.formerName}.`;
+    if (b.architect) return `One building in the zone was designed by ${b.architect}.`;
+    if (b.built != null) return `One building in the zone dates from the ${Math.floor(b.built / 10) * 10}s.`;
+    return lookClue(b);
+  }
+  /** Mirrors ZoneClue.historyFact: the fact a landmark's hard hint uses, if it has a year and names neither it nor the target. */
+  function historyFact(b, targetName) {
+    const l = pack.landmarks.find(l => l.building === b.id), facts = l?.facts || [];
+    const fact = facts.length ? facts[facts.length === 1 ? 0 : 1] : null;
+    return fact && /\b(1[6-9]|20)\d\d\b/.test(fact) && !givesAway(fact, l.name) && !(targetName && givesAway(fact, targetName)) ? fact.trim() : null;
+  }
+  const startOfSentence = f => ['It', 'Its', "It's", 'The', 'This', 'A', 'An'].includes(f.split(/\s+/)[0])
+    ? f[0].toLowerCase() + f.slice(1) : f;
+  function clueText(zone, targetId) {
+    const photoId = clueBuilding(zone, targetId);
+    if (photoId != null) return describeClue(buildings.get(photoId));
+    const candidates = clueCandidates(zone, targetId);
+    if (candidates.length && isLandmark(candidates[0])) {
+      const target = pack.landmarks.find(l => l.building === targetId)?.name;
+      const fact = b => historyFact(b, target);
+      const b = pickClue(zone, candidates.filter(fact));
+      if (b) return `About one building in the zone: ${startOfSentence(fact(b))}`;
+    }
+    const b = pickClue(zone, candidates.filter(o => usableFormerName(o) || o.architect || o.built != null)) || pickClue(zone, candidates);
+    return b ? describeClue(b) : null;
+  }
   const playerInZone = (z, p) => distOf(z.centre, p) <= z.radius + PLAYER_RADIUS;
   const zoneBuildings = z => pack.buildings.filter(b => inZone(z, b.center));
 
@@ -2313,7 +2767,7 @@ const LocalRules = (() => {
       start: startPoint, walked: 0, track: [startPoint], checks: [], guesses: [], stage: 'find', hint: null,
       startedAt: Date.now(), zoneAt: null, shortest: route, won: false, fact: null };
     return ok({ type: 'started', roundId: round.id, campusId: pack.id, campus: pack.campus, point: startPoint,
-      checksRemaining: CHECKS, guessLimit: GUESSES, difficulty: 'normal', mode, date,
+      checksRemaining: CHECKS, guessLimit: GUESSES, difficulty: 'normal', mode, date, clueBuilding: clueBuilding(round.zone, building.id), clueText: clueText(round.zone, building.id),
       message: `Find the zone. Check inside it to know you're there. ${CHECKS} checks.` });
   }
 
@@ -2533,13 +2987,32 @@ const LocalRules = (() => {
     const guessPts = round.won ? GUESS_POINTS[round.guesses.length - 1] : 0, multiplier = MULT[round.hint] || 1;
     const hintBonus = Math.round(guessPts * (multiplier - 1));
     const checkBonus = found ? Math.round(100 * Math.min(CHECKS - 1, CHECKS - round.checks.length) / (CHECKS - 1)) : 0;
-    return { route, efficiency: Math.round(efficiency * 100), guess: guessPts, hintBonus, checkBonus, multiplier,
-      total: route + guessPts + hintBonus + checkBonus, max: 1000 };
+    const short = metresShort(), nearMiss = short == null ? 0 : Math.round(100 * Math.max(0, 1 - short / NEAR_MISS));
+    return { route, efficiency: Math.round(efficiency * 100), guess: guessPts, hintBonus, checkBonus, nearMiss, multiplier,
+      total: route + guessPts + hintBonus + checkBonus + nearMiss, max: 1000 };
+  }
+  /** Mirrors Expedition.metresShortOfZone: unfound zone, closest check (or the final search) beyond a check's reach. */
+  const NEAR_MISS = 150;
+  function metresShort() {
+    if (round.zoneAt != null) return null;
+    const spots = round.checks.map(c => c.metres);
+    if (round.stage === 'finished') spots.push(distOf(round.pos, round.zone.centre));
+    return spots.length ? Math.max(0, Math.min(...spots) - round.zone.radius - PLAYER_RADIUS) : null;
+  }
+  /** Mirrors Expedition.achievements. */
+  function achievements(sc) {
+    const earned = {
+      beta_player: round.startedAt < BETA_ENDS,
+      almost_almost: sc.nearMiss > 0,
+      absolute_zero: round.zoneAt != null && round.checks.length === 1,
+      supernova: sc.total === 1000,
+    };
+    return ACHIEVEMENTS.filter(a => earned[a.id]).map(({ id, title, subtitle, description }) => ({ id, title, subtitle, description }));
   }
   function finished(summary = null) {
-    const t = round.target;
+    const t = round.target, sc = score(), short = metresShort();
     return { result: { won: round.won, target: { name: t.name, category: t.category, buildingId: round.building.id, centre: round.building.center },
-      score: score(), metresWalked: Math.round(round.walked), shortestMetres: Math.round(round.shortest.metres),
+      score: sc, achievements: achievements(sc), metresShort: short == null ? null : Math.round(short), metresWalked: Math.round(round.walked), shortestMetres: Math.round(round.shortest.metres),
       secondsToZone: round.zoneAt ? Math.round((round.zoneAt - round.startedAt + (round.travelMs || 0)) / 1000) : null,
       zone: { centre: round.zone.centre, radius: round.zone.radius }, checksUsed: round.checks.length,
       guessesUsed: round.guesses.length, hintLevel: round.hint, route: round.track, shortestRoute: round.shortest.points,
@@ -2628,7 +3101,7 @@ function saveDailyRun() {
     zoneElapsed: game.zoneAt ? performance.now() - game.zoneAt : null,
     checksLeft: game.checksLeft, checkCount: game.checkCount, checks: game.checkHistory,
     trail: game.trail, zone: game.zone, hint: game.hint, guessed: [...game.guessed],
-    zoneBuildings: [...game.zoneBuildings], rules: STATIC ? LocalRules.snapshot() : null };
+    zoneBuildings: [...game.zoneBuildings], clueBuilding: game.clueBuilding ?? null, clueText: game.clueText ?? null, rules: STATIC ? LocalRules.snapshot() : null };
   store.set(dailyRunKey(game.date), JSON.stringify(run));
 }
 function storedDailyResult() {
@@ -2699,10 +3172,13 @@ function showCanada(mode = 'visit', firstVisit = false) {
   // Frame every campus, so a narrow phone screen shows Victoria to St. John's too.
   const placed = campusIndex.filter(c => c.center);
   const lons = placed.map(c => c.center[0]), lats = placed.map(c => c.center[1]);
-  const bar = $('pickerBar').getBoundingClientRect();
-  const view = lons.length && map.cameraForBounds([[Math.min(...lons), Math.min(...lats)], [Math.max(...lons), Math.max(...lats)]],
-    { padding: { top: bar.bottom + 30, bottom: 40, left: 40, right: 40 } });
-  map.flyTo({ center: view?.center || [-92, 52], zoom: Math.min(3.4, view?.zoom ?? 3.4), pitch: 0, bearing: 0, duration: 2600, essential: true });
+  const canada = () => {   // measured at the current window size, so a re-aimed flight still frames it
+    const bar = $('pickerBar').getBoundingClientRect();
+    const view = lons.length && map.cameraForBounds([[Math.min(...lons), Math.min(...lats)], [Math.max(...lons), Math.max(...lats)]],
+      { padding: { top: bar.bottom + 30, bottom: 40, left: 40, right: 40 } });
+    return { center: view?.center || [-92, 52], zoom: Math.min(3.4, view?.zoom ?? 3.4), pitch: 0, bearing: 0 };
+  };
+  glide((duration, again) => map[again ? 'easeTo' : 'flyTo']({ ...canada(), duration, essential: true }), 2600);
 }
 function closeCanada() {
   if (!game.picking || game.firstPick) return;   // the first visit needs an answer
@@ -2710,8 +3186,8 @@ function closeCanada() {
   map.setLayoutProperty('campus-dots', 'visibility', 'none');
   for (const pin of game.campusPins) pin.remove();
   $('pickerBar').classList.add('hidden'); setInteractive(false);
-  map.flyTo({ center: ORIGIN, ...CAMPUS_VIEW, bearing: -20, duration: 2600, essential: true });
-  map.once('moveend', () => { $('title').classList.remove('hidden'); game.orbiting = true; });
+  flyTo({ center: ORIGIN, ...CAMPUS_VIEW, bearing: -20, duration: 2600 })
+    .then(() => { $('title').classList.remove('hidden'); game.orbiting = true; });
 }
 function pickCampus(id) {
   const settingHome = game.pickMode === 'home';
@@ -2722,8 +3198,7 @@ function pickCampus(id) {
   $('pickerBar').classList.add('hidden');
   for (const pin of game.campusPins) pin.remove();
   // Fly all the way down, then load that campus at the same view so the switch is seamless.
-  map.flyTo({ center: campus.center, ...CAMPUS_VIEW, bearing: -20, duration: 3200, essential: true });
-  map.once('moveend', () => {
+  flyTo({ center: campus.center, ...CAMPUS_VIEW, bearing: -20, duration: 3200 }).then(() => {
     const url = new URL(location.href); url.searchParams.delete('v');
     if (settingHome) url.searchParams.delete('campus'); else url.searchParams.set('campus', id);   // home needs no parameter
     location.href = url.toString();
@@ -2827,7 +3302,8 @@ function runFromServer(body) {
     point: body.point, heading, camBearing: same ? local.camBearing : heading, walked: body.metresWalked,
     elapsed: body.elapsedSeconds * 1000, zoneElapsed: body.zoneElapsedSeconds == null ? null : body.zoneElapsedSeconds * 1000,
     checksLeft: body.checksRemaining, checkCount: body.checks.length, checks: body.checks, trail: body.trail,
-    zone: body.zone || null, hint: body.hint || null, guessed: body.guesses, zoneBuildings: body.zoneBuildings, rules: null };
+    zone: body.zone || null, hint: body.hint || null, guessed: body.guesses, zoneBuildings: body.zoneBuildings,
+    clueBuilding: body.clueBuilding ?? null, clueText: body.clueText ?? null, rules: null };
 }
 
 async function loadCampusPack() {
@@ -2853,6 +3329,8 @@ function restoreDailyRun(run) {
   game.checkHistory = run.checks || [];
   game.zone = run.zone; game.hint = run.hint;
   game.guessed = new Set(run.guessed || []); game.zoneBuildings = new Set(run.zoneBuildings || []);
+  game.clueBuilding = run.clueBuilding ?? null; game.clueText = run.clueText ?? null;
+  findClue(game.clueBuilding).then(photo => { if (game.phase !== 'done') showClue(photo, false); });
   pack.guessLimit = 3;
   hide('title');
   // Start from a clean slate so restoring can never draw a check twice.
@@ -2941,6 +3419,8 @@ async function startRound() {
   game.camBearing = game.heading;
   game.startedAt = performance.now();
   game.phase = 'walk';
+  game.clueBuilding = r.body.clueBuilding ?? null; game.clueText = r.body.clueText ?? null;
+  const photo = findClue(game.clueBuilding);
   saveDailyRun();
   renderHud();
   for (const id of ['hud', 'log', 'compass', 'help', 'mapBtn', 'checkBtn']) show(id);
@@ -2948,6 +3428,8 @@ async function startRound() {
   drawAvatar();
   await flyTo({ center: game.pos, zoom: LOOK_ZOOM, pitch: 55, bearing: game.heading, duration: 3200 });
   lookAroundMode();
+  await showClue(await Promise.race([photo, new Promise(res => setTimeout(() => res(null), 6000))]), true);
+  if (!game.cluePhoto && !game.clueText) toast('NO ZONE CLUE', 'warm', 'No photo or clue for this zone. Use your checks.');
   toast('FIND THE ZONE', 'warm', 'Open the map (M) and click where to go. Space checks the temperature.');
   setTimeout(() => { if (game.phase === 'walk' && !game.usedMap) toast('HOW TO MOVE', 'warm', 'Press M or the Map button, then click a spot to travel there.'); }, 20000);
   setTimeout(() => $('mapBtn').classList.remove('pulse'), 20000);
@@ -3040,8 +3522,41 @@ function lookAroundMode() {
 function setInteractive(on) {
   for (const h of ['dragPan', 'dragRotate', 'scrollZoom', 'touchZoomRotate', 'doubleClickZoom', 'keyboard']) on ? map[h].enable() : map[h].disable();
 }
+// ---------- camera flights ----------
+/**
+ * MapLibre aims a flight at the screen centre it had when the flight began, so resizing the window mid-flight
+ * landed the camera off target. A flight is a function of its duration (and whether it is being re-aimed); when the
+ * map resizes mid-flight, it is re-aimed from wherever the camera is, in the time left. Resolves on arrival, or when
+ * something else takes over the camera.
+ */
+let flight = null;
+function glide(go, duration) {
+  flight?.done();
+  return new Promise(resolve => {
+    const f = { go, ends: performance.now() + duration, reaiming: false };
+    const arrived = () => { if (!f.reaiming) f.done(); };
+    f.done = () => { map.off('moveend', arrived); if (flight === f) flight = null; resolve(); };
+    flight = f;
+    go(duration, false);   // registered after the call: starting a flight ends the previous one with a moveend
+    if (map.isMoving()) map.on('moveend', arrived); else f.done();
+  });
+}
+function reaimFlight() {
+  const f = flight;
+  if (!f || !map.isMoving()) return;
+  f.reaiming = true;
+  f.go(Math.max(250, f.ends - performance.now()), true);
+  f.reaiming = false;
+}
+/** Re-aimed flights ease from where they are, so the camera doesn't start a second zoom-out arc. */
 function flyTo(options) {
-  return new Promise(resolve => { map.once('moveend', resolve); map.flyTo({ ...options, essential: true }); });
+  return glide((duration, again) => map[again ? 'easeTo' : 'flyTo']({ ...options, duration, essential: true }), options.duration ?? 1000);
+}
+function easeTo(options) {
+  return glide(duration => map.easeTo({ ...options, duration, essential: true }), options.duration ?? 500);
+}
+function fitBounds(bounds, options) {
+  return glide(duration => map.fitBounds(bounds, { ...options(), duration, essential: true }), options().duration ?? 1000);
 }
 
 // W/S and ↑/↓ move, A/D strafe, ←/→ turn. Around the zone, A/D and ←/→ both orbit and W/S tilt.
@@ -3049,6 +3564,11 @@ const KEYMAP = { KeyW: 'fwd', KeyS: 'back', KeyA: 'strafeLeft', KeyD: 'strafeRig
   ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'tiltUp', ArrowDown: 'tiltDown' };
 addEventListener('keydown', e => {
   if (e.code === 'Escape' && !$('tutorial').classList.contains('hidden')) { closeTutorial(); return; }
+  if (!$('achievements').classList.contains('hidden')) { if (e.code === 'Escape') closeAchievements(); return; }
+  if (!$('clueCard').classList.contains('hidden')) {
+    if (e.code === 'Escape' || e.code === 'Enter' || e.code === 'Space') { e.preventDefault(); closeClueCard(); }
+    return;
+  }
   if (e.code === 'Escape' && game.picking) { closeCanada(); return; }
   if (e.code === 'Enter' && game.phase === 'title' && $('tutorial').classList.contains('hidden')) { startRound(); return; }
   if (game.phase === 'walk') {
@@ -3058,7 +3578,7 @@ addEventListener('keydown', e => {
     if (e.code === 'Space' && !e.repeat) { doCheck(); e.preventDefault(); return; }
   }
   if (LOOK_PHASES.has(game.phase) && !game.mapView && KEYMAP[e.code]) { game.keys[KEYMAP[e.code]] = true; e.preventDefault(); }
-  if (LOOK_PHASES.has(game.phase) && !game.mapView && e.code === 'KeyC' && game.pos) map.easeTo({ center: game.pos, duration: 600 });
+  if (LOOK_PHASES.has(game.phase) && !game.mapView && e.code === 'KeyC' && game.pos) easeTo({ center: game.pos, duration: 600 });
 });
 addEventListener('keyup', e => { if (KEYMAP[e.code]) game.keys[KEYMAP[e.code]] = false; });
 addEventListener('blur', () => (game.keys = {}));
@@ -3102,7 +3622,8 @@ $('shareBtn').addEventListener('click', async () => {
   const checks = r.checks.map(c => heat[c.heat] || '⬜').join('');
   const guesses = '❌'.repeat(Math.max(0, r.guessesUsed - (r.won ? 1 : 0))) + (r.won ? '✅' : '');
   const title = game.mode === 'daily' ? `Campus Hot & Cold · ${$('campusName').textContent} daily ${game.date}` : 'Campus Hot & Cold';
-  const text = `${title}\n${r.score.total}/1000 · ${r.hintLevel || 'no'} hint\nChecks ${checks}\nGuesses ${guesses}\n${location.origin + location.pathname}`;
+  const badges = (game.shownBadges || []).map(a => `${ACHIEVEMENTS.find(x => x.id === a.id)?.share || '🏅'} ${a.title}`).join(' · ');
+  const text = `${title}\n${r.score.total}/1000 · ${r.hintLevel || 'no'} hint\nChecks ${checks}\nGuesses ${guesses}\n${badges ? badges + '\n' : ''}${location.origin + location.pathname}`;
   try { await navigator.clipboard.writeText(text); toast('COPIED', 'warm', 'Paste it to your friends.'); }
   catch (e) { prompt('Copy your result:', text); }
 });
@@ -3127,6 +3648,7 @@ for (const card of document.querySelectorAll('.hintcard')) {
     buildings.set(b.id, b);
   }
   named = pack.buildings.filter(b => b.name);
+  labelled = pack.buildings.filter(labelOf);
   if (pack.mascot) $('mascotLine').textContent = ` · Play as ${pack.mascot.name}`
     + (mascotNamesItself(pack.mascot) ? '' : ` the ${pack.mascot.species}`);
   landmarkBuildings = named.filter(b => b.category);

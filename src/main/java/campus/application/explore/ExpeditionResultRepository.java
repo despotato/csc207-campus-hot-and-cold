@@ -1,21 +1,18 @@
 package campus.application.explore;
 
 import java.io.IOException;
-import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
-/**
- * Stores finished explore rounds.
- *
- * <p>Extension point (team task "Save and review explore results"): the game currently uses
- * {@link #DISABLED}, so nothing is saved. A file-backed implementation in the infrastructure layer,
- * plus a "review explore history" use case and a history panel on the explore page, complete the
- * feature. {@link RoundFinisher} already calls {@link #save} exactly once per finished round (after a
- * final guess or a failed final search), and reports a failed save without losing the on-screen result.
- */
+/** Stores and reads completed Explore rounds. */
 public interface ExpeditionResultRepository {
-    void save(UUID roundId, String campus, Instant finishedAt, String difficulty, ExploreResponse.Result result)
-            throws IOException;
+    void save(SavedExpedition round) throws IOException;
+
+    Optional<SavedExpedition> find(UUID roundId) throws IOException;
+
+    /** Returns valid rounds newest first; implementations may omit individual corrupt records. */
+    List<SavedExpedition> all() throws IOException;
 
     /** False when saving is not set up; the page then hides save messages. */
     default boolean enabled() {
@@ -24,8 +21,17 @@ public interface ExpeditionResultRepository {
 
     ExpeditionResultRepository DISABLED = new ExpeditionResultRepository() {
         @Override
-        public void save(UUID roundId, String campus, Instant finishedAt, String difficulty,
-                         ExploreResponse.Result result) { }
+        public void save(SavedExpedition round) { }
+
+        @Override
+        public Optional<SavedExpedition> find(UUID roundId) {
+            return Optional.empty();
+        }
+
+        @Override
+        public List<SavedExpedition> all() {
+            return List.of();
+        }
 
         @Override
         public boolean enabled() {
