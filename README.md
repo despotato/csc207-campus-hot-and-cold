@@ -135,9 +135,11 @@ Explore is the two-stage version of the game, played in a pixel-art 3D model of 
 ### What the player sees and does
 
 **Stage 1: find the zone**
-- You start somewhere on campus, 450–900 m from a hidden 90 m zone, as your school's mascot. You don't walk: drag (or use the arrow keys) to look around where you stand, and pinch or scroll to zoom.
-- Press <kbd>Space</kbd> to spend one of 6 temperature checks. You see a temperature (hotter means closer) and whether you're warmer or colder than at your last check. Each check is numbered, in the list and on the map. The avatar has a 3 m radius: touching the zone edge counts, and a check there ends stage 1. With no checks left, your next check is a final search: touching the zone continues, anywhere else the round ends.
-- To move, press <kbd>M</kbd> (or the Travel button) to open the campus map with your checks and trail, then click where to go. Each trip is charged as the shortest walk there (distance and time).
+- The HUD shows the two stages: "1. Find the zone → 2. Guess the building". The temperature measures how close you are to the **zone**, not to the building.
+- You start somewhere on campus, 450–900 m from a hidden 90 m zone, as your school's mascot, with the campus map open. A photo taken inside the zone (never of the target) is pinned to the side as evidence; click it to enlarge. On phones it folds into a corner tab.
+- To move, click or tap a spot to preview it (a gold pin), then click or tap the pin again (a quick double-tap works too) to move there. Clicking elsewhere replaces the preview; dragging, scrolling and pinching never move you. Each move is charged as the shortest walk there (distance and time), and the map stays open. **Look around** opens the 3D view; <kbd>M</kbd> brings the map back.
+- **Check this spot** (or <kbd>Space</kbd>) spends one of 6 temperature checks. The first miss gives a broad direction from that spot ("Cold · Search east from here", with an arrow on its pin). Later checks lead with "Warmer · Closer to the zone" or "Colder · Farther from the zone", with the temperature second; the warmest check is starred on the map. A check reaches 15 m around you: within reach of the zone edge, it finds the zone and ends stage 1. With no checks left, your next check is a final search: in the zone it continues, anywhere else the round ends.
+- The first Start on a device offers a short practice (preview, move, check, then a second spot to see what warmer means). It runs in the browser only: no Daily attempt, score or history. The **Practice** button replays it.
 - Distance travelled and time are shown at all times.
 
 **Stage 2: guess the building**
