@@ -349,12 +349,12 @@ const PIX = Math.min(1, Math.max(0.15, Number(params.get('pix')) || 0.3));
 const DEBUG = params.get('debug') === '1';
 // Without the Java server (e.g. on GitHub Pages) the page plays with an in-browser copy of the rules.
 const STATIC = params.get('static') === '1' || !['127.0.0.1', 'localhost'].includes(location.hostname);
+const $ = id => document.getElementById(id);
 if (!STATIC) {
   $('historyBtn').classList.remove('hidden');
   $('historyBtn').addEventListener('click', openHistory);
   $('historyClose').addEventListener('click', () => hide('history'));
 }
-const $ = id => document.getElementById(id);
 const HEAT_COLORS = { hot: '#ff4d2e', warm: '#ff9f1c', cool: '#4cc9f0', cold: '#6f8cff' };
 const TREND_TEXT = { first: '', warmer: '▲ Warmer', same: '■ Same', colder: '▼ Colder' };
 // About 30 seconds from one edge of campus to the other. Java's Expedition.TRAVEL_SPEED matches WALK_SPEED.
@@ -3157,11 +3157,6 @@ addEventListener('pointerup', () => { game.dragX = null; game.justDragged = game
 $('startBtn').addEventListener('click', startRound);
 $('toGuess').addEventListener('click', startGuessing);
 $('replayBtn').addEventListener('click', replay);
-if (!STATIC) {
-  $('historyBtn').classList.remove('hidden');
-  $('historyBtn').addEventListener('click', openHistory);
-  $('historyClose').addEventListener('click', () => hide('history'));
-}
 $('againBtn').addEventListener('click', resetRound);
 $('viewDailyResult').addEventListener('click', () => {
   const result = (!STATIC && serverDaily?.result) || storedDailyResult();
