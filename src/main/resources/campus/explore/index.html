@@ -94,6 +94,19 @@
   #previewPin span { position: absolute; left: 20px; top: -50px; white-space: nowrap; font-size: 11px; padding: 3px 7px;
     background: #1b1f3aee; border: 2px solid var(--gold); color: var(--gold); animation: pulse 900ms steps(2) infinite; }
   #mapActions { display: flex; gap: 8px; }
+  #stages { font-size: 9px; display: flex; gap: 4px; align-items: center; white-space: nowrap; }
+  #stages b { opacity: .45; font-weight: normal; }
+  #stages b.on { opacity: 1; color: var(--gold); font-weight: bold; }
+  #coach { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); width: min(480px, calc(100vw - 24px));
+    z-index: 7; display: grid; gap: 6px; }
+  #coach.hidden { display: none; }
+  #coach small { color: var(--gold); font-size: 10px; }
+  #coach p { margin: 0; font-size: 14px; line-height: 1.45; }
+  #coach .buttons { display: flex; gap: 8px; justify-content: flex-end; }
+  #practiceMark { position: fixed; left: 0; top: 0; width: 34px; height: 34px; margin: -17px 0 0 -17px; border-radius: 50%;
+    border: 4px dashed var(--gold); pointer-events: none; animation: pulse 900ms steps(2) infinite; z-index: 4; }
+  #practiceMark.hidden { display: none; }
+  @media (max-width: 640px) { #coach { bottom: calc(max(16px, env(safe-area-inset-bottom)) + 84px); } #coach p { font-size: 12px; } }
   #mapCheck:disabled { opacity: .5; }
   @keyframes fill { to { width: 100%; } }
 
@@ -325,6 +338,7 @@
 <div id="vignette"></div>
 
 <div id="hud" class="panel hidden" aria-live="polite">
+  <div id="stages"><b id="stage1" class="on">1. Find the zone</b>→<b id="stage2">2. Guess the building</b></div>
   <div class="row"><span>Distance</span><b id="dist">0 m</b></div>
   <div class="row"><span>Time</span><b id="time">00:00</b></div>
   <div class="row"><span>Checks</span><span id="pips"></span></div>
@@ -336,10 +350,13 @@
 <div id="travelCursor" class="hidden"></div>
 <div id="checkLabels"></div>
 <div id="help" class="panel hidden">
-  Drag to move · right-drag to turn · <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> <kbd>Q</kbd><kbd>E</kbd> fly · <kbd>C</kbd> back to you · <kbd>Space</kbd> check · <kbd>M</kbd> map: click to travel
+  Drag to move · right-drag to turn · <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> <kbd>Q</kbd><kbd>E</kbd> fly · <kbd>C</kbd> back to you · <kbd>Space</kbd> check · <kbd>M</kbd> map: pick a spot, then move
 </div>
 <div id="mapTitle" class="panel hidden"><span>Campus map<small class="keys">Click a spot to preview it, click the pin again to move · scroll to zoom</small><small class="taps">Tap a spot to preview it, tap the pin again to move</small></span><span id="mapActions"><button id="mapCheck" type="button">Check this spot <kbd>Space</kbd></button><button id="mapBack" class="secondary" type="button">Look around</button></span></div>
 <div id="previewPin" class="hidden"><i></i><span></span></div>
+<div id="practiceMark" class="hidden"></div>
+<div id="coach" class="panel hidden" role="status"><small>Practice · not scored, not saved</small><p id="coachText"></p>
+  <div class="buttons"><button id="coachSkip" class="secondary" type="button">Skip practice</button><button id="coachPlay" class="hidden" type="button">Start the real round</button></div></div>
 <div id="toast"></div>
 <div id="banner" class="panel hidden"><div id="bannerText"></div><div class="hint" id="bannerHint"></div></div>
 <div id="tip" class="panel hidden"></div>
@@ -375,7 +392,7 @@
     </div>
     <!-- Difficulty selector: the start request already sends { difficulty }. See the team task "Difficulty levels". -->
     <div id="difficulty" data-value="normal" class="controls">Difficulty: Normal</div>
-    <div class="buttons"><button id="startBtn" autofocus>Start <kbd>Enter</kbd></button><button id="viewDailyResult" class="secondary hidden">View today's result</button><button id="historyBtn" class="secondary hidden">History</button><button id="tutorialBtn" class="secondary">How to play</button><button id="achievementsBtn" class="secondary">Achievements</button></div>
+    <div class="buttons"><button id="startBtn" autofocus>Start <kbd>Enter</kbd></button><button id="viewDailyResult" class="secondary hidden">View today's result</button><button id="historyBtn" class="secondary hidden">History</button><button id="tutorialBtn" class="secondary">How to play</button><button id="practiceBtn" class="secondary">Practice</button><button id="achievementsBtn" class="secondary">Achievements</button></div>
     <p id="loading">Loading campus…</p>
   </div>
 </section>
@@ -415,8 +432,8 @@
 
 <section id="hintScreen" class="screen hidden">
   <div class="card panel">
-    <h2>You found the zone!</h2>
-    <p class="lead">Pick one hint card. You won't see it until you choose. Harder hints multiply your identification points.</p>
+    <h2>Zone found!</h2>
+    <p class="lead">Pick a hint, then guess one of the highlighted buildings. You won't see the hint until you choose; harder hints multiply your identification points.</p>
     <div id="cards">
       <div class="hintcard" data-level="easy" tabindex="0" role="button"><div><div class="back">?</div><div class="lvl">Easy ×1</div><div class="who">What you can see</div></div></div>
       <div class="hintcard" data-level="normal" tabindex="0" role="button"><div><div class="back">?</div><div class="lvl">Normal ×1.5</div><div class="who">What students know</div></div></div>
@@ -1982,6 +1999,7 @@ function checkHeadline(b) {
 }
 async function doCheck() {
   if (game.phase !== 'walk' || game.travelling || game.checking) return;
+  if (practice.on) { practiceCheck(); return; }   // practice checks never run out or reach the server
   if (game.checksLeft <= 0 && !(game.armedSearch && performance.now() - game.armedSearch < 3000)) {
     game.armedSearch = performance.now();
     toast('FINAL SEARCH?', 'warm', 'Press Space or tap Check again. If the zone isn\'t here, the round ends.');
@@ -2112,6 +2130,12 @@ function onPreviewPin(point) {
   return Math.hypot(p.x - point.x, p.y - point.y) <= PIN_REACH_PX;
 }
 function placePreview() {
+  const mark = $('practiceMark');
+  if (practice.mark && game.mapView) {
+    const m = map.project(practice.mark);
+    mark.style.transform = `translate(${Math.round(m.x)}px, ${Math.round(m.y)}px)`;
+    mark.classList.remove('hidden');
+  } else mark.classList.add('hidden');
   const pin = $('previewPin');
   if (!game.preview || !game.mapView) { pin.classList.add('hidden'); return; }
   const p = map.project(game.preview);
@@ -2132,6 +2156,7 @@ function onMapTap(e) {
   game.preview = to;
   $('travelCursor').classList.add('hidden');
   placePreview();
+  if (practice.on) practiceStep('previewed');
 }
 /** Keeps the map clear of its own panel (at the top, or along the bottom on phones) so no pin hides under it. */
 function mapPadding() {
@@ -2139,6 +2164,15 @@ function mapPadding() {
   if (r.height && r.top < innerHeight / 2) pad.top = Math.round(r.bottom + 30);
   else if (r.height) pad.bottom = Math.round(innerHeight - r.top + 30);
   return pad;
+}
+/** After a move, pans the map if the mascot ended up near an edge or under a panel. */
+function keepInView(p) {
+  const pad = mapPadding(), at = map.project(p), coachBox = $('coach').getBoundingClientRect();
+  const bottom = innerHeight - pad.bottom - (coachBox.height ? coachBox.height + 10 : 0);
+  if (at.x < pad.left || at.x > innerWidth - pad.right || at.y < pad.top || at.y > bottom) {
+    // An offset, not padding: MapLibre keeps padding for every later camera move.
+    easeTo({ center: p, offset: [(pad.left - pad.right) / 2, (pad.top - (innerHeight - bottom)) / 2], duration: 600 });
+  }
 }
 /** What the map shows: the check dots, your route so far, and the mascot's dot at {@code at}. */
 function drawMapOverlays(at = game.pos) {
@@ -2170,6 +2204,7 @@ async function travelTo(to) {
   $('mapCheck').disabled = true;   // a check always happens where the mascot has arrived, never mid-move
   placePreview();
   try {
+    if (practice.on) { await practiceTravel(to); return; }
     while (game.sending) await new Promise(r => setTimeout(r, 20));
     if (game.lastPushed !== game.pos) push(game.pos);
     await syncPosition();
@@ -2190,6 +2225,7 @@ async function travelTo(to) {
     drawMapOverlays();
     drawAvatar();
     renderHud();
+    keepInView(game.pos);
     saveDailyRun();
     if (!game.checkCount) toast('ARRIVED', 'warm', TOUCH ? 'Tap Check this spot to take a reading.' : 'Press Space or Check this spot to take a reading.');
   } finally {
@@ -2212,7 +2248,8 @@ function enterZone(zone) {
     geometry: { type: 'Polygon', coordinates: [circle(zone.centre, zone.radius, 64)] } }]));
   for (const b of pack.buildings) if (distOf(b.center, zone.centre) <= zone.radius) game.zoneBuildings.add(b.id);
   refreshHighlights();
-  toast("YOU'RE IN THE ZONE!", 'warm', 'Choose a hint card.');
+  toast('ZONE FOUND!', 'warm', 'Pick a hint, then guess one of the highlighted buildings.');
+  $('stage1').classList.remove('on'); $('stage2').classList.add('on');
   flyTo({ center: zone.centre, zoom: 17.5, pitch: 55, bearing: game.camBearing, duration: 2600 }).then(() => {
     show('hintScreen');
     lookAroundMode();
@@ -2711,12 +2748,12 @@ async function replay() {
 
 // ---------- tutorial ----------
 const TUTORIAL = [
-  ['Look around, travel by map', 'Drag to move the camera, right-drag to turn · <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> <kbd>Q</kbd><kbd>E</kbd> fly · <kbd>C</kbd> back to you<br><kbd>M</kbd> or the 🗺 Map button · click a spot to travel there',
-    "You're somewhere on campus. Somewhere 450 to 900 m away is a hidden zone around one building. Look around where you stand, then open the map and click where to go next. Each trip counts as the shortest walk there."],
-  ['Check the temperature', '<kbd>Space</kbd> → <span style="color:#ff4d2e">40°C hot</span> … <span style="color:#6f8cff">-10°C cold</span><br>▲ +4° warmer · ▼ -3° colder than your last check',
-    'You have 6 checks. Each gives a temperature: 40°C at the zone centre, a degree cooler for every 20 m away. Checks are numbered on the right and on the map. A check reaches 15 m around you: within 15 m of the zone edge counts. Press Space there to find it. Out of checks? Your next Space is a final search.'],
-  ['Travel by map', '<kbd>M</kbd> or the 🗺 Map button · click anywhere to go there',
-    'Campus is big. Open the map to see every check and your trail, then click a spot to travel there in a moment. The trip counts as the shortest walk.'],
+  ['Find the zone, then the building', '1. Find the zone → 2. Guess the building',
+    "Somewhere 450 to 900 m from you is a hidden zone around one building. Stage 1: find the zone. The temperature tells you how close you are to the zone, not to the building. Stage 2: inside the zone, pick a hint and guess the building. A photo taken inside the zone is pinned to the side; recognise it and you can head straight there."],
+  ['Move with the map', 'Click a spot → a pin · click the pin again → move there',
+    "Stage 1 starts on the campus map. Click a spot to preview it, then click the pin again (or double-click) to move. Clicking somewhere else just moves the pin; dragging and scrolling never move you. Each move counts as the shortest walk there. Look around opens the 3D view; M brings the map back."],
+  ['Check the temperature', '<kbd>Space</kbd> or Check this spot<br><span style="color:#6f8cff">Cold · Search east from here</span><br><span style="color:#ff9f1c">Warmer · Closer to the zone</span>',
+    "You have 6 checks. Your first miss points the way, with an arrow on its pin. After that each check says warmer (closer to the zone) or colder (farther), and the warmest is starred on the map. A check reaches 15 m around you. Out of checks? Your next check is a final search."],
   ['Pick a hint blind', 'EASY ×1 what you can see<br>NORMAL ×1.5 what students know<br>HARD ×2 campus history',
     "In the zone, choose a face-down hint card. Harder hints are worth more. Then click the building you think it is. You get 3 guesses."],
   ['Score out of 1000', 'Route up to 400 (full at 80% efficiency) · guess 250/200/150<br>hint bonus up to +250 · checks saved up to 100',
@@ -2725,12 +2762,10 @@ const TUTORIAL = [
 // Phones and tablets have no keyboard: the same steps, told with taps and pinches.
 const TOUCH = matchMedia('(pointer: coarse)').matches;
 const TUTORIAL_TOUCH = {
-  0: ['Drag to move the camera · two-finger twist to turn, drag up/down to tilt · pinch to zoom<br>🗺 Travel · tap a spot to go there',
-    "You're somewhere on campus. Somewhere 450 to 900 m away is a hidden zone around one building. Look around where you stand, then open the map and tap where to go next. Each trip counts as the shortest walk there."],
-  1: ['CHECK → <span style="color:#ff4d2e">40°C hot</span> … <span style="color:#6f8cff">-10°C cold</span><br>▲ +4° warmer · ▼ -3° colder than your last check',
-    'You have 6 checks. Each gives a temperature: 40°C at the zone centre, a degree cooler for every 20 m away. Checks are numbered on the map. A check reaches 15 m around you: within 15 m of the zone edge counts. Tap Check there to find it. Out of checks? Your next Check is a final search.'],
-  2: ['🗺 Travel · tap anywhere to go there',
-    'Campus is big. Open the map to see every check and your trail, then tap a spot to travel there in a moment. The trip counts as the shortest walk.'],
+  1: ['Tap a spot → a pin · tap the pin again → move there',
+    "Stage 1 starts on the campus map. Tap a spot to preview it, then tap the pin again (or double-tap) to move. Tapping somewhere else just moves the pin; dragging and pinching never move you. Each move counts as the shortest walk there. Look around opens the 3D view."],
+  2: ['Check this spot<br><span style="color:#6f8cff">Cold · Search east from here</span><br><span style="color:#ff9f1c">Warmer · Closer to the zone</span>',
+    "You have 6 checks. Your first miss points the way, with an arrow on its pin. After that each check says warmer (closer to the zone) or colder (farther), and the warmest is starred on the map. A check reaches 15 m around you. Out of checks? Your next check is a final search."],
 };
 let tutorialStep = 0;
 function showTutorial(step) {
@@ -2749,7 +2784,7 @@ function showTutorial(step) {
 function closeTutorial() { hide('tutorial'); show('title'); $('startBtn').focus(); }
 $('tutorialBtn').addEventListener('click', () => showTutorial(0));
 $('tutBack').addEventListener('click', () => showTutorial(tutorialStep - 1));
-$('tutNext').addEventListener('click', () => tutorialStep === TUTORIAL.length - 1 ? (closeTutorial(), startRound()) : showTutorial(tutorialStep + 1));
+$('tutNext').addEventListener('click', () => tutorialStep === TUTORIAL.length - 1 ? (closeTutorial(), play()) : showTutorial(tutorialStep + 1));
 $('tutClose').addEventListener('click', closeTutorial);
 
 // ---------- static mode: the game rules in the browser (mirrors the Java domain) ----------
@@ -3539,6 +3574,125 @@ function restoreDailyRun(run) {
   return true;
 }
 
+// ---------- practice: preview, move, check, twice; outside the Daily attempt, the score and history ----------
+const practice = { on: false, step: '', zone: null, mark: null };
+/** First Start on this device runs the practice first (it can be skipped); later Starts go straight in. */
+function play() {
+  if (!store.get('practiced') && !DEBUG) startPractice(); else startRound();
+}
+function coach(text, done = false) {
+  $('coachText').textContent = text;
+  $('coachSkip').classList.toggle('hidden', done);
+  $('coachPlay').classList.toggle('hidden', !done);
+  show('coach');
+}
+function startPractice() {
+  if (game.phase !== 'title') return;
+  // Start on open ground near the middle of campus; the practice zone is around a landmark 250 to 450 m away.
+  const lms = pack.landmarks.map(l => buildings.get(l.building)).filter(Boolean);
+  const mid = [lms.reduce((a, b) => a + b.center[0], 0) / lms.length, lms.reduce((a, b) => a + b.center[1], 0) / lms.length];
+  const start = isOpen(mid) ? mid : nearbyOpen(mid, 80);
+  const far = lms.filter(b => { const d = distOf(start, b.center); return d > 250 && d < 450; });
+  if (!start || !far.length) { store.set('practiced', '1'); startRound(); return; }
+  practice.on = true;
+  practice.zone = { centre: far[Math.floor(far.length / 2)].center, radius: 90 };
+  // A suggested first spot, 120 m off to one side of the zone, so the first check misses and points the way.
+  const side = (bearingOf(start, practice.zone.centre) + 90) % 360;
+  practice.mark = nearbyOpen(offsetPt(start, side, 120), 40) || nearbyOpen(offsetPt(start, side + 180, 120), 40);
+  hide('title');
+  game.orbiting = false;
+  game.pos = start; game.confirmedPos = start; game.trail = [start]; game.walked = 0;
+  game.checksLeft = 6; game.checkCount = 0; game.startedAt = performance.now();
+  game.heading = openestHeading(start); game.camBearing = game.heading;
+  game.phase = 'walk';
+  for (const id of ['hud', 'log']) show(id);
+  renderHud();
+  drawAvatar();
+  toggleMapView(true);
+  practiceStep('begin');
+}
+function practiceStep(event) {
+  const tap = TOUCH ? 'Tap' : 'Click', check = TOUCH ? 'Check this spot' : 'Check this spot (or Space)';
+  if (event === 'begin' && practice.step === '') {
+    practice.step = 'preview';
+    coach(`1. Find the zone → 2. Guess the building. Stage 1 is a search for a hidden zone. ${tap} the marked spot (or anywhere on a path) to preview it.`);
+  } else if (event === 'previewed' && practice.step === 'preview') {
+    practice.step = 'move';
+    coach(`${tap} the pin again to move there. ${TOUCH ? 'Tapping' : 'Clicking'} somewhere else just moves the pin, and dragging never moves you.`);
+  } else if (event === 'moved' && practice.step === 'move') {
+    practice.step = 'check';
+    practice.mark = null;
+    coach(`You moved. Now take a reading: ${check}. The temperature tells you how close you are to the zone.`);
+  } else if (event === 'checked' && practice.step === 'check') {
+    practice.step = 'second';
+    coach(`A first miss points the way (see the arrow on its pin). Pick a second spot that way, ${tap.toLowerCase()} the pin again to move, and check again.`);
+  } else if (event === 'warmer' && practice.step === 'second') {
+    practice.step = 'done';
+    coach('Warmer means closer to the zone, not to the building. Find the zone first; inside it you pick a hint and guess the building. In a real round you have 6 checks.', true);
+  } else if (event === 'colder' && practice.step === 'second') {
+    coach('Colder: that spot is farther from the zone. Try going the way the arrow points, then check again.');
+  } else if (event === 'zone') {
+    practice.step = 'done';
+    coach("That's the zone! In a real round the camera now flies up, the zone's buildings light up, and you pick a hint and guess the building.", true);
+  }
+}
+async function practiceTravel(to) {
+  const from = game.pos;
+  game.preview = null;
+  placePreview();
+  await animateMarker([from, to], 700);
+  game.pos = to; game.confirmedPos = to; game.walked += distOf(from, to);
+  game.trail.push(to);
+  drawMapOverlays(); drawAvatar(); renderHud();
+  keepInView(game.pos);
+  practiceStep('moved');
+}
+/** The same reading a real check gives (LocalRules), worked out here: nothing is sent or saved. */
+function practiceCheck() {
+  const d = distOf(game.pos, practice.zone.centre), last = game.checkHistory[game.checkHistory.length - 1];
+  game.checkCount++; game.checksLeft = Math.max(0, 6 - game.checkCount);
+  const number = game.checkCount;
+  if (d <= practice.zone.radius + 15) {
+    addCheckMarker(game.pos, 'zone', number, 'ZONE');
+    toast('ZONE FOUND!', 'warm', 'In a real round: pick a hint, then guess.');
+    drawMapOverlays(); renderHud();
+    practiceStep('zone');
+    return;
+  }
+  const heat = d < 150 ? 'hot' : d < 300 ? 'warm' : d < 500 ? 'cool' : 'cold';
+  const temperature = Math.max(-10, Math.min(40, Math.round(40 - d / 20)));
+  const trend = !last ? 'first' : Math.abs(d - last.metres) < 5 ? 'same' : d < last.metres ? 'warmer' : 'colder';
+  const direction = last ? undefined : ['north', 'east', 'south', 'west'][Math.round(bearingOf(game.pos, practice.zone.centre) / 90) % 4];
+  const b = { point: game.pos, heat, trend, temperature, direction, number, metres: d, change: last ? temperature - last.temperature : null };
+  game.checkHistory.push(b);
+  addCheckMarker(b.point, heat, number, `${temperature}°`, direction, temperature);
+  const delta = b.change == null ? '' : ` ${b.change > 0 ? '▲ +' : b.change < 0 ? '▼ ' : '■ '}${b.change}°`;
+  toast(checkHeadline(b), heat, `#${number} · ${temperature}°C${delta}`);
+  const li = document.createElement('li');
+  li.style.color = HEAT_COLORS[heat];
+  li.textContent = `#${number} ${checkHeadline(b)} · ${temperature}°C${delta}`;
+  $('checks').append(li); $('nochecks').classList.add('hidden');
+  drawMapOverlays(); renderHud();
+  practiceStep(trend === 'first' ? 'checked' : trend === 'warmer' ? 'warmer' : 'colder');
+}
+/** Clears everything the practice drew, then starts the real round. */
+function endPractice() {
+  if (!practice.on) return;
+  practice.on = false; practice.mark = null; practice.step = '';
+  store.set('practiced', '1');
+  hide('coach');
+  toggleMapView(false);
+  markerFeatures.length = 0; ringFeatures.length = 0; checkDots.length = 0; checkList.length = 0;
+  map.getSource('markers').setData(fc([])); map.getSource('check-rings').setData(fc([]));
+  $('checks').innerHTML = ''; $('nochecks').classList.remove('hidden');
+  game.checkHistory = []; game.checkCount = 0; game.walked = 0; game.trail = [];
+  game.phase = 'title';
+  startRound();
+}
+$('coachSkip').addEventListener('click', endPractice);
+$('coachPlay').addEventListener('click', endPractice);
+$('practiceBtn').addEventListener('click', () => { if (game.phase === 'title') startPractice(); });
+
 async function startRound() {
   if (game.phase !== 'title' || $('startBtn').disabled) return;
   if (chosenMode === 'daily' && !STATIC && serverDaily?.status === 'inProgress') {
@@ -3647,6 +3801,8 @@ function renderHud() {
   if (pips.childElementCount !== total) pips.innerHTML = '<i></i>'.repeat(total);
   [...pips.children].forEach((pip, i) => pip.classList.toggle('used', i < game.checkCount));
   $('checkBtn').textContent = game.checksLeft > 0 ? 'Check' : 'Final search';
+  $('stage1').classList.toggle('on', game.phase === 'walk');
+  $('stage2').classList.toggle('on', game.phase !== 'walk');
 }
 const clock = s => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
 
@@ -3736,7 +3892,7 @@ addEventListener('keydown', e => {
     return;
   }
   if (e.code === 'Escape' && game.picking) { closeCanada(); return; }
-  if (e.code === 'Enter' && game.phase === 'title' && $('tutorial').classList.contains('hidden')) { startRound(); return; }
+  if (e.code === 'Enter' && game.phase === 'title' && $('tutorial').classList.contains('hidden')) { play(); return; }
   if (game.phase === 'walk') {
     if (e.code === 'KeyM' && !e.repeat) { toggleMapView(); e.preventDefault(); return; }
     if (e.code === 'Escape') { toggleMapView(false); return; }
@@ -3766,7 +3922,7 @@ addEventListener('pointermove', e => {
   game.orbiting = false;
 });
 addEventListener('pointerup', () => { game.dragX = null; game.justDragged = game.dragged > 6; });
-$('startBtn').addEventListener('click', startRound);
+$('startBtn').addEventListener('click', play);
 $('toGuess').addEventListener('click', startGuessing);
 $('replayBtn').addEventListener('click', replay);
 $('againBtn').addEventListener('click', resetRound);

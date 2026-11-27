@@ -151,7 +151,7 @@ public final class ExplorePresenter implements ExploreOutputBoundary {
         body.put("zoneFound", checked.zone() != null);
         if (checked.zone() != null) {
             body.put("zone", Map.of("centre", point(checked.zone().centre()), "radius", checked.zone().radiusMetres()));
-            body.put("message", "You're in the zone! Pick a hint to identify the building.");
+            body.put("message", "Zone found! Pick a hint, then guess one of the highlighted buildings.");
         } else if (checked.finalSearch()) {
             body.put("message", "The zone isn't here. The round is over.");
         } else {
