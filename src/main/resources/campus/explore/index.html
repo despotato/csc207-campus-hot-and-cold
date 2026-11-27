@@ -140,6 +140,21 @@
   .cluePhoto { display: block; width: 100%; aspect-ratio: 16 / 10; background: #000 no-repeat center / cover; image-rendering: auto; }
   #clueCard { z-index: 20; background: #0b0d1ed9; }
   #clueCard .card { max-width: 560px; width: 100%; }
+  /* Pinned: an evidence photo taped to the side of the screen; click it to enlarge. The same element (and Street View
+     frame, which would reload if moved) is both the pinned card and the enlarged one. */
+  #clueCard.pinned { inset: auto; left: 12px; top: 124px; display: block; padding: 0; background: none; z-index: 6;
+    pointer-events: none; }
+  #clueCard.pinned .card { width: 250px; padding: 14px 10px 8px; transform: rotate(-1.5deg); cursor: zoom-in;
+    pointer-events: auto; position: relative; animation: pinDrop 500ms ease-out; }
+  #clueCard.pinned .card::before { content: ''; position: absolute; left: 50%; top: -9px; width: 70px; height: 18px;
+    transform: translateX(-50%) rotate(2deg); background: #fff8e7cc; box-shadow: 0 1px 0 #0004; }
+  #clueCard.pinned h2 { font-size: 11px; margin: 0; }
+  #clueCard.pinned #clueLead, #clueCard.pinned #clueSwap, #clueCard.pinned .buttons { display: none; }
+  #clueCard.pinned #clueWords { font-size: 12px; margin: 6px 0 2px; }
+  #clueCard.pinned #clueCredit { font-size: 8px; }
+  #clueCard .enlarge { display: none; font-size: 9px; opacity: .7; text-align: right; margin-top: 2px; }
+  #clueCard.pinned .enlarge { display: block; }
+  @keyframes pinDrop { from { transform: translateY(-30px) rotate(-6deg); opacity: 0; } }
   #clueCard .cluePhoto { border: 3px solid var(--paper); margin: 8px 0 2px; }
   .cluePhoto { position: relative; overflow: hidden; }
   /* Google's place card (top-left) could name the street, so the embed sits 80 px higher and that strip is cut off;
@@ -377,13 +392,14 @@
 
 <section id="clueCard" class="screen hidden" role="dialog" aria-modal="true" aria-labelledby="clueTitle">
   <div class="card panel">
-    <h2 id="clueTitle">Somewhere in the zone</h2>
+    <h2 id="clueTitle">Photographed inside the zone</h2>
     <div class="cluePhoto" id="cluePhoto" role="img" aria-label="Street photo of a building in the hidden zone"></div>
     <small id="clueCredit"></small>
     <button id="clueSwap" class="link hidden">Photo didn't load? Read a written clue instead</button>
     <p id="clueWords" class="hidden"></p>
     <p id="clueLead" class="lead"></p>
-    <div class="buttons"><button id="clueClose">Find the zone</button></div>
+    <small class="enlarge">Click to enlarge</small>
+    <div class="buttons"><button id="clueClose">Pin it to the side</button></div>
   </div>
 </section>
 <button id="clueThumb" class="hidden" aria-label="Show the photo of a building in the zone"><span class="cluePhoto" id="clueThumbPhoto"></span><small>Zone photo</small></button>
@@ -2190,6 +2206,7 @@ function enterZone(zone) {
   hide('mapBtn');
   hide('checkBtn');
   game.phase = 'zone'; game.zone = zone; game.zoneAt = performance.now(); game.keys = {}; game.autopilot = null;
+  if ($('clueCard').classList.contains('pinned')) pinClue();
   hide('help');
   map.getSource('zone').setData(fc([{ type: 'Feature', properties: {},
     geometry: { type: 'Polygon', coordinates: [circle(zone.centre, zone.radius, 64)] } }]));
@@ -2422,10 +2439,10 @@ function clueMode(words) {
   $('clueSwap').classList.toggle('hidden', text || !game.clueText);
   $('clueWords').classList.toggle('hidden', !text);
   $('clueWords').textContent = game.clueText || '';
-  $('clueTitle').textContent = text ? 'A clue to the zone' : 'Somewhere in the zone';
+  $('clueTitle').textContent = text ? 'A clue to the zone' : 'Photographed inside the zone';
   $('clueLead').textContent = text
-    ? "It isn't the building you're looking for, but it's in the zone. The clue stays in the corner."
-    : "This building stands in the hidden zone. It isn't the one you're looking for, but find it and you've found the zone. The photo stays in the corner.";
+    ? "It isn't the building you're looking for, but it's in the zone. The clue stays pinned to the side."
+    : "This spot is inside the hidden zone. It isn't the building you're looking for, but find this spot and you've found the zone. The photo stays pinned to the side.";
   $('clueThumb').classList.toggle('icon', text || !!game.cluePhoto?.embed);
   $('clueThumb').classList.toggle('words', text);
   $('clueThumb').querySelector('small').textContent = text ? 'Zone clue' : 'Zone photo';
@@ -2446,18 +2463,32 @@ async function showClue(photo, open) {
   if (!game.cluePhoto && !game.clueText) return;
   if (game.cluePhoto) $('clueCredit').textContent = game.cluePhoto.credit;
   clueMode(!game.cluePhoto);
-  show('clueThumb');
-  if (open) await openClueCard();
+  if (open) await openClueCard(); else pinClue();
+}
+const PHONE = matchMedia('(max-width: 640px)');
+const clueEnlarged = () => !$('clueCard').classList.contains('hidden') && !$('clueCard').classList.contains('pinned');
+/** Pinned to the side (desktop), or folded into the corner tab on phones so the map stays usable. */
+function pinClue() {
+  if (!game.cluePhoto && !game.clueText) return;
+  $('clueCard').classList.add('pinned');
+  $('clueCard').setAttribute('aria-modal', 'false');
+  // Once the zone is found the photo has done its job: it folds into the corner there too.
+  if (PHONE.matches || game.phase !== 'walk') { hide('clueCard'); show('clueThumb'); } else { show('clueCard'); hide('clueThumb'); }
 }
 function openClueCard() {
   if (!game.cluePhoto && !game.clueText) return Promise.resolve();
-  show('clueCard');
+  $('clueCard').classList.remove('pinned');
+  $('clueCard').setAttribute('aria-modal', 'true');
+  show('clueCard'); hide('clueThumb');
   $('clueClose').focus();
-  return new Promise(res => { closeClueCard = () => { hide('clueCard'); closeClueCard = () => {}; res(); }; });
+  return new Promise(res => { closeClueCard = () => { pinClue(); closeClueCard = () => {}; res(); }; });
 }
 $('clueSwap').addEventListener('click', () => clueMode(true));
 $('clueClose').addEventListener('click', () => closeClueCard());
-$('clueCard').addEventListener('click', e => { if (e.target.id === 'clueCard') closeClueCard(); });
+$('clueCard').addEventListener('click', e => {
+  if ($('clueCard').classList.contains('pinned')) openClueCard();
+  else if (e.target.id === 'clueCard') closeClueCard();
+});
 $('clueThumb').addEventListener('click', openClueCard);
 
 // ---------- achievements ----------
@@ -3560,8 +3591,9 @@ async function startRound() {
   drawAvatar();
   await flyTo({ center: game.pos, zoom: LOOK_ZOOM, pitch: 55, bearing: game.heading, duration: 3200 });
   lookAroundMode();
-  await showClue(await Promise.race([photo, new Promise(res => setTimeout(() => res(null), 6000))]), true);
-  if (!game.cluePhoto && !game.clueText) toast('NO ZONE CLUE', 'warm', 'No photo or clue for this zone. Use your checks.');
+  // The clue pins itself to the side once it loads (a phone opens it once, then folds it into the corner).
+  Promise.race([photo, new Promise(res => setTimeout(() => res(null), 6000))]).then(p => showClue(p, PHONE.matches))
+    .then(() => { if (!game.cluePhoto && !game.clueText) toast('NO ZONE CLUE', 'warm', 'No photo or clue for this zone. Use your checks.'); });
   // Stage 1 happens on the map: pick a spot, move, check.
   if (game.phase === 'walk') toggleMapView(true);
   toast('1. FIND THE ZONE', 'warm', TOUCH ? 'Tap a spot, tap the pin again to move, then check the temperature.'
@@ -3699,7 +3731,7 @@ const KEYMAP = { KeyW: 'fwd', KeyS: 'back', KeyA: 'strafeLeft', KeyD: 'strafeRig
 addEventListener('keydown', e => {
   if (e.code === 'Escape' && !$('tutorial').classList.contains('hidden')) { closeTutorial(); return; }
   if (!$('achievements').classList.contains('hidden')) { if (e.code === 'Escape') closeAchievements(); return; }
-  if (!$('clueCard').classList.contains('hidden')) {
+  if (clueEnlarged()) {
     if (e.code === 'Escape' || e.code === 'Enter' || e.code === 'Space') { e.preventDefault(); closeClueCard(); }
     return;
   }
