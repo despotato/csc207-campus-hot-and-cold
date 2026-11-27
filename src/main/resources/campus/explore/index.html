@@ -196,6 +196,16 @@
   .routeHead { width: 14px; height: 14px; border-radius: 50%; background: #ff5fa2; border: 3px solid #1b1f3a; }
   #wiki:has(#wikiImg.hidden) { grid-template-columns: 1fr; }   /* no photo: the text takes the full width */
   #resultsHead { display: contents; }
+  #history { position: fixed; inset: 12px; z-index: 20; max-width: 640px; width: calc(100% - 24px); max-height: calc(100dvh - 24px);
+    margin: auto; display: flex; flex-direction: column; }
+  #history.hidden { display: none; }
+  #historyHead { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  #historyList { min-height: 120px; overflow-y: auto; margin: 10px 0; }
+  .historyRow { width: 100%; display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; text-align: left;
+    margin: 0 0 8px; background: var(--paper); }
+  .historyRow small { grid-column: 1; font-size: 10px; opacity: .75; }
+  .historyRow b { grid-column: 2; grid-row: 1 / 3; color: var(--hot); }
+  #historyEmpty { padding: 24px 8px; text-align: center; opacity: .85; }
   @media (max-width: 640px) {
     #log { display: none; } #help { display: none; } #cards { grid-template-columns: 1fr; } .hintcard { aspect-ratio: auto; min-height: 90px; }
     #checkBtn { display: block; }
@@ -341,7 +351,7 @@
     </div>
     <!-- Difficulty selector: the start request already sends { difficulty }. See the team task "Difficulty levels". -->
     <div id="difficulty" data-value="normal" class="controls">Difficulty: Normal</div>
-    <div class="buttons"><button id="startBtn" autofocus>Start <kbd>Enter</kbd></button><button id="viewDailyResult" class="secondary hidden">View today's result</button><button id="tutorialBtn" class="secondary">How to play</button><button id="achievementsBtn" class="secondary">Achievements</button></div>
+    <div class="buttons"><button id="startBtn" autofocus>Start <kbd>Enter</kbd></button><button id="viewDailyResult" class="secondary hidden">View today's result</button><button id="historyBtn" class="secondary hidden">History</button><button id="tutorialBtn" class="secondary">How to play</button><button id="achievementsBtn" class="secondary">Achievements</button></div>
     <p id="loading">Loading campus…</p>
   </div>
 </section>
@@ -414,6 +424,11 @@
   <div class="buttons"><button id="replayBtn" class="secondary">Replay route</button><button id="shareBtn" class="secondary">Share</button><button id="againBtn">Play again</button></div>
 </aside>
 
+<aside id="history" class="panel hidden" aria-label="Explore history">
+  <div id="historyHead"><h2>History</h2><button id="historyClose" class="secondary" type="button">Close</button></div>
+  <div id="historyList"></div>
+</aside>
+
 <script>
 "use strict";
 const params = new URLSearchParams(location.search);
@@ -422,6 +437,11 @@ const DEBUG = params.get('debug') === '1';
 // Without the Java server (e.g. on GitHub Pages) the page plays with an in-browser copy of the rules.
 const STATIC = params.get('static') === '1' || !['127.0.0.1', 'localhost'].includes(location.hostname);
 const $ = id => document.getElementById(id);
+if (!STATIC) {
+  $('historyBtn').classList.remove('hidden');
+  $('historyBtn').addEventListener('click', openHistory);
+  $('historyClose').addEventListener('click', () => hide('history'));
+}
 const HEAT_COLORS = { hot: '#ff4d2e', warm: '#ff9f1c', cool: '#4cc9f0', cold: '#6f8cff' };
 const TREND_TEXT = { first: '', warmer: '▲ Warmer', same: '■ Same', colder: '▼ Colder' };
 // About 30 seconds from one edge of campus to the other. Java's Expedition.TRAVEL_SPEED matches WALK_SPEED.
@@ -540,7 +560,7 @@ const game = {
 window.game = game;
 
 async function api(action, body = {}) {
-  if (action !== 'start') body = { ...body, round: game.roundId };
+  if (action !== 'start' && action !== 'history' && action !== 'recap') body = { ...body, round: game.roundId };
   if (STATIC) return LocalRules.handle(action, body);
   const response = await fetch('/api/' + action, { method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body) });
@@ -2423,6 +2443,60 @@ function countUp(el, target) {
     if (k < 1) requestAnimationFrame(tick);
   };
   requestAnimationFrame(tick);
+}
+
+async function openHistory() {
+  show('history');
+  const list = $('historyList');
+  list.textContent = 'Loading…';
+  const response = await api('history', { campus: pack.id }).catch(() => null);
+  if (!response || response.status !== 200) {
+    list.textContent = 'Could not load history.';
+    return;
+  }
+  const rounds = response.body.rounds || [];
+  list.innerHTML = '';
+  if (!rounds.length) {
+    const empty = document.createElement('p');
+    empty.id = 'historyEmpty';
+    empty.textContent = 'No Explore rounds saved yet. Finish a round to start your history!';
+    list.append(empty);
+    return;
+  }
+  for (const round of rounds) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'historyRow';
+    const date = document.createElement('span');
+    date.textContent = round.dailyDate || round.finishedAt.slice(0, 10);
+    const target = document.createElement('small');
+    target.textContent = `${round.campusId} · ${round.target} · ${round.difficulty.toLower ? round.difficulty.toLower() : round.difficulty}`;
+    const score = document.createElement('b');
+    score.textContent = `${round.score}/1000`;
+    button.append(date, target, score);
+    button.addEventListener('click', () => openRecap(round.roundId));
+    list.append(button);
+  }
+}
+
+async function openRecap(roundId) {
+  const response = await api('recap', { round: roundId }).catch(() => null);
+  if (!response || response.status !== 200) {
+    $('historyList').textContent = response?.body?.error || 'Could not read this saved round.';
+    return;
+  }
+  const recap = response.body;
+  hide('history');
+  hide('title');
+  game.phase = 'done';
+  game.mode = recap.mode;
+  game.date = recap.dailyDate;
+  game.result = recap.result;
+  game.zone = recap.result.zone;
+  game.orbiting = false;
+  fillResults(recap.result, null);
+  show('results');
+  replay();
 }
 
 /** The point `share` (0-1) of the way along a line, by distance. */

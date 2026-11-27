@@ -59,21 +59,10 @@ public final class ExplorePresenter implements ExploreOutputBoundary {
             }
             case ExploreResponse.Checked checked -> checked(checked, body);
             case ExploreResponse.HintChosen hint -> {
-                body.put("type", "hint");
-                body.put("level", name(hint.level()));
-                body.put("multiplier", hint.multiplier());
-                body.put("hint", hint.hint());
-                body.put("zoneBuildings", hint.zoneBuildings());
+                hint(hint, body);
             }
             case ExploreResponse.Guessed guessed -> {
-                body.put("type", "guessed");
-                body.put("buildingId", guessed.buildingId());
-                body.put("correct", guessed.correct());
-                body.put("guessesRemaining", guessed.guessesRemaining());
-                body.put("message", guessed.correct() ? "That's it!"
-                        : guessed.result().isPresent() ? "Out of guesses."
-                        : "Not this one. " + guessed.guessesRemaining() + " guesses left.");
-                guessed.result().ifPresent(finished -> putFinished(body, finished));
+                guessed(guessed, body);
             }
             case ExploreResponse.DailyStatus daily -> {
                 body.put("type", "dailyStatus");
@@ -91,6 +80,12 @@ public final class ExplorePresenter implements ExploreOutputBoundary {
                 body.put("trails", traffic.trails().stream().map(trail -> trail.stream().map(ExplorePresenter::point)
                         .toList()).toList());
             }
+            case ExploreResponse.History history -> {
+                history(history, body);
+            }
+            case ExploreResponse.Recap recap -> {
+                recap(recap, body);
+            }
             case ExploreResponse.Failed failed -> {
                 status = 400;
                 body.put("type", "error");
@@ -98,6 +93,53 @@ public final class ExplorePresenter implements ExploreOutputBoundary {
             }
         }
         viewModel = new ExploreViewModel(status, body);
+    }
+
+    private static void history(ExploreResponse.History history, Map<String, Object> body) {
+        body.put("type", "history");
+        body.put("rounds", history.rounds().stream().map(round -> {
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("roundId", round.id().toString());
+            item.put("campusId", round.campusId());
+            item.put("finishedAt", round.finishedAt().toString());
+            item.put("dailyDate", round.dailyDate() == null ? null : round.dailyDate().toString());
+            item.put("mode", round.mode());
+            item.put("difficulty", round.difficulty());
+            item.put("target", round.result().targetName());
+            item.put("score", round.result().score());
+            return item;
+        }).toList());
+    }
+
+    private static void recap(ExploreResponse.Recap recap, Map<String, Object> body) {
+        var round = recap.round();
+        body.put("type", "recap");
+        body.put("roundId", round.id().toString());
+        body.put("campusId", round.campusId());
+        body.put("finishedAt", round.finishedAt().toString());
+        body.put("dailyDate", round.dailyDate() == null ? null : round.dailyDate().toString());
+        body.put("mode", round.mode());
+        body.put("difficulty", round.difficulty());
+        body.put("result", result(round.result()));
+    }
+
+    private static void hint(ExploreResponse.HintChosen hint, Map<String, Object> body) {
+        body.put("type", "hint");
+        body.put("level", name(hint.level()));
+        body.put("multiplier", hint.multiplier());
+        body.put("hint", hint.hint());
+        body.put("zoneBuildings", hint.zoneBuildings());
+    }
+
+    private static void guessed(ExploreResponse.Guessed guessed, Map<String, Object> body) {
+        body.put("type", "guessed");
+        body.put("buildingId", guessed.buildingId());
+        body.put("correct", guessed.correct());
+        body.put("guessesRemaining", guessed.guessesRemaining());
+        body.put("message", guessed.correct() ? "That's it!"
+                : guessed.result().isPresent() ? "Out of guesses."
+                : "Not this one. " + guessed.guessesRemaining() + " guesses left.");
+        guessed.result().ifPresent(finished -> putFinished(body, finished));
     }
 
     private static void checked(ExploreResponse.Checked checked, Map<String, Object> body) {
