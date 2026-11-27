@@ -159,7 +159,11 @@ public final class ExplorePresenter implements ExploreOutputBoundary {
             body.put("trend", name(checked.trend()));
             body.put("temperature", checked.temperature());
             body.put("change", checked.change());
-            body.put("message", checked.temperature() + "°C. " + label(checked.heat()) + trendText(checked.trend())
+            if (checked.direction() != null) {
+                body.put("direction", name(checked.direction()));
+            }
+            // Lead with what to do next (a direction, or warmer/colder); the degrees are secondary.
+            body.put("message", headline(checked) + ". " + checked.temperature() + "°C."
                     + (checked.checksRemaining() == 0 ? " No checks left: your next search is final." : ""));
         }
         if (checked.finished() != null) {
@@ -275,21 +279,22 @@ public final class ExplorePresenter implements ExploreOutputBoundary {
         return value.name().toLowerCase(Locale.ROOT);
     }
 
-    private static String label(Expedition.Heat heat) {
-        return switch (heat) {
-            case HOT -> "Hot!";
-            case WARM -> "Warm.";
-            case COOL -> "Cool.";
-            case COLD -> "Cold.";
+    /** "Cold · Search east from here", "Warmer · Closer to the zone". */
+    static String headline(ExploreResponse.Checked checked) {
+        String heat = switch (checked.heat()) {
+            case HOT -> "Hot";
+            case WARM -> "Warm";
+            case COOL -> "Cool";
+            case COLD -> "Cold";
         };
-    }
-
-    private static String trendText(Expedition.Trend trend) {
-        return switch (trend) {
-            case FIRST -> "";
-            case WARMER -> " Warmer than your last check.";
-            case SAME -> " About the same as your last check.";
-            case COLDER -> " Colder than your last check.";
+        if (checked.direction() != null) {
+            return heat + " · Search " + name(checked.direction()) + " from here";
+        }
+        return switch (checked.trend()) {
+            case FIRST -> heat;
+            case WARMER -> "Warmer · Closer to the zone";
+            case SAME -> "About the same · No closer to the zone";
+            case COLDER -> "Colder · Farther from the zone";
         };
     }
 }

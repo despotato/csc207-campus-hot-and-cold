@@ -145,6 +145,9 @@ class ExploreFlowTest {
         assertEquals(1, checked.body().get("number"));
         assertTrue(checked.body().get("temperature") instanceof Integer, "a whole-degree temperature");
         assertNull(checked.body().get("change"), "nothing to compare the first check with");
+        assertEquals("east", checked.body().get("direction"), "the first miss points broadly at the zone");
+        assertTrue(((String) checked.body().get("message")).startsWith("Cold · Search east from here."),
+                "lead with what to do next; degrees come after");
         assertFalse(Json.write(checked.body()).contains("metres"), "exact distance hidden");
 
         assertEquals(400, call("guess", Map.of("buildingId", 1)).status(), "can't guess before the zone");

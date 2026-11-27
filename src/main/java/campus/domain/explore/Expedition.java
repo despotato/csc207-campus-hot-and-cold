@@ -47,6 +47,9 @@ public final class Expedition {
 
     public enum Trend { FIRST, WARMER, SAME, COLDER }
 
+    /** A broad direction: a quarter of the compass. */
+    public enum Compass { NORTH, EAST, SOUTH, WEST }
+
     public enum HintLevel {
         EASY(1.0), NORMAL(1.5), HARD(2.0);
 
@@ -365,6 +368,18 @@ public final class Expedition {
         Check check = new Check(here, heat, trend, distance, false);
         checks.add(check);
         return check;
+    }
+
+    /**
+     * After the first check misses, a broad direction from that check towards the zone (one of four, so the player
+     * still chooses where to go); empty for every other check. Later checks are compared by warmer or colder.
+     */
+    public Optional<Compass> directionAfter(Check check) {
+        if (check.inZone() || checks.isEmpty() || checks.getFirst() != check) {
+            return Optional.empty();
+        }
+        double bearing = check.point().bearingTo(zone.centre());
+        return Optional.of(Compass.values()[(int) Math.round(bearing / 90) % 4]);
     }
 
     /**

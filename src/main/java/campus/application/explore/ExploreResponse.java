@@ -38,7 +38,7 @@ public sealed interface ExploreResponse {
      */
     record Checked(GeoPoint point, Expedition.Heat heat, Expedition.Trend trend, int checksRemaining,
                    boolean finalSearch, ZoneView zone, Finished finished, int number, Integer temperature,
-                   Integer change) implements ExploreResponse { }
+                   Integer change, Expedition.Compass direction) implements ExploreResponse { }
 
     record HintChosen(Expedition.HintLevel level, double multiplier, String hint, List<Integer> zoneBuildings)
             implements ExploreResponse { }

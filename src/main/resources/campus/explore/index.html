@@ -66,6 +66,8 @@
     transform: translate(14px, -30px); background: #1b1f3aee; border: 2px solid var(--gold); color: var(--gold); white-space: nowrap; }
   #travelCursor.blocked { border-color: var(--hot); color: var(--hot); }
   #checkLabels { position: fixed; inset: 0; pointer-events: none; overflow: hidden; }
+  #checkLabels div.warmest { outline: 3px solid #fff8e7; }
+  #checkLabels .arrow { display: inline-block; margin-left: 4px; font-weight: bold; }
   #checkLabels div { position: absolute; left: 0; top: 0; font-size: 11px; padding: 2px 5px; white-space: nowrap; color: #1b1f3a;
     border: 2px solid #1b1f3a; font-weight: bold; }
   #help { position: fixed; left: 50%; bottom: 12px; transform: translateX(-50%); white-space: nowrap; font-size: 12px; }
@@ -1512,12 +1514,24 @@ function placeCheckLabels() {
   while (layer.childElementCount < checkList.length) layer.append(document.createElement('div'));
   const zoom = map.getZoom(), pitch = map.getPitch() * Math.PI / 180, c = map.getCenter();
   const ppm = 512 * Math.pow(2, zoom) / (40075016.686 * Math.cos(c.lat * Math.PI / 180));
+  // The warmest check so far (latest on a tie) is outlined, so later checks are easy to compare.
+  let warmest = -1;
+  checkList.forEach((check, i) => { if (check.temperature != null && (warmest < 0 || check.temperature >= checkList[warmest].temperature)) warmest = i; });
   checkList.forEach((check, i) => {
     const el = layer.children[i];
     if (!show) { el.style.display = 'none'; return; }
     const p = map.project(check.point);
     const lift = game.mapView ? 14 : 8.5 * ppm * Math.sin(pitch) + 10;
-    el.textContent = check.label; el.style.background = check.color; el.style.display = '';
+    el.textContent = check.label + (i === warmest && checkList.length > 1 ? ' ★ warmest' : '');
+    el.classList.toggle('warmest', i === warmest && checkList.length > 1);
+    if (check.direction) {   // an arrow pointing the way, turned with the map
+      const arrow = document.createElement('span');
+      arrow.className = 'arrow';
+      arrow.textContent = '↑ ' + check.direction[0].toUpperCase();
+      arrow.style.transform = `rotate(${COMPASS[check.direction] - map.getBearing()}deg)`;
+      el.append(arrow);
+    }
+    el.style.background = check.color; el.style.display = '';
     el.style.transform = `translate(${Math.round(p.x + (game.mapView ? 12 : -14))}px, ${Math.round(p.y - lift)}px)`;
   });
 }
@@ -1933,6 +1947,14 @@ async function syncPosition() {
 // ---------- checks ----------
 // Entering the zone isn't announced: a check inside it finds it. With no checks left, Space (pressed twice)
 // makes one final search that either finds the zone or ends the round.
+const COMPASS = { north: 0, east: 90, south: 180, west: 270 };
+/** What a check means, said first: a direction after the first miss, then warmer or colder. Degrees come second. */
+function checkHeadline(b) {
+  const heat = b.heat[0].toUpperCase() + b.heat.slice(1);
+  if (b.direction) return `${heat} · Search ${b.direction} from here`;
+  return { warmer: 'Warmer · Closer to the zone', colder: 'Colder · Farther from the zone',
+    same: 'About the same · No closer to the zone' }[b.trend] || heat;
+}
 async function doCheck() {
   if (game.phase !== 'walk' || game.mapView || game.checking) return;
   if (game.checksLeft <= 0 && !(game.armedSearch && performance.now() - game.armedSearch < 3000)) {
@@ -1963,11 +1985,11 @@ async function doCheck() {
       if (b.result) finish(b.result, b.saveError);
     } else {
       const delta = b.change == null ? '' : ` ${b.change > 0 ? '▲ +' : b.change < 0 ? '▼ ' : '■ '}${b.change}°`;
-      addCheckMarker(b.point, b.heat, b.number, `${b.temperature}°`);
-      toast(`${b.temperature}°C`, b.heat, `#${b.number} · ${b.heat.toUpperCase()}${delta}` + (b.checksRemaining === 0 ? ' · No checks left' : ''));
+      addCheckMarker(b.point, b.heat, b.number, `${b.temperature}°`, b.direction, b.temperature);
+      toast(checkHeadline(b), b.heat, `#${b.number} · ${b.temperature}°C${delta}` + (b.checksRemaining === 0 ? ' · No checks left: your next search is final' : ''));
       flashVignette(HEAT_COLORS[b.heat]);
       li.style.color = HEAT_COLORS[b.heat];
-      li.textContent = `#${b.number}  ${b.temperature}°C ${b.heat.toUpperCase()}${delta}`;
+      li.textContent = `#${b.number} ${checkHeadline(b)} · ${b.temperature}°C${delta}`;
     }
     $('checks').append(li); $('nochecks').classList.add('hidden');
     renderHud();
@@ -1976,9 +1998,9 @@ async function doCheck() {
 }
 
 const markerFeatures = [], ringFeatures = [], checkDots = [], checkList = [];
-function addCheckMarker(point, heat, number, text) {
+function addCheckMarker(point, heat, number, text, direction, temperature) {
   const color = HEAT_COLORS[heat] || '#ffd23f';
-  checkList.push({ point, color, label: `#${number} ${text}` });
+  checkList.push({ point, color, label: `#${number} ${text}`, direction, temperature });
   // A thin flagpole with a heat-coloured flag, so it never hides the avatar standing at the spot.
   markerFeatures.push(box(point, 0, -0.3, 0.3, -0.3, 0.3, 0, 8, '#fff8e7'), box(point, 0, 0.3, 3.2, -0.25, 0.25, 5.6, 7.8, color));
   ringFeatures.push({ type: 'Feature', properties: { color }, geometry: { type: 'LineString', coordinates: circle(point, 9, 24) } });
@@ -2851,6 +2873,11 @@ const LocalRules = (() => {
   /** Same as Java's Expedition.Check.temperature(): 40°C at the zone, a degree cooler per 20 m, floor -10°C. */
   const temperatureFor = d => Math.max(-10, Math.min(40, Math.round(40 - d / 20)));
 
+  /** Compass bearing in degrees, 0 = north, clockwise (GeoPoint.bearingTo). */
+  function bearingOf(a, b) {
+    const north = b[1] - a[1], east = (b[0] - a[0]) * Math.cos(a[1] * Math.PI / 180);
+    return (Math.atan2(east, north) * 180 / Math.PI + 360) % 360;
+  }
   function check() {
     if (round.stage !== 'find') return fail('Checks are only used while finding the zone.');
     const here = round.pos, d = distOf(here, round.zone.centre);
@@ -2870,7 +2897,9 @@ const LocalRules = (() => {
     const trend = !last ? 'first' : Math.abs(d - last.metres) < 5 ? 'same' : d < last.metres ? 'warmer' : 'colder';
     const temperature = temperatureFor(d);
     round.checks.push({ point: here, heat, trend, metres: d, temperature });
-    return ok({ type: 'checked', point: here, heat, trend, number: round.checks.length, temperature,
+    // After the first miss only: a broad direction (a quarter of the compass) towards the zone (Expedition.directionAfter).
+    const direction = last ? undefined : ['north', 'east', 'south', 'west'][Math.round(bearingOf(here, round.zone.centre) / 90) % 4];
+    return ok({ type: 'checked', point: here, heat, trend, number: round.checks.length, temperature, direction,
       change: last ? temperature - last.temperature : null, checksRemaining: CHECKS - round.checks.length, finalSearch: false, zoneFound: false });
   }
 
@@ -3353,10 +3382,10 @@ function restoreDailyRun(run) {
   for (const c of game.checkHistory) {
     if (c.finalSearch && !c.zoneFound) continue;
     addCheckMarker(c.point, c.zoneFound ? 'zone' : c.heat, c.number,
-      c.zoneFound ? 'ZONE' : `${c.temperature}°`);
+      c.zoneFound ? 'ZONE' : `${c.temperature}°`, c.direction, c.zoneFound ? null : c.temperature);
     const li = document.createElement('li');
     li.textContent = c.zoneFound ? `#${c.number} IN THE ZONE!`
-      : `#${c.number}  ${c.temperature}°C ${c.heat.toUpperCase()}`;
+      : `#${c.number} ${checkHeadline(c)} · ${c.temperature}°C`;
     $('checks').append(li);
   }
   if (game.checkHistory.length) $('nochecks').classList.add('hidden');

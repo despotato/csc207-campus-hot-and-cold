@@ -38,13 +38,13 @@ public final class CheckTemperatureInteractor implements CheckTemperatureInputBo
                         : check.temperature() - checks.get(checks.size() - 2).temperature();
                 output.present(new ExploreResponse.Checked(check.point(), check.heat(), check.trend(),
                         expedition.checksRemaining(), false, zone(expedition), null, checks.size(),
-                        check.temperature(), change));
+                        check.temperature(), change, expedition.directionAfter(check).orElse(null)));
             } else {
                 boolean found = expedition.finalSearch(clock.instant());
                 session.checkpoint(true);
                 output.present(new ExploreResponse.Checked(expedition.position(), null, null, 0, true,
                         found ? zone(expedition) : null, found ? null : finisher.finish(expedition),
-                        expedition.checksUsed() + 1, null, null));
+                        expedition.checksUsed() + 1, null, null, null));
             }
         } catch (IllegalStateException exception) {
             output.present(new ExploreResponse.Failed(exception.getMessage()));

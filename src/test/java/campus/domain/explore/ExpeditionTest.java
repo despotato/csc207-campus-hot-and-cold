@@ -182,6 +182,9 @@ class ExpeditionTest {
         assertEquals(26, warm.temperature(), "40°C at the zone, a degree cooler per 20 m");
         assertEquals(10, second.temperature(), "600 m away");
         assertEquals(-10, first.temperature(), "about 1 km away: floored at -10°C");
+        assertEquals(Optional.of(Expedition.Compass.EAST), round.directionAfter(first),
+                "the first miss points broadly towards the zone (due east here)");
+        assertEquals(Optional.empty(), round.directionAfter(second), "later checks only say warmer or colder");
         while (round.checksRemaining() > 0) {
             round.check(later);
         }
