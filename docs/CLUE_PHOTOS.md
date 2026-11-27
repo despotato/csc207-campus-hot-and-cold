@@ -1,10 +1,14 @@
 # Start-of-round clue views
 
 At the start of a round the player sees a street view of an ordinary building inside the hidden zone (never a
-landmark, so never the target). It stays as a "Zone photo" button for the rest of the round.
+landmark: that would give the zone away, and it is never the target). It stays as a "Zone photo" button for the rest
+of the round.
 
-- **Domain:** `Expedition.clueBuilding()` picks a building with a stored view, 10 m or more inside the zone, chosen
-  from the zone's centre, so a daily's view is the same for everyone. The page mirrors it (`LocalRules`).
+- **Domain:** `ZoneClue` (used by `Expedition.clueBuilding()` / `clueText()`) chooses from ordinary buildings 10 m or
+  more inside the zone, else ordinary ones anywhere in it, picked from the zone's centre so a daily's clue is the same
+  for everyone. Only when every building in the zone is a landmark does it use another landmark, and then only as
+  words about its look ("4 storeys, stone"): no photo, no history. The page mirrors it (`LocalRules`, measuring with
+  the same haversine formula so both agree at the boundaries).
 - **Pack:** `cluePhotos` lists one view per ~60 m region of the campus, chosen ahead of time by
   `tools/fetch_clue_photos.py`. Players never trigger that step.
 - **Display:** a Google Street View entry (`pano`, `heading`, `pitch`, `fov`) is shown through the Maps Embed API.

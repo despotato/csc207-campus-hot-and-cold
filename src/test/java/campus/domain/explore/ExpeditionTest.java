@@ -431,30 +431,38 @@ class ExpeditionTest {
                 landmarks, ground, cluePhotos);
     }
 
-    @Test void aZoneOfLandmarksUsesAnotherLandmarkForTheClue() {
-        CampusMap map = allLandmarks(Set.of(1, 2), new Building(2, "North Hall", at(1010, 130), 11),
-                new Building(3, "Edge Hall", at(1080, 75), 7));
+    @Test void aZoneOfLandmarksGetsOnlyTheLookOfAnotherLandmarkAndNoPhoto() {
+        CampusMap map = allLandmarks(Set.of(1, 2), new Building(2, "North Hall", at(1010, 130), 11, "stone", false,
+                1907, "Darling & Pearson", "Old North"));
         Expedition round = new Expedition(map, map.landmarks().getFirst(), new Zone(at(1000, 75), 90), START, T0);
-        assertEquals(2, round.clueBuilding().orElseThrow(), "the photographed landmark, never the target");
-        assertEquals("One building in the zone is 3 storeys, brick.", round.clueText().orElseThrow());
+        assertTrue(round.clueBuilding().isEmpty(), "a landmark photo would give the zone away");
+        assertEquals("One building in the zone is 3 storeys, stone.", round.clueText().orElseThrow(),
+                "the look only: a landmark's history would name it");
 
-        CampusMap edgeOnly = allLandmarks(Set.of(1), new Building(3, "Edge Hall", at(1085, 75), 7));
-        Expedition edge = new Expedition(edgeOnly, edgeOnly.landmarks().getFirst(), new Zone(at(1000, 75), 90), START,
-                T0);
-        assertTrue(edge.clueBuilding().isEmpty(), "the target's photo is never used");
-        assertEquals("One building in the zone is 2 storeys, brick.", edge.clueText().orElseThrow(),
-                "Edge Hall, 85 m out: the whole zone when nothing else is 10 m inside");
+        CampusMap targetOnly = allLandmarks(Set.of(1));
+        Expedition alone = new Expedition(targetOnly, targetOnly.landmarks().getFirst(), new Zone(at(1000, 75), 90),
+                START, T0);
+        assertTrue(alone.clueBuilding().isEmpty(), "the target's photo is never used");
+        assertTrue(alone.clueText().isEmpty(), "nothing but the target");
+    }
+
+    @Test void anOrdinaryBuildingNearTheEdgeComesBeforeLandmarks() {
+        CampusMap map = allLandmarks(Set.of(6), new Building(2, "North Hall", at(1010, 130), 11),
+                new Building(6, null, at(1085, 75), 7));
+        Expedition round = new Expedition(map, map.landmarks().getFirst(), new Zone(at(1000, 75), 90), START, T0);
+        assertEquals(6, round.clueBuilding().orElseThrow(), "the unnamed shed 85 m out, not North Hall");
+        assertEquals("One building in the zone is 2 storeys, brick.", round.clueText().orElseThrow());
     }
 
     @Test void historyComesFirstAndNeverRepeatsTheCurrentName() {
-        assertEquals("One building in the zone used to be called the Physics Building.", Expedition.describe(
+        assertEquals("One building in the zone used to be called the Physics Building.", ZoneClue.describe(
                 new Building(9, "Sandford Fleming", at(0, 0), 15, "stone", true, 1907, "Darling", "the Physics Building")));
-        assertEquals("One building in the zone was designed by Darling & Pearson.", Expedition.describe(
+        assertEquals("One building in the zone was designed by Darling & Pearson.", ZoneClue.describe(
                 new Building(9, "Old Hall", at(0, 0), 15, "stone", true, 1892, "Darling & Pearson", "Old Hall Annex")),
                 "a former name that contains the current one is skipped");
-        assertEquals("One building in the zone dates from the 1890s.", Expedition.describe(
+        assertEquals("One building in the zone dates from the 1890s.", ZoneClue.describe(
                 new Building(9, null, at(0, 0), 15, "stone", true, 1892, null, null)));
-        assertEquals("One building in the zone is 1 storey, glass.", Expedition.describe(
+        assertEquals("One building in the zone is 1 storey, glass.", ZoneClue.describe(
                 new Building(9, null, at(0, 0), 3, "glass", false, null, null, null)));
     }
 

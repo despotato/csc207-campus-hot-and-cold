@@ -12,11 +12,9 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalDouble;
-import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.random.RandomGenerator;
-import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
 
 /**
@@ -86,9 +84,6 @@ public final class Expedition {
             return guessPoints + hintBonus;
         }
     }
-
-    /** Clue buildings stand this far inside the zone edge, so every copy of the rules agrees on them. */
-    static final double CLUE_INSET = 10;
 
     public static final int MAX_SCORE = 1000;
     static final int ROUTE_POINTS = 400;
@@ -497,82 +492,16 @@ public final class Expedition {
     }
 
     /**
-     * The building shown in the start-of-round photo: a photographed one among the {@link #clueCandidates()}.
-     * Chosen from the zone's centre, so a daily's photo is the same for everyone. Empty when none of them has a
-     * stored photo. The page mirrors this (LocalRules clueBuilding).
+     * The building shown in the start-of-round photo, never the target; empty when the zone's clue candidates have no
+     * stored photo. The same for everyone on a daily. See {@link ZoneClue}.
      */
     public Optional<Integer> clueBuilding() {
-        return pickClue(clueCandidates().stream().filter(building -> map.hasCluePhoto(building.id()))
-                .toList()).map(Building::id);
+        return new ZoneClue(map, zone, target.buildingId()).building();
     }
 
-    /**
-     * The start-of-round clue in words, for when there's no photo (or it can't load): a piece of recorded history
-     * about an ordinary building in the zone, or failing that a deliberately vague look. With a photo it's about the
-     * photographed building. Never its current name (names are labelled on the map) and never where it is. Empty
-     * only when the zone holds no building but the target. The page mirrors this (LocalRules clueText).
-     */
+    /** The start-of-round clue in words, about the photographed building if there is one. See {@link ZoneClue}. */
     public Optional<String> clueText() {
-        Optional<Building> described = clueBuilding().map(id -> map.building(id).orElseThrow());
-        if (described.isEmpty()) {
-            List<Building> candidates = clueCandidates();
-            described = pickClue(candidates.stream().filter(Expedition::hasHistory).toList())
-                    .or(() -> pickClue(candidates));
-        }
-        return described.map(Expedition::describe);
-    }
-
-    private static boolean hasHistory(Building building) {
-        return usableFormerName(building) || building.architect() != null || building.built() != null;
-    }
-
-    private static boolean usableFormerName(Building building) {
-        return building.formerName() != null
-                && (building.name() == null || !LandmarkNames.givesAway(building.formerName(), building.name()));
-    }
-
-    /**
-     * Buildings the start-of-round clue may be about, never the target: ordinary buildings 10 m or more inside the
-     * zone; else, where every building there is a landmark, the other landmarks there; else any other building in the
-     * whole zone. The first two keep clear of the edge so every copy of the rules agrees on them.
-     */
-    private List<Building> clueCandidates() {
-        Set<Integer> landmarkBuildings = map.landmarks().stream().map(CampusLandmark::buildingId)
-                .collect(Collectors.toSet());
-        List<Building> inner = map.buildingsIn(new Zone(zone.centre(), zone.radiusMetres() - CLUE_INSET));
-        List<Building> ordinary = inner.stream().filter(building -> !landmarkBuildings.contains(building.id()))
-                .toList();
-        if (!ordinary.isEmpty()) {
-            return ordinary;
-        }
-        List<Building> others = inner.stream().filter(building -> building.id() != target.buildingId()).toList();
-        return others.isEmpty() ? map.buildingsIn(zone).stream()
-                .filter(building -> building.id() != target.buildingId()).toList() : others;
-    }
-
-    /** The same pick for everyone: an index taken from the zone's centre. */
-    private Optional<Building> pickClue(List<Building> candidates) {
-        if (candidates.isEmpty()) {
-            return Optional.empty();
-        }
-        long seed = Math.round(zone.centre().latitude() * 1e6) + Math.round(zone.centre().longitude() * 1e6);
-        return Optional.of(candidates.get((int) Math.floorMod(seed, (long) candidates.size())));
-    }
-
-    /** History first (a former name, the architect, the decade it was built); else storeys and facade only. */
-    static String describe(Building building) {
-        if (usableFormerName(building)) {
-            return "One building in the zone used to be called " + building.formerName() + ".";
-        }
-        if (building.architect() != null) {
-            return "One building in the zone was designed by " + building.architect() + ".";
-        }
-        if (building.built() != null) {
-            return "One building in the zone dates from the " + (building.built() / 10 * 10) + "s.";
-        }
-        long floors = Math.max(1, Math.round(building.height() / 3.66));
-        return "One building in the zone is " + floors + (floors == 1 ? " storey, " : " storeys, ")
-                + building.material() + ".";
+        return new ZoneClue(map, zone, target.buildingId()).text();
     }
 
     /** The badges this round has earned so far, in {@link Achievement} order. */

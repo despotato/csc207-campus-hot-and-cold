@@ -2,8 +2,8 @@
 """Pick the start-of-round clue views for a campus pack, ahead of time.
 
 At the start of a round the game shows a street view of an ordinary building inside the hidden zone
-(Expedition.clueBuilding). This script runs once per campus (by a developer) and lists one view per region of the
-campus in the pack as "cluePhotos".
+(ZoneClue.building; never a landmark, which would give the zone away). This script runs once per campus (by a developer) and lists one view per region of the campus in the pack
+as "cluePhotos", then fills upcoming daily zones that still have none.
 
 The campus is split into square regions (60 m by default). Each region gets one view: its tallest ordinary building
 (not a landmark, 200 m² or more) that street imagery faces from close by. A 90 m zone covers several regions, so most
@@ -311,15 +311,21 @@ def main():
     def inside(b, xy, radius=80):
         bx, by_ = to_xy(b["lon"], b["lat"])
         return math.hypot(bx - xy[0], by_ - xy[1]) <= radius
+
+    def clue_candidates(puzzle):
+        """The photographable part of ZoneClue.candidates: ordinary buildings 10 m in, else anywhere in the zone."""
+        xy = zone_xy(puzzle)
+        ordinary = [b for b in pack["buildings"] if b["id"] not in landmark_ids]
+        return [b for b in ordinary if inside(b, xy)] or [b for b in ordinary if inside(b, xy, 90)]
+
     tried = set()
     for date, puzzle in sorted(pack.get("daily", {}).items()):
         if date < today:
             continue
-        xy = zone_xy(puzzle)
-        if any(inside(by_id[i], xy) for i in photos):
+        pool = clue_candidates(puzzle)
+        if any(b["id"] in photos for b in pool):
             continue
-        candidates = [b for b in pack["buildings"] if b["id"] not in landmark_ids and b["id"] not in tried
-                      and not b.get("flat") and inside(b, xy, 78)]
+        candidates = [b for b in pool if b["id"] not in tried and not b.get("flat")]
         for b in candidates:
             b.setdefault("_size", footprint(b, lat0))
             b["_height"] = b.get("height") or 0
@@ -345,10 +351,7 @@ def main():
     # How many upcoming dailies will show a photo (same choice as Expedition.clueBuilding).
     upcoming = [p for d, p in pack.get("daily", {}).items() if d >= today]
     def has_clue(puzzle):
-        zx, zy = to_xy(puzzle["zone"][0], puzzle["zone"][1]) if isinstance(puzzle["zone"], list) else to_xy(
-            puzzle["zone"]["lon"], puzzle["zone"]["lat"])
-        return any(math.hypot(*(a - b for a, b in zip(to_xy(by_id[i]["lon"], by_id[i]["lat"]), (zx, zy)))) <= 80
-                   for i in used)
+        return any(b["id"] in used for b in clue_candidates(puzzle))
     covered = sum(1 for p in upcoming if has_clue(p))
     size = sum(f.stat().st_size for f in out_dir.glob("*.jpg")) / 1e6
     for folder in (out_dir, out_dir.parent):   # no stored photos: leave no empty folders behind
