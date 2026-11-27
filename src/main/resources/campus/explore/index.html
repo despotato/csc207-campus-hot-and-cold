@@ -149,6 +149,8 @@
   #statsView { margin-top: 10px; overflow-y: auto; }
   #statsView dl { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; margin: 8px 0; }
   #statsView dd { margin: 0; color: var(--gold); }
+  #statsView .histogram { display: grid; grid-template-columns: 64px 1fr 24px; gap: 4px 8px; align-items: center; font-size: 11px; }
+  #statsView .histogram i { display: block; min-width: 2px; height: 10px; background: var(--mint); }
   #historyList { min-height: 120px; overflow-y: auto; margin: 10px 0; }
   .historyRow { width: 100%; display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; text-align: left;
     margin: 0 0 8px; background: var(--paper); }
@@ -357,6 +359,7 @@ const PIX = Math.min(1, Math.max(0.15, Number(params.get('pix')) || 0.3));
 const DEBUG = params.get('debug') === '1';
 // Without the Java server (e.g. on GitHub Pages) the page plays with an in-browser copy of the rules.
 const STATIC = params.get('static') === '1' || !['127.0.0.1', 'localhost'].includes(location.hostname);
+const $ = id => document.getElementById(id);
 if (!STATIC) {
   $('historyBtn').classList.remove('hidden');
   $('historyBtn').addEventListener('click', openHistory);
@@ -364,7 +367,6 @@ if (!STATIC) {
   $('historyTab').addEventListener('click', openHistory);
   $('statsTab').addEventListener('click', openStats);
 }
-const $ = id => document.getElementById(id);
 const HEAT_COLORS = { hot: '#ff4d2e', warm: '#ff9f1c', cool: '#4cc9f0', cold: '#6f8cff' };
 const TREND_TEXT = { first: '', warmer: '▲ Warmer', same: '■ Same', colder: '▼ Colder' };
 // About 30 seconds from one edge of campus to the other. Java's Expedition.TRAVEL_SPEED matches WALK_SPEED.
@@ -2168,7 +2170,7 @@ async function fillResults(r, saveError) {
   }
   $('streakRow').classList.add('hidden');
   if (!STATIC && game.mode === 'daily') {
-    const stats = await api('stats', { campus: pack.id }).catch(() => null);
+    const stats = await api('stats', { campus: homeCampus() || pack.id }).catch(() => null);
     if (stats?.status === 200) {
       $('streak').textContent = `${stats.body.currentDailyStreak} days`;
       $('streakRow').classList.remove('hidden');
@@ -2228,7 +2230,7 @@ async function openStats() {
   show('statsView');
   const view = $('statsView');
   view.textContent = 'Loading…';
-  const response = await api('stats', { campus: pack.id }).catch(() => null);
+  const response = await api('stats', { campus: homeCampus() || pack.id }).catch(() => null);
   if (!response || response.status !== 200) {
     view.textContent = response?.body?.error || 'Could not load player statistics.';
     return;
@@ -2250,12 +2252,30 @@ async function openStats() {
     dt.textContent = label; dd.textContent = value;
     dl.append(dt, dd);
   }
-  view.innerHTML = '<h3>Score by campus</h3>';
+  view.replaceChildren();
+  const campusTitle = document.createElement('h3');
+  campusTitle.textContent = 'Best score by campus';
+  view.append(campusTitle);
   for (const [campus, score] of Object.entries(stats.bestScorePerCampus || {})) {
     const p = document.createElement('p');
     p.textContent = `${campus}: ${score}`;
     view.append(p);
   }
+  const histogramTitle = document.createElement('h3');
+  histogramTitle.textContent = 'Score histogram';
+  view.append(histogramTitle);
+  const histogram = document.createElement('div');
+  histogram.className = 'histogram';
+  const buckets = Object.entries(stats.scoreHistogram || {}).sort((a, b) => Number(a[0]) - Number(b[0]));
+  const maxCount = Math.max(1, ...buckets.map(([, count]) => Number(count)));
+  for (const [bucket, count] of buckets) {
+    const label = document.createElement('span'), bar = document.createElement('i'), total = document.createElement('span');
+    label.textContent = `${bucket}–${Math.min(1000, Number(bucket) + 99)}`;
+    bar.style.width = `${Math.max(2, Number(count) / maxCount * 100)}%`;
+    total.textContent = count;
+    histogram.append(label, bar, total);
+  }
+  view.append(histogram);
   view.append(dl);
 }
 
@@ -3214,11 +3234,6 @@ addEventListener('pointerup', () => { game.dragX = null; game.justDragged = game
 $('startBtn').addEventListener('click', startRound);
 $('toGuess').addEventListener('click', startGuessing);
 $('replayBtn').addEventListener('click', replay);
-if (!STATIC) {
-  $('historyBtn').classList.remove('hidden');
-  $('historyBtn').addEventListener('click', openHistory);
-  $('historyClose').addEventListener('click', () => hide('history'));
-}
 $('againBtn').addEventListener('click', resetRound);
 $('viewDailyResult').addEventListener('click', () => {
   const result = (!STATIC && serverDaily?.result) || storedDailyResult();
