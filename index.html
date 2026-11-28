@@ -58,7 +58,7 @@
   #needle { font-size: 18px; color: var(--hot); transition: transform 60ms linear; }
   #mapBtn { position: fixed; right: 12px; bottom: 150px; font-size: 16px; padding: 10px 14px; text-align: left; }
   #mapBtn small { display: block; font-size: 10px; margin-top: 2px; }
-  #mapBtn.pulse { animation: pulse 900ms steps(2) infinite; }
+  #mapBtn.pulse, #practiceBtn.pulse { animation: pulse 900ms steps(2) infinite; }
   #checkBtn { display: block; position: fixed; left: 12px; bottom: max(16px, env(safe-area-inset-bottom));
     min-width: 116px; min-height: 52px; touch-action: manipulation; }
   @keyframes pulse { 50% { box-shadow: 0 0 0 6px #ffd23f99, 0 4px 0 var(--ink); } }
@@ -399,13 +399,13 @@
     </div>
     <p id="modeNote" class="note"></p>
     <ol class="rules">
-      <li>Travel around campus with the map to find the hidden <b>zone</b>. You get a few hot/cold checks; a check made inside the zone finds it.</li>
+      <li>Find the hidden <b>zone</b>: tap the ground to drop a pin, tap it again to walk there, then check. Warmer means closer to the zone; a check inside it finds it.</li>
       <li>Inside the zone, pick a hint <b>blind</b>: easy, normal or hard. Harder hints score more.</li>
       <li>Click the building you think it is. Fewer guesses and shorter walks score more.</li>
     </ol>
     <div class="controls">
-      <span>Drag to move, right-drag to turn</span>
-      <span><kbd>Space</kbd> check</span><span><kbd>M</kbd> map &amp; travel</span><span>Pinch/scroll to zoom</span>
+      <span>Tap ground: pin · tap pin: walk</span>
+      <span><kbd>Space</kbd> check</span><span><kbd>M</kbd> map for long trips</span><span><kbd>Esc</kbd> controls</span>
     </div>
     <!-- Difficulty selector: the start request already sends { difficulty }. See the team task "Difficulty levels". -->
     <div id="difficulty" data-value="normal" class="controls">Difficulty: Normal</div>
@@ -2435,7 +2435,7 @@ function fillResults(r, saveError) {
   const sc = r.score, ordinal = ['1st', '2nd', '3rd'][r.guessesUsed - 1];
   const lines = [
     ['Route efficiency', r.secondsToZone == null ? 'Zone not found'
-      : `${sc.efficiency}% efficient: ${r.metresWalked} m walked, ${r.shortestMetres} m shortest`, sc.route],
+      : `${sc.efficiency}% efficient: ${r.metresWalked} m to the zone, ${r.shortestMetres} m shortest (walking inside it is free)`, sc.route],
     ['Identification', r.won ? `Correct on the ${ordinal} guess` : 'Not identified', sc.guess],
     ['Hint bonus', r.hintLevel ? `${r.hintLevel[0].toUpperCase() + r.hintLevel.slice(1)} hint ×${sc.multiplier}` : 'No hint', sc.hintBonus],
     ['Checks saved', r.secondsToZone == null ? 'Zone not found' : `${Math.max(0, 6 - r.checksUsed)} of 5 saveable (the finding check is free)`, sc.checkBonus],
@@ -2458,6 +2458,7 @@ function fillResults(r, saveError) {
   }
   countUp($('total'), sc.total);
   $('walked').textContent = fmt(r.metresWalked);
+  $('walked').previousElementSibling.textContent = r.secondsToZone == null ? 'Walked' : 'Walked to the zone';
   $('shortest').textContent = fmt(r.shortestMetres);
   $('zoneTime').textContent = r.secondsToZone == null ? '—' : clock(r.secondsToZone);
   $('checksUsed').textContent = r.checksUsed;
@@ -3232,8 +3233,29 @@ const LocalRules = (() => {
       ...(round.stage === 'finished' ? await finishedAsync() : {}) });
   }
 
+  /**
+   * What the route score counts (Expedition.metresToZone): the metres walked until you last crossed into the zone.
+   * Walking on inside it is free; leaving and coming back counts. Before the zone is found, everything walked.
+   */
+  function metresToZone() {
+    if (round.zoneAt == null) return round.walked;
+    const walked = [...round.track];
+    const lastPt = walked[walked.length - 1];
+    if (lastPt[0] !== round.pos[0] || lastPt[1] !== round.pos[1]) walked.push(round.pos);
+    const last = walked.length - 1;
+    let outside = last;
+    while (outside >= 0 && playerInZone(round.zone, walked[outside])) outside--;
+    if (outside < 0 || outside === last) return round.walked;
+    const out = walked[outside], inn = walked[outside + 1], at = f => [out[0] + (inn[0] - out[0]) * f, out[1] + (inn[1] - out[1]) * f];
+    let low = 0, high = 1;
+    for (let i = 0; i < 20; i++) { const mid = (low + high) / 2; if (playerInZone(round.zone, at(mid))) high = mid; else low = mid; }
+    let inside = distOf(at(high), inn);
+    for (let i = outside + 1; i < last; i++) inside += distOf(walked[i], walked[i + 1]);
+    return Math.max(0, round.walked - inside);
+  }
   function score() {
-    const found = round.zoneAt != null, efficiency = round.walked > 0 ? Math.min(1, round.shortest.metres / round.walked) : 0;
+    const toZone = metresToZone();
+    const found = round.zoneAt != null, efficiency = toZone > 0 ? Math.min(1, round.shortest.metres / toZone) : 0;
     const route = found ? Math.round(400 * Math.min(1, efficiency / FULL_ROUTE)) : 0;
     const guessPts = round.won ? GUESS_POINTS[round.guesses.length - 1] : 0, multiplier = MULT[round.hint] || 1;
     const hintBonus = Math.round(guessPts * (multiplier - 1));
@@ -3263,7 +3285,7 @@ const LocalRules = (() => {
   function finished(summary = null) {
     const t = round.target, sc = score(), short = metresShort();
     return { result: { won: round.won, target: { name: t.name, category: t.category, buildingId: round.building.id, centre: round.building.center },
-      score: sc, achievements: achievements(sc), metresShort: short == null ? null : Math.round(short), metresWalked: Math.round(round.walked), shortestMetres: Math.round(round.shortest.metres),
+      score: sc, achievements: achievements(sc), metresShort: short == null ? null : Math.round(short), metresWalked: Math.round(metresToZone()), shortestMetres: Math.round(round.shortest.metres),
       secondsToZone: round.zoneAt ? Math.round((round.zoneAt - round.startedAt + (round.travelMs || 0)) / 1000) : null,
       zone: { centre: round.zone.centre, radius: round.zone.radius }, checksUsed: round.checks.length,
       guessesUsed: round.guesses.length, hintLevel: round.hint, route: round.track, shortestRoute: round.shortest.points,
@@ -3670,9 +3692,18 @@ function endPractice() {
 $('coachSkip').addEventListener('click', endPractice);
 $('coachDone').addEventListener('click', endPractice);
 $('practiceBtn').addEventListener('click', () => { if (game.phase === 'title') startRound(true); });
+/** New players (never finished or skipped the practice) see it highlighted in gold. */
+function markPractice() {
+  const fresh = !store.get(PRACTICE_SEEN);
+  $('practiceBtn').classList.toggle('secondary', !fresh);
+  $('practiceBtn').classList.toggle('pulse', fresh);
+  $('practiceBtn').textContent = fresh ? 'New here? Guided practice' : 'Guided practice';
+}
+markPractice();
 
 async function startRound(practiceRound = false) {
-  if (game.phase !== 'title' || $('startBtn').disabled) return;
+  // Practice never touches the daily, so it starts even when today's daily is done (Start is disabled then).
+  if (game.phase !== 'title' || (practiceRound !== true && $('startBtn').disabled)) return;
   practice.on = practiceRound === true;
   if (!practice.on && chosenMode === 'daily' && !STATIC && serverDaily?.status === 'inProgress') {
     game.phase = 'starting';   // Enter on the focused button also clicks it: only one resume may run
@@ -3982,7 +4013,13 @@ for (const card of document.querySelectorAll('.hintcard')) {
   $('loading').textContent = '';
   setInterval(syncPosition, 150);
   try {   // back from a practice: straight into a real round
-    if (sessionStorage.getItem('autostart')) { sessionStorage.removeItem('autostart'); setTimeout(() => startRound(), 300); }
+    if (sessionStorage.getItem('autostart')) {
+      sessionStorage.removeItem('autostart');
+      // Wait (up to 6 s) for Start to be ready: Java may still be answering whether today's daily is available.
+      const began = performance.now();
+      const tryStart = () => { if (!$('startBtn').disabled) startRound(); else if (performance.now() - began < 6000) setTimeout(tryStart, 200); };
+      setTimeout(tryStart, 300);
+    }
   } catch (e) { /* storage blocked: the title screen is fine */ }
   requestAnimationFrame(frame);
 
