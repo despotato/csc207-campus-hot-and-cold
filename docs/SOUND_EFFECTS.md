@@ -18,7 +18,7 @@ files can be added one at a time, in any order.
   short (0.1–0.6 s) because the next action is available straight away. The two big moments (zone found, correct
   guess) can be longer and grander.
 - **Loops** (`walk`, `ambience-*`) must loop seamlessly (no click at the loop point).
-- Players can mute everything (🔊 Sound on/off on the title screen and in the Esc controls panel).
+- Players can mute everything (🔊 Sound on/off in Settings on the title screen and in the pause menu, Esc).
 
 ## The list
 

@@ -152,6 +152,14 @@
   #title .titleMore button { font-size: 11px; padding: 5px 9px; box-shadow: 0 3px 0 var(--ink); }
   #title .titleMore button.hidden { display: none; }
   #settings { z-index: 20; background: #0b0d1ed9; }
+  #pauseMenu { z-index: 20; background: #0b0d1ed9; }
+  #pauseMenu .card { max-width: 400px; padding: 22px 26px; }
+  #pauseMenu .pauseButtons { display: grid; gap: 10px; margin: 6px 0 10px; }
+  #pauseMenu .note { margin: 0 0 14px; font-size: 11px; opacity: .8; }
+  #pauseMenu .pauseKeys { border-top: 2px dashed #fff8e755; padding-top: 12px; font-size: 11px; line-height: 1.9; }
+  #pauseMenu .pauseKeys b { display: block; font-size: 11px; opacity: .75; }
+  #pauseMenu .taps { display: none; }
+  @media (pointer: coarse) { #pauseMenu .keys { display: none; } #pauseMenu .taps { display: inline; } }
   #settings .card { max-width: 400px; padding: 22px 26px; }
   #settings .choice { align-items: center; margin-bottom: 12px; }
   #settings .label { font-size: 11px; opacity: .75; min-width: 56px; }
@@ -317,7 +325,7 @@
     #results .buttons { margin-top: 8px; flex-wrap: nowrap; }
     #results .buttons button { flex: 1; padding: 8px 6px; font-size: 11px; }
   }
-  @media (pointer: coarse) { #checkBtn { display: block; } #controlsBtn { display: none; } }   /* no keys to explain on touch */
+  @media (pointer: coarse) { #checkBtn { display: block; } #controlsBtn kbd { display: none; } }
   /* Landscape phones: short screens keep Start in view and squeeze the score sheet. */
   @media (max-height: 500px) {
     #title .rules, #title .controls:not(#difficulty) { display: none; }
@@ -413,14 +421,11 @@
 <button id="checkBtn" class="hidden" type="button" aria-label="Check the temperature">Check</button>
 <div id="travelCursor" class="hidden"></div>
 <div id="checkLabels"></div>
-<div id="help" class="panel hidden">
-  <button class="secondary soundToggle" data-sfx type="button">🔊 Sound on</button>
-  Drag to move · right-drag to turn · <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> <kbd>Q</kbd><kbd>E</kbd> fly · <kbd>C</kbd> back to you · <kbd>Space</kbd> check · <kbd>M</kbd> map: pick a spot, then move
-</div>
+<div id="help" class="panel hidden"></div>
 <div id="mapTitle" class="panel hidden"><span>Campus map<small class="keys">Click a spot to preview it, click the pin again to move · scroll to zoom</small><small class="taps">Tap a spot to preview it, tap the pin again to move</small></span><span id="mapActions"><button id="mapCheck" type="button">Check this spot <kbd>Space</kbd></button><button id="mapBack" class="secondary" type="button">Look around</button></span></div>
 <div id="previewPin" class="hidden"><i></i><span></span></div>
 <button id="pinTag" class="hidden" type="button"></button>
-<button id="controlsBtn" class="secondary hidden" type="button">Controls <kbd>Esc</kbd></button>
+<button id="controlsBtn" class="secondary hidden" type="button">Menu <kbd>Esc</kbd></button>
 <div id="coach" class="panel hidden" role="status"><div class="head"><span id="coachStep"></span><button id="coachSkip" class="link" type="button">Skip practice</button></div>
   <p id="coachText"></p><button id="coachDone" class="hidden" type="button">Start a real round</button></div>
 <div id="toast"></div>
@@ -479,6 +484,26 @@
   </div>
 </section>
 <button id="clueThumb" class="hidden" aria-label="Show the photo of a building in the zone"><span class="cluePhoto" id="clueThumbPhoto"></span><small>Zone photo</small></button>
+
+<section id="pauseMenu" class="screen hidden" role="dialog" aria-modal="true" aria-labelledby="pauseTitle">
+  <div class="card panel">
+    <h2 id="pauseTitle">Paused</h2>
+    <div class="pauseButtons">
+      <button id="resumeBtn">Resume <kbd>Esc</kbd></button>
+      <button class="secondary soundToggle" data-sfx type="button">🔊 Sound on</button>
+      <button id="quitBtn" class="secondary">Quit to main menu</button>
+    </div>
+    <p id="quitNote" class="note"></p>
+    <div class="pauseKeys">
+      <b>Controls</b>
+      <span class="keys">Click the ground: drop a pin · click the pin: walk there · drag to look around, right-drag to turn ·
+        <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> <kbd>Q</kbd><kbd>E</kbd> fly · <kbd>C</kbd> back to you ·
+        <kbd>Space</kbd> check · <kbd>M</kbd> map for long trips</span>
+      <span class="taps">Tap the ground: drop a pin · tap the pin: walk there · drag to look around, twist to turn, pinch to
+        zoom · Check reads the temperature · Map for long trips</span>
+    </div>
+  </div>
+</section>
 
 <section id="settings" class="screen hidden" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
   <div class="card panel">
@@ -2752,7 +2777,7 @@ function enterZone(zone) {
   game.phase = 'zone'; game.zone = zone; game.zoneAt = performance.now(); game.keys = {}; game.autopilot = null;
   // The zone photo has done its job: put it away so it can't cover the hint banner (on phones it sat on top of it).
   hide('clueCard'); hide('clueThumb');
-  game.preview = null; drawPin(); setCompassHint(null); hide('controlsBtn'); hide('help');
+  game.preview = null; drawPin(); setCompassHint(null); hide('help');
   hide('help');
   map.getSource('zone').setData(fc([{ type: 'Feature', properties: {},
     geometry: { type: 'Polygon', coordinates: [circle(zone.centre, zone.radius, 64)] } }]));
@@ -3278,7 +3303,7 @@ const TUTORIAL = [
   ['Find the zone, then the building', '1. Find the zone → 2. Guess the building',
     "Somewhere 450 to 900 m from you is a hidden zone around one building. Stage 1: find the zone. The temperature tells you how close you are to the zone, not to the building. Stage 2: inside the zone, pick a hint and guess the building. A photo taken inside the zone is pinned to the side; recognise it and you can head straight there."],
   ['Drop a pin, walk there', 'Click the ground → a pin · click the pin again → walk there',
-    "Click the ground to drop a gold pin, then click the pin again (or double-click) to walk there. Clicking somewhere else just moves the pin; dragging to look around never moves you. Each walk counts as the shortest route there. For longer trips, open the map (M) and do the same. Esc shows the camera controls."],
+    "Click the ground to drop a gold pin, then click the pin again (or double-click) to walk there. Clicking somewhere else just moves the pin; dragging to look around never moves you. Each walk counts as the shortest route there. For longer trips, open the map (M) and do the same. Esc (or Menu) pauses: controls, sound, or quit to the main menu."],
   ['Check the temperature', '<kbd>Space</kbd> or Check this spot<br><span style="color:#6f8cff">Cold · Search east from here</span><br><span style="color:#ff9f1c">Warmer · Closer to the zone</span>',
     "You have 6 checks. Your first miss points the way: a gold arrow floats over that spot and the compass marks the direction. After that each check says warmer (closer to the zone) or colder (farther), and the warmest is starred on the map. A check reaches 15 m around you. Out of checks? Your next check is a final search."],
   ['Pick a hint blind', 'EASY ×1 what you can see<br>NORMAL ×1.5 what students know<br>HARD ×2 campus history',
@@ -4375,8 +4400,26 @@ function setCompassHint(direction, from) {
   $('compassHint').textContent = direction ? direction[0].toUpperCase() : '';
   $('compassHint').classList.toggle('hidden', !direction);
 }
-function toggleControls() { $('help').classList.toggle('hidden'); }
-$('controlsBtn').addEventListener('click', toggleControls);
+// ---------- pause menu: resume, sound, controls, quit to the main menu ----------
+const ROUND_PHASES = new Set(['walk', 'zone', 'hint', 'guess']);
+function openMenu() {
+  if (!ROUND_PHASES.has(game.phase)) return;
+  game.keys = {};
+  $('quitNote').textContent = practice.on ? 'Quitting leaves the practice. You can replay it from the main menu.'
+    : game.mode === 'daily' ? "Your daily is saved: choose Resume daily on the main menu to carry on."
+    : "Quitting ends this round. It won't be scored or saved.";
+  show('pauseMenu');
+  $('resumeBtn').focus();
+}
+const closeMenu = () => hide('pauseMenu');
+function quitToMenu() {
+  saveDailyRun();   // a daily is saved as it goes; this makes sure the latest position is in too
+  location.reload();   // a fresh title screen (a daily in progress shows Resume daily there)
+}
+$('controlsBtn').addEventListener('click', openMenu);
+$('resumeBtn').addEventListener('click', closeMenu);
+$('quitBtn').addEventListener('click', quitToMenu);
+$('pauseMenu').addEventListener('click', e => { if (e.target.id === 'pauseMenu') closeMenu(); });
 for (const b of document.querySelectorAll('.soundToggle')) b.addEventListener('click', () => { setSoundOn(!soundOn()); if (soundOn()) sound('ui-select'); });
 setSoundOn(soundOn());
 let toastTimer;
@@ -4461,6 +4504,7 @@ addEventListener('keydown', e => {
   if (e.code === 'Escape' && !$('tutorial').classList.contains('hidden')) { closeTutorial(); return; }
   if (!$('achievements').classList.contains('hidden')) { if (e.code === 'Escape') closeAchievements(); return; }
   if (!$('settings').classList.contains('hidden')) { if (e.code === 'Escape') closeSettings(); return; }
+  if (!$('pauseMenu').classList.contains('hidden')) { if (e.code === 'Escape') closeMenu(); return; }
   if (clueEnlarged()) {
     if (e.code === 'Escape' || e.code === 'Enter' || e.code === 'Space') { e.preventDefault(); closeClueCard(); }
     return;
@@ -4469,10 +4513,11 @@ addEventListener('keydown', e => {
   if (e.code === 'Enter' && game.phase === 'title' && $('tutorial').classList.contains('hidden')) { play(); return; }
   if (game.phase === 'walk') {
     if (e.code === 'KeyM' && !e.repeat) { toggleMapView(); e.preventDefault(); return; }
-    if (e.code === 'Escape') { if (game.mapView) toggleMapView(false); else toggleControls(); return; }
+    if (e.code === 'Escape') { if (game.mapView) toggleMapView(false); else openMenu(); return; }
     if (e.code === 'Space' && !e.repeat) { doCheck(); e.preventDefault(); return; }
     if (game.mapView) return;
   }
+  if (e.code === 'Escape' && ROUND_PHASES.has(game.phase) && $('hintScreen').classList.contains('hidden')) { openMenu(); return; }
   if (LOOK_PHASES.has(game.phase) && !game.mapView && KEYMAP[e.code]) { game.keys[KEYMAP[e.code]] = true; e.preventDefault(); }
   if (LOOK_PHASES.has(game.phase) && !game.mapView && e.code === 'KeyC' && game.pos) easeTo({ center: game.pos, duration: 600 });
 });
