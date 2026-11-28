@@ -4241,9 +4241,9 @@ function restoreDailyRun(run) {
 const practice = { on: false };
 // Seen once it's finished or skipped (a new key: the earlier, unguided practice set 'practiced').
 const PRACTICE_SEEN = 'guidedPractice';
-/** First Start on this device opens the guided practice (it can be skipped); later Starts go straight in. */
+/** Start always plays the chosen round; the practice is offered beside it (gold ★ until it's been done), never forced. */
 function play() {
-  if (!store.get(PRACTICE_SEEN) && !DEBUG) startRound(true); else startRound();
+  startRound();
 }
 function coach(step, text, done = false) {
   if (text !== $('coachText').textContent) sound('coach-step');
