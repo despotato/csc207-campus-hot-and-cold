@@ -342,6 +342,16 @@
 .campusPin:hover { background: var(--hot); color: #fff; }
 #pickerBar { position: fixed; top: calc(12px + env(safe-area-inset-top, 0px)); left: 50%; transform: translateX(-50%);
   display: flex; gap: 12px; align-items: center; flex-wrap: wrap; justify-content: center; max-width: calc(100% - 32px); z-index: 5; }
+#campusFind { position: relative; }
+#campusSearch { font: inherit; font-size: 12px; width: 190px; padding: 8px 10px; background: #fff8e1; color: #1d2038;
+  border: 2px solid #1d2038; box-shadow: 0 3px 0 #1d2038; }
+#campusResults { position: absolute; top: calc(100% + 6px); left: 0; min-width: 100%; width: max-content; max-width: 320px;
+  margin: 0; padding: 4px; list-style: none; z-index: 6; }
+#campusResults.hidden { display: none; }
+#campusResults li { padding: 6px 8px; font-size: 12px; cursor: pointer; white-space: nowrap; }
+#campusResults li small { opacity: .7; margin-left: 6px; font-size: 10px; }
+#campusResults li[aria-selected="true"], #campusResults li:hover { background: var(--gold); color: var(--ink); }
+@media (max-width: 640px) { #campusSearch { width: 120px; } }
 #campusSelect { font: inherit; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; width: 100%;
   max-width: 100%; padding: 8px 10px; background: #fff8e1; color: #1d2038; border: 2px solid #1d2038;
   box-shadow: 3px 3px 0 rgba(0,0,0,0.35); border-radius: 0; cursor: pointer; }
@@ -366,6 +376,7 @@
 <div id="travelCursor" class="hidden"></div>
 <div id="checkLabels"></div>
 <div id="help" class="panel hidden">
+  <button class="secondary soundToggle" data-sfx type="button">🔊 Sound on</button>
   Drag to move · right-drag to turn · <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> <kbd>Q</kbd><kbd>E</kbd> fly · <kbd>C</kbd> back to you · <kbd>Space</kbd> check · <kbd>M</kbd> map: pick a spot, then move
 </div>
 <div id="mapTitle" class="panel hidden"><span>Campus map<small class="keys">Click a spot to preview it, click the pin again to move · scroll to zoom</small><small class="taps">Tap a spot to preview it, tap the pin again to move</small></span><span id="mapActions"><button id="mapCheck" type="button">Check this spot <kbd>Space</kbd></button><button id="mapBack" class="secondary" type="button">Look around</button></span></div>
@@ -386,6 +397,8 @@
 
 <div id="pickerBar" class="panel hidden">
   <span><b id="pickerTitle">Choose a university</b> <span class="note" id="pickerNote">Drag and scroll the map · click a campus to fly there</span></span>
+  <span id="campusFind"><input id="campusSearch" type="search" placeholder="Search campuses" autocomplete="off" spellcheck="false"
+    aria-label="Search campuses" aria-controls="campusResults" aria-autocomplete="list"><ul id="campusResults" class="panel hidden" role="listbox"></ul></span>
   <button class="secondary" id="pickerBack">Back <kbd>Esc</kbd></button>
 </div>
 <section id="title" class="screen">
@@ -393,6 +406,11 @@
     <h1>Campus<br>Hot <span class="amp">&amp;</span> Cold</h1>
     <p class="lead"><span id="campusName">Campus</span> · Explore<span id="mascotLine"></span></p>
     <div class="choice" id="campusChoice" role="radiogroup" aria-label="University"></div>
+    <div class="choice" id="lookChoice" role="radiogroup" aria-label="Light">
+      <button class="secondary" data-look="live" role="radio">Live <small id="liveLook"></small></button>
+      <button class="secondary" data-look="day" role="radio">Day</button>
+      <button class="secondary" data-look="night" role="radio">Night</button>
+    </div>
     <div class="choice" id="modeChoice" role="radiogroup" aria-label="Mode">
       <button class="secondary" data-mode="daily" role="radio">Daily <small id="dailyDate"></small></button>
       <button class="secondary" data-mode="unlimited" role="radio">Unlimited</button>
@@ -409,7 +427,7 @@
     </div>
     <!-- Difficulty selector: the start request already sends { difficulty }. See the team task "Difficulty levels". -->
     <div id="difficulty" data-value="normal" class="controls">Difficulty: Normal</div>
-    <div class="buttons"><button id="startBtn" autofocus>Start <kbd>Enter</kbd></button><button id="viewDailyResult" class="secondary hidden">View today's result</button><button id="historyBtn" class="secondary hidden">History</button><button id="tutorialBtn" class="secondary">How to play</button><button id="practiceBtn" class="secondary">Guided practice</button><button id="achievementsBtn" class="secondary">Achievements</button></div>
+    <div class="buttons"><button id="startBtn" autofocus>Start <kbd>Enter</kbd></button><button id="viewDailyResult" class="secondary hidden">View today's result</button><button id="historyBtn" class="secondary hidden">History</button><button id="tutorialBtn" class="secondary">How to play</button><button id="practiceBtn" class="secondary">Guided practice</button><button class="secondary soundToggle" data-sfx type="button">🔊 Sound on</button><button id="achievementsBtn" class="secondary">Achievements</button></div>
     <p id="loading">Loading campus…</p>
   </div>
 </section>
@@ -633,8 +651,86 @@ async function api(action, body = {}) {
 // with real floors and stay fixed as the camera moves.
 const BAY = 4, FLOOR = 3.66, ROOF_TILE = 8;
 const MATERIALS = ['brick', 'stone', 'glass', 'concrete'];
-const SUN_HEIGHT = 0.8;   // sun elevation ≈ 39°: long enough shadows to read the buildings' shapes
-const SUN = (() => { const x = -0.45, y = -0.89, l = Math.hypot(x, y); return [x / l, y / l]; })();
+// ---------- light: time-of-day looks (presentation only: no rule reads them) ----------
+// az: compass bearing towards the sun; height: its height per metre of distance (tan of its elevation).
+// lit / shade: brightness of walls facing / turned from the sun; tint multiplies the whole 3D scene; ground tints the
+// flat map; shadow is the shadow tone; sky / horizon / haze colour the sky and the distance; lamps: street lamps on.
+const LOOKS = {
+  dawn: { label: 'Dawn', az: 100, height: 0.27, lit: 1.06, shade: 0.6, roof: 0.92, tint: [1.0, 0.9, 0.9],
+    ground: ['#f3a58c', 0.1], shadow: ['#2a2f66', 0.44], sky: '#7b8cc6', horizon: '#f6c4a6', haze: '#ebc6b6', hazeMax: 0.6,
+    night: 0, lamps: 0.45 },
+  day: { label: 'Day', az: 205, height: 0.95, lit: 1.12, shade: 0.6, roof: 1.06, tint: [1.04, 1.0, 0.95],
+    ground: ['#fff1c8', 0.05], shadow: ['#1b2645', 0.46], sky: '#4aa3e6', horizon: '#d5eaf4', haze: '#cbdde8', hazeMax: 0.72,
+    night: 0, lamps: 0 },
+  golden: { label: 'Golden hour', az: 255, height: 0.32, lit: 1.12, shade: 0.56, roof: 0.95, tint: [1.08, 0.93, 0.76],
+    ground: ['#ffae52', 0.1], shadow: ['#3b2458', 0.48], sky: '#6c84c8', horizon: '#ffcd8c', haze: '#f2cda2', hazeMax: 0.6,
+    night: 0, lamps: 0.35 },
+  night: { label: 'Night', az: 200, height: 0.9, lit: 1.0, shade: 0.76, roof: 0.9, tint: [0.44, 0.5, 0.74],
+    ground: ['#0c1534', 0.55], shadow: ['#000814', 0.24], sky: '#0a1330', horizon: '#2c3a6c', haze: '#1e2a52', hazeMax: 0.65,
+    night: 1, lamps: 1 },
+};
+let LOOK = LOOKS.day, SUN_HEIGHT = LOOK.height, SUN = [0, 1];
+/** The sun's elevation in degrees, and whether it's morning, at a place and time (low-precision solar formulas). */
+function sunAt(lat, lon, when = Date.now()) {
+  const rad = Math.PI / 180, n = when / 86400000 + 2440587.5 - 2451545.0;
+  const g = (357.528 + 0.9856003 * n) * rad, L = 280.46 + 0.9856474 * n;
+  const lambda = (L + 1.915 * Math.sin(g) + 0.02 * Math.sin(2 * g)) * rad, eps = (23.439 - 0.0000004 * n) * rad;
+  const ra = Math.atan2(Math.cos(eps) * Math.sin(lambda), Math.cos(lambda)) / rad, dec = Math.asin(Math.sin(eps) * Math.sin(lambda));
+  const gmst = (18.697374558 + 24.06570982441908 * n) % 24;
+  const hour = ((gmst * 15 + lon - ra) % 360 + 540) % 360 - 180;   // hour angle: negative before noon
+  const elevation = Math.asin(Math.sin(lat * rad) * Math.sin(dec) + Math.cos(lat * rad) * Math.cos(dec) * Math.cos(hour * rad)) / rad;
+  return { elevation, morning: hour < 0 };
+}
+/** Live: the campus's own sky right now (dawn, day, golden hour or night); Day and Night are fixed. */
+function liveLook(lat, lon) {
+  const sun = sunAt(lat, lon);
+  return sun.elevation < -4 ? 'night' : sun.elevation < 12 ? (sun.morning ? 'dawn' : 'golden') : 'day';
+}
+/** Chosen once when the campus loads and held for the whole round, so a Daily looks the same throughout. */
+function chooseLook(setting, lat, lon) {
+  return LOOKS[setting === 'day' || setting === 'night' ? setting : liveLook(lat, lon)];
+}
+const LOOK_UNIFORMS = {
+  lookTint: { value: new THREE.Color(1, 1, 1) }, lookHaze: { value: new THREE.Color('#c8dce7') }, lookHazeMax: { value: 0 },
+  lookEye: { value: new THREE.Vector2() }, lookStart: { value: 400 }, lookEnd: { value: 1800 }, lookNight: { value: 0 },
+};
+function setLookUniforms() {
+  LOOK_UNIFORMS.lookTint.value.setRGB(...LOOK.tint);
+  LOOK_UNIFORMS.lookHaze.value.set(LOOK.haze);
+  LOOK_UNIFORMS.lookNight.value = LOOK.night;
+}
+const LOOK_VERTEX = `
+vec4 lookWorld = vec4(transformed, 1.0);
+#ifdef USE_INSTANCING
+lookWorld = instanceMatrix * lookWorld;
+#endif
+vLookXY = lookWorld.xy;`;
+/** Distance haze: farther than the point the camera looks at, things fade into the horizon colour. */
+const LOOK_FRAGMENT = `
+outgoingLight = mix(outgoingLight, lookHaze, lookHazeMax * smoothstep(lookStart, lookEnd, distance(vLookXY, lookEye)));
+#include <opaque_fragment>`;
+const LOOK_DECLARE = `
+uniform vec3 lookTint;
+uniform vec3 lookHaze;
+uniform float lookHazeMax;
+uniform vec2 lookEye;
+uniform float lookStart;
+uniform float lookEnd;
+uniform float lookNight;
+varying vec2 vLookXY;`;
+function addLookUniforms(shader) { Object.assign(shader.uniforms, LOOK_UNIFORMS); }
+/** The time-of-day tint and distance haze on an ordinary (vertex-coloured) material: trees, students. */
+function withLook(material) {
+  material.onBeforeCompile = shader => {
+    addLookUniforms(shader);
+    shader.vertexShader = shader.vertexShader.replace('#include <common>', `#include <common>
+varying vec2 vLookXY;`).replace('#include <begin_vertex>', `#include <begin_vertex>${LOOK_VERTEX}`);
+    shader.fragmentShader = shader.fragmentShader.replace('#include <common>', `#include <common>${LOOK_DECLARE}`)
+      .replace('#include <opaque_fragment>', `outgoingLight *= lookTint;${LOOK_FRAGMENT}`);
+  };
+  material.customProgramCacheKey = () => 'look';
+  return material;
+}
 
 function pixelTexture(draw, size = 16) {
   const canvas = document.createElement('canvas');
@@ -679,9 +775,11 @@ const PARALLAX_EYE = { value: new THREE.Vector3() };
  * field, so recessed windows, mortar joints and grass tufts shift with the camera like real relief. Geometry must
  * carry 'ptan' (texture u direction) and 'pbit' (texture v direction) in local metres; depth is in texture units.
  */
-function withParallax(material, height, depth, windows = false) {
+function withParallax(material, height, depth, windows = false, glass = false) {
   material.onBeforeCompile = shader => {
+    addLookUniforms(shader);
     shader.uniforms.windowVariety = { value: windows ? 1 : 0 };
+    shader.uniforms.glassVariety = { value: glass ? 1 : 0 };
     shader.uniforms.heightMap = { value: height };
     shader.uniforms.parallaxDepth = { value: new THREE.Vector2(depth[0], depth[1]) };
     shader.uniforms.eye = PARALLAX_EYE;
@@ -690,8 +788,9 @@ function withParallax(material, height, depth, windows = false) {
 attribute vec3 ptan;
 attribute vec3 pbit;
 uniform vec3 eye;
-varying vec3 vViewTS;`)
-      .replace('#include <begin_vertex>', `#include <begin_vertex>
+varying vec3 vViewTS;
+varying vec2 vLookXY;`)
+      .replace('#include <begin_vertex>', `#include <begin_vertex>${LOOK_VERTEX}
 vec3 toEye = eye - position;
 vViewTS = vec3(dot(toEye, ptan), dot(toEye, pbit), abs(dot(toEye, cross(ptan, pbit))));`);
     shader.fragmentShader = shader.fragmentShader
@@ -699,7 +798,8 @@ vViewTS = vec3(dot(toEye, ptan), dot(toEye, pbit), abs(dot(toEye, cross(ptan, pb
 uniform sampler2D heightMap;
 uniform vec2 parallaxDepth;
 uniform float windowVariety;
-varying vec3 vViewTS;`)
+uniform float glassVariety;
+varying vec3 vViewTS;${LOOK_DECLARE}`)
       .replace('#include <map_fragment>', `
 vec3 viewTS = normalize(vViewTS);
 const int LAYERS = 14;
@@ -715,14 +815,22 @@ for (int i = 0; i < LAYERS; i++) {
 }
 diffuseColor *= texture2D(map, puv);
 diffuseColor.rgb *= 1.0 - 0.35 * layer;   // deeper relief is a little darker (ambient occlusion)
+float lookGlow = 0.0;   // a lit window at night: drawn warm and bright, untouched by the night tint
 if (windowVariety > 0.5 && below > 0.85) {
   // Each window (one per bay and floor) differs: some lit, some with blinds drawn, some dark.
   float cell = fract(sin(dot(floor(vMapUv), vec2(12.9898, 78.233))) * 43758.5453);
-  if (cell < 0.14) diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.86, 0.76, 0.52), 0.5);
+  if (lookNight > 0.5) lookGlow = cell < 0.2 ? 1.0 : 0.0;
+  else if (cell < 0.14) diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.86, 0.76, 0.52), 0.5);
   else if (cell < 0.3) diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.72, 0.7, 0.64), 0.45);
   else if (cell < 0.45) diffuseColor.rgb *= 0.72;
 }
-`);
+if (glassVariety > 0.5 && lookNight > 0.5) {   // glass towers: whole office bays lit
+  float bay = fract(sin(dot(floor(vMapUv), vec2(39.346, 11.135))) * 43758.5453);
+  if (bay < 0.1) lookGlow = 0.55;
+}
+`)
+      .replace('#include <opaque_fragment>', `outgoingLight *= lookTint;
+outgoingLight = mix(outgoingLight, vec3(1.0, 0.74, 0.4) * (0.62 + 0.3 * diffuseColor.r), lookGlow * 0.85);${LOOK_FRAGMENT}`);
   };
   material.customProgramCacheKey = () => 'parallax';
   return material;
@@ -972,7 +1080,7 @@ function addGable(g, roofs, tile, roofTint, walls, wallTint) {
     const quad = [P(ua, ve, eaveZ), P(ub, ve, eaveZ), P(ub, g.vm, g.ridge), P(ua, g.vm, g.ridge)];
     const uv = [[0, 0], [(ub - ua) / tile, 0], [(ub - ua) / tile, slopeLen / tile], [0, slopeLen / tile]];
     const up = [-side * g.vx * (half + eave), -side * g.vy * (half + eave), g.ridge - eaveZ], n = Math.hypot(...up);
-    const light = side < 0 ? 1.0 : 0.82;   // the slope facing the sun side is brighter
+    const light = (side < 0 ? 1.0 : 0.82) * LOOK.roof;   // the slope facing the sun side is brighter
     for (const k of [0, 1, 2, 0, 2, 3]) {
       roofs.pos.push(...quad[k]); roofs.uv.push(...uv[k]);
       roofs.shade.push(roofTint[0] * light, roofTint[1] * light, roofTint[2] * light);
@@ -1076,7 +1184,8 @@ function buildMeshes() {
           const len = Math.hypot(bx - ax, by - ay);
           if (len < 0.01) continue;
           const nx = outward * (by - ay) / len, ny = outward * -(bx - ax) / len;
-          const light = 0.68 + 0.32 * Math.max(0, nx * SUN[0] + ny * SUN[1]) + 0.06 * Math.max(0, -(nx * SUN[0] + ny * SUN[1]));
+          const facing = nx * SUN[0] + ny * SUN[1];   // walls turned to the sun are lit; the rest sit in shade
+          const light = LOOK.shade + (LOOK.lit - LOOK.shade) * Math.max(0, facing) + 0.06 * Math.max(0, -facing);
           const u0 = along / BAY, u1 = (along + len) / BAY, v0 = base / FLOOR, v1 = top / FLOOR;
           along += len;
           w.pos.push(ax, ay, base, bx, by, base, bx, by, top, ax, ay, base, bx, by, top, ax, ay, top);
@@ -1097,7 +1206,8 @@ function buildMeshes() {
       for (let i = 0; i < rp.length; i += 3) {
         roofs.pos.push(rp[i], rp[i + 1], top);
         roofs.uv.push(rp[i] / tile, rp[i + 1] / tile);
-        roofs.shade.push(...roofJitter); roofs.tan.push(1, 0, 0); roofs.bit.push(0, 1, 0);
+        roofs.shade.push(roofJitter[0] * LOOK.roof, roofJitter[1] * LOOK.roof, roofJitter[2] * LOOK.roof);
+        roofs.tan.push(1, 0, 0); roofs.bit.push(0, 1, 0);
       }
       roof.dispose();
     }
@@ -1122,7 +1232,7 @@ function buildMeshes() {
     const geometry = scene3d.geometries[m] = toGeometry(walls[m]);
     group.add(new THREE.Mesh(geometry, withParallax(new THREE.MeshBasicMaterial({ map: pixelTexture(FACADES[m]), vertexColors: true,
       side: THREE.DoubleSide }), heightTexture(FACADES[m], RAISED_FRAMES.has(m)), [FACADE_RELIEF[m] / BAY, FACADE_RELIEF[m] / FLOOR],
-      !RAISED_FRAMES.has(m))));
+      !RAISED_FRAMES.has(m), RAISED_FRAMES.has(m))));
   }
   for (const r of ROOF_TYPES) {
     if (!roofSets[r].pos.length) continue;
@@ -1187,7 +1297,7 @@ function buildGround() {
       return box;
     });
     const merged = mergeGeometries(geometries);
-    const mesh = new THREE.InstancedMesh(merged, new THREE.MeshBasicMaterial({ vertexColors: true }), trees.length);
+    const mesh = new THREE.InstancedMesh(merged, withLook(new THREE.MeshBasicMaterial({ vertexColors: true })), trees.length);
     const m = new THREE.Matrix4(), q = new THREE.Quaternion(), tint = new THREE.Color();
     trees.forEach((t, i) => {
       const h = Math.sin(i * 12.9898) * 43758.5453, r = h - Math.floor(h);
@@ -1272,8 +1382,8 @@ function setStudents(trails) {
   }).filter(w => w.pts.length >= 2 && w.len > 20);
   if (!walks.length) return;
   const { shirt, rest } = studentGeometry();
-  const shirts = new THREE.InstancedMesh(shirt, new THREE.MeshBasicMaterial({ vertexColors: true }), walks.length);
-  const bodies = new THREE.InstancedMesh(rest, new THREE.MeshBasicMaterial({ vertexColors: true }), walks.length);
+  const shirts = new THREE.InstancedMesh(shirt, withLook(new THREE.MeshBasicMaterial({ vertexColors: true })), walks.length);
+  const bodies = new THREE.InstancedMesh(rest, withLook(new THREE.MeshBasicMaterial({ vertexColors: true })), walks.length);
   const tint = new THREE.Color();
   walks.forEach((w, i) => shirts.setColorAt(i, tint.set(STUDENT_SHIRTS[i % STUDENT_SHIRTS.length])));
   for (const mesh of [shirts, bodies]) { mesh.castShadow = true; mesh.frustumCulled = false; layer.scene.add(mesh); }
@@ -1306,6 +1416,102 @@ async function loadTraffic() {
   if (r?.status === 200) setStudents(r.body.trails);
 }
 
+/** A wide sheet just above the flat map that hazes the distant ground into the horizon, like the buildings. */
+function hazePlane() {
+  const material = new THREE.ShaderMaterial({
+    uniforms: { ...LOOK_UNIFORMS }, transparent: true, depthWrite: false,
+    vertexShader: `varying vec2 vLookXY;
+void main() { vLookXY = position.xy; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+    fragmentShader: `uniform vec3 lookHaze; uniform float lookHazeMax; uniform vec2 lookEye; uniform float lookStart; uniform float lookEnd;
+varying vec2 vLookXY;
+void main() { gl_FragColor = vec4(lookHaze, lookHazeMax * smoothstep(lookStart, lookEnd, distance(vLookXY, lookEye))); }`,
+  });
+  const plane = new THREE.Mesh(new THREE.PlaneGeometry(40000, 40000), material);
+  plane.position.z = 0.04;
+  plane.renderOrder = -10;   // before the lawns and buildings, which haze themselves
+  plane.frustumCulled = false;
+  plane.userData.flat = true;
+  return plane;
+}
+/** A soft radial glow (additive): the light pools on the ground and the halo round each lamp. */
+function glowTexture(inner, outer) {
+  const c = document.createElement('canvas');
+  c.width = c.height = 64;
+  const g = c.getContext('2d'), grad = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  grad.addColorStop(0, inner); grad.addColorStop(0.35, outer); grad.addColorStop(1, 'rgba(0,0,0,0)');
+  g.fillStyle = grad; g.fillRect(0, 0, 64, 64);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+/**
+ * Street lamps along campus paths and a light by each named building's door side, for dusk and night: a dark post,
+ * a bright head with a halo (the only things that glow, so it reads like selective bloom without a post-process),
+ * and a warm pool of light on the ground. All instanced: a few draw calls whatever the campus size.
+ */
+function buildLamps(strength) {
+  const group = new THREE.Group();
+  const nodes = pack.walkways.nodes, near = landmarkBuildings.map(b => toLocal(b.center));
+  const onCampus = ([x, y]) => near.some(([lx, ly]) => Math.abs(lx - x) < 220 && Math.abs(ly - y) < 220);
+  const taken = new Set(), doors = [];
+  let lamps = [];
+  let carry = 0;
+  for (const [a, b] of pack.walkways.edges) {
+    const pa = toLocal(nodes[a]), pb = toLocal(nodes[b]), len = Math.hypot(pb[0] - pa[0], pb[1] - pa[1]);
+    for (let d = 34 - carry; d < len; d += 34) {
+      const f = d / len, p = [pa[0] + (pb[0] - pa[0]) * f, pa[1] + (pb[1] - pa[1]) * f];
+      const key = Math.round(p[0] / 18) + ',' + Math.round(p[1] / 18);
+      if (taken.has(key) || !onCampus(p)) continue;
+      taken.add(key); lamps.push(p);
+    }
+    carry = (carry + len) % 34;
+  }
+  if (lamps.length > 1400) { const every = lamps.length / 1400; lamps = lamps.filter((_, i) => Math.floor(i / every) !== Math.floor((i - 1) / every)); }   // thin evenly
+  // A light by each named building, on the side nearest a path (a stand-in for its entrance).
+  const local = nodes.map(toLocal);
+  for (const b of named) {
+    const [cx, cy] = toLocal(b.center);
+    let path = null, best = 150 ** 2;
+    for (const [x, y] of local) { const d = (x - cx) ** 2 + (y - cy) ** 2; if (d < best) { best = d; path = [x, y]; } }
+    if (!path) continue;
+    let door = null, nearest = Infinity;
+    for (const ring of b.outline.map(poly => poly[0])) for (const v of ring) {
+      const [x, y] = toLocal(v), d = (x - path[0]) ** 2 + (y - path[1]) ** 2;
+      if (d < nearest) { nearest = d; door = [x, y]; }
+    }
+    if (door) doors.push([door[0] + (path[0] - door[0]) * Math.min(1, 2.5 / Math.sqrt(nearest || 1)), door[1] + (path[1] - door[1]) * Math.min(1, 2.5 / Math.sqrt(nearest || 1))]);
+  }
+  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), one = new THREE.Vector3(1, 1, 1);
+  const instanced = (geometry, material, points, z, scale = 1) => {
+    const mesh = new THREE.InstancedMesh(geometry, material, points.length);
+    points.forEach(([x, y], i) => mesh.setMatrixAt(i, m.compose(new THREE.Vector3(x, y, z), q, one.clone().multiplyScalar(scale))));
+    mesh.frustumCulled = false;
+    group.add(mesh);
+    return mesh;
+  };
+  const post = new THREE.BoxGeometry(0.25, 0.25, 4.2); post.translate(0, 0, 2.1);
+  instanced(post, withLook(new THREE.MeshBasicMaterial({ color: 0x3a3f4c })), lamps, 0);
+  instanced(new THREE.BoxGeometry(0.7, 0.7, 0.45), new THREE.MeshBasicMaterial({ color: 0xffe6a8 }), lamps, 4.35);
+  const additive = (texture, opacity) => new THREE.MeshBasicMaterial({ map: texture, transparent: true, depthWrite: false,
+    blending: THREE.AdditiveBlending, opacity, side: THREE.DoubleSide });
+  const pool = additive(glowTexture('rgba(255,214,140,0.9)', 'rgba(255,170,80,0.35)'), 0.55 * strength);
+  const poolQuad = new THREE.PlaneGeometry(14, 14);
+  const pools = instanced(poolQuad, pool, lamps, 0.09);
+  const doorPools = instanced(new THREE.PlaneGeometry(11, 11), pool, doors, 0.1);
+  pools.renderOrder = doorPools.renderOrder = -1;
+  // Halos: two crossed upright quads, so the glow reads from every side.
+  const crossed = new THREE.BufferGeometry(), r = 1.6;
+  crossed.setAttribute('position', new THREE.Float32BufferAttribute([-r, 0, -r, r, 0, -r, r, 0, r, -r, 0, -r, r, 0, r, -r, 0, r,
+    0, -r, -r, 0, r, -r, 0, r, r, 0, -r, -r, 0, r, r, 0, -r, r], 3));
+  crossed.setAttribute('uv', new THREE.Float32BufferAttribute([0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1], 2));
+  const haloMaterial = additive(glowTexture('rgba(255,240,200,1)', 'rgba(255,190,110,0.45)'), 0.8 * strength);
+  instanced(crossed, haloMaterial, lamps, 4.35);
+  instanced(crossed, haloMaterial, doors, 3.2, 0.8);
+  group.userData.flat = true;
+  group.traverse(o => { o.userData.flat = true; });
+  return group;
+}
+
 function buildingLayer() {
   const origin = maplibregl.MercatorCoordinate.fromLngLat(ORIGIN, 0);
   const s = origin.meterInMercatorCoordinateUnits();
@@ -1323,11 +1529,11 @@ function buildingLayer() {
       // Shadows land on an invisible ground sheet (it only darkens where shadowed) and on rooftops.
       const b = pack.bounds, [x0, y0] = toLocal([b.west, b.south]), [x1, y1] = toLocal([b.east, b.north]);
       const sheet = new THREE.Mesh(new THREE.PlaneGeometry(x1 - x0 + 600, y1 - y0 + 600),
-        new THREE.ShadowMaterial({ opacity: 0.38, depthWrite: false }));
+        new THREE.ShadowMaterial({ color: LOOK.shadow[0], opacity: LOOK.shadow[1], depthWrite: false }));
       sheet.position.set((x0 + x1) / 2, (y0 + y1) / 2, 0.05);
       sheet.receiveShadow = true;
       this.scene.add(sheet);
-      const roofShadow = new THREE.ShadowMaterial({ opacity: 0.32, depthWrite: false,
+      const roofShadow = new THREE.ShadowMaterial({ color: LOOK.shadow[0], opacity: LOOK.shadow[1] * 0.85, depthWrite: false,
         polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
       for (const geometry of Object.values(scene3d.roofGeometries)) {
         const roofShadows = new THREE.Mesh(geometry, roofShadow);
@@ -1343,6 +1549,8 @@ function buildingLayer() {
       this.scene.add(this.sun, this.sun.target);
       this.avatarShadow = new THREE.Group();
       this.scene.add(this.avatarShadow);
+      this.scene.add(hazePlane());
+      if (LOOK.lamps > 0) this.scene.add(buildLamps(LOOK.lamps));
       scene3d.layer = this;
       this.renderer = new THREE.WebGLRenderer({ canvas: m.getCanvas(), context: gl, antialias: false });
       this.renderer.autoClear = false;
@@ -1361,6 +1569,15 @@ function buildingLayer() {
       // Camera position in local metres: the eye is where the projection sends w to 0 (clip-space direction 0,0,1,0).
       const eye = new THREE.Vector4(0, 0, 1, 0).applyMatrix4(this.camera.projectionMatrix.clone().invert());
       PARALLAX_EYE.value.set(eye.x / eye.w, eye.y / eye.w, eye.z / eye.w);
+      // Haze starts a little beyond the point the camera looks at, so everything near and mid-distance stays crisp;
+      // looking straight down (the map) there's no horizon, so no haze.
+      const c = this.map.getCenter(), [fx, fy] = toLocal([c.lng, c.lat]);
+      const ex = PARALLAX_EYE.value.x, ey = PARALLAX_EYE.value.y, ahead = Math.hypot(fx - ex, fy - ey);
+      LOOK_UNIFORMS.lookEye.value.set(ex, ey);
+      LOOK_UNIFORMS.lookStart.value = ahead + 150;
+      LOOK_UNIFORMS.lookEnd.value = ahead + 1500;
+      const pitch = this.map.getPitch();
+      LOOK_UNIFORMS.lookHazeMax.value = LOOK.hazeMax * Math.min(1, Math.max(0, (pitch - 30) / 30));
       this.renderer.resetState();
       this.renderer.render(this.scene, this.camera);
     },
@@ -1416,6 +1633,17 @@ function buildStyle() {
         paint: { 'line-color': '#55545a', 'line-width': ['interpolate', ['exponential', 2], ['zoom'], 14, 2, 19, 26] } },
     ],
   };
+}
+
+/** The sky and a tint over the flat map, for the chosen look. Called once the campus is known. */
+function applyLookToMap() {
+  map.setSky({ 'sky-color': LOOK.sky, 'horizon-color': LOOK.horizon, 'fog-color': LOOK.haze,
+    'sky-horizon-blend': 0.7, 'horizon-fog-blend': 0.8, 'fog-ground-blend': 0.85 });
+  // Over the ground and footpaths, under everything the game draws (routes, zone, check rings, pins, mascot).
+  if (LOOK.ground) map.addLayer({ id: 'look-tint', type: 'background',
+    paint: { 'background-color': LOOK.ground[0], 'background-opacity': LOOK.ground[1] } }, 'routes-casing');
+  document.documentElement.style.setProperty('--sky', LOOK.sky);
+  document.documentElement.style.setProperty('--horizon', LOOK.horizon);
 }
 
 function initMap() {
@@ -1508,6 +1736,10 @@ function addGameLayers() {
   map.addLayer({ id: 'zone-floor', type: 'fill', source: 'zone', paint: { 'fill-color': '#ffd23f', 'fill-opacity': 0.18 } });
   map.addLayer({ id: 'zone-ring', type: 'line', source: 'zone', paint: { 'line-color': '#ffd23f', 'line-width': 4, 'line-dasharray': [2, 1] } });
 
+  // Expanding rings for feedback (a check, an arrival, finding the zone, a correct guess).
+  map.addSource('pulses', { type: 'geojson', data: fc([]) });
+  map.addLayer({ id: 'pulses', type: 'line', source: 'pulses', paint: { 'line-color': ['get', 'color'],
+    'line-opacity': ['get', 'o'], 'line-width': ['get', 'w'] } });
   map.addSource('check-rings', { type: 'geojson', data: fc([]) });
   map.addLayer({ id: 'check-rings', type: 'line', source: 'check-rings', paint: { 'line-color': ['get', 'color'], 'line-width': 4 } });
 
@@ -2018,6 +2250,7 @@ async function doCheck() {
   if (game.phase !== 'walk' || game.travelling || game.checking) return;
   if (game.checksLeft <= 0 && !(game.armedSearch && performance.now() - game.armedSearch < 3000)) {
     game.armedSearch = performance.now();
+    sound('final-search-armed');
     toast('FINAL SEARCH?', 'warm', 'Press Space or tap Check again. If the zone isn\'t here, the round ends.');
     return;
   }
@@ -2046,6 +2279,11 @@ async function doCheck() {
     } else {
       const delta = b.change == null ? '' : ` ${b.change > 0 ? '▲ +' : b.change < 0 ? '▼ ' : '■ '}${b.change}°`;
       addCheckMarker(b.point, b.heat, b.number, `${b.temperature}°`, b.direction, b.temperature);
+      pulse(b.point, HEAT_COLORS[b.heat], 6, 45, 650, 6);
+      sound('check-' + b.heat);
+      if (b.trend === 'warmer' || b.trend === 'colder') setTimeout(() => sound('trend-' + b.trend), 350);
+      if (b.direction) setTimeout(() => sound('direction'), 450);
+      if (b.checksRemaining === 0) setTimeout(() => sound('last-check'), 700);
       toast(checkHeadline(b), b.heat, `#${b.number} · ${b.temperature}°C${delta}` + (b.checksRemaining === 0 ? ' · No checks left: your next search is final' : ''));
       flashVignette(HEAT_COLORS[b.heat]);
       li.style.color = HEAT_COLORS[b.heat];
@@ -2078,6 +2316,7 @@ function toggleMapView(force) {
   const open = force ?? !game.mapView;
   if (open === game.mapView) return;
   game.mapView = open;
+  sound(open ? 'map-open' : 'map-close');
   game.keys = {};
   $('mapTitle').classList.toggle('hidden', !open);
   map.setLayoutProperty('dots', 'visibility', open ? 'visible' : 'none');
@@ -2112,7 +2351,9 @@ function toggleMapView(force) {
 /** Where you stand: the camera orbits this spot; you move only by travelling with the map. */
 const LOOK_ZOOM = 18;
 function drawAvatar() {
+  const lift = game.avatarLift || 0;
   const parts = avatarFeatures(game.pos, game.heading).filter(f => f.properties.color !== '#00000055');
+  if (lift) for (const f of parts) { f.properties.base += lift; f.properties.top += lift; }
   map.getSource('avatar').setData(fc(parts));
   const layer = scene3d.layer;
   if (!layer) return;
@@ -2131,6 +2372,185 @@ function drawAvatar() {
   map.triggerRepaint();
 }
 const pitchFor = zoom => 50 + (zoom - ZOOM_MIN) * 4;
+
+// ---------- sound: named slots for every event (the files come separately: docs/SOUND_EFFECTS.md) ----------
+// A slot plays sounds/<id>.mp3 if it exists and stays silent if not, so the game works with any, all or none of them.
+// Volumes live here so the mix can be tuned in one place.
+const SOUNDS = {
+  'ui-click': 0.35, 'ui-select': 0.45, 'picker-open': 0.5, 'campus-fly': 0.6, 'round-start': 0.7,
+  'pin-drop': 0.55, 'walk': 0.45, 'arrive': 0.5, 'blocked': 0.45, 'map-open': 0.45, 'map-close': 0.4,
+  'check-hot': 0.75, 'check-warm': 0.7, 'check-cool': 0.7, 'check-cold': 0.7, 'trend-warmer': 0.55, 'trend-colder': 0.55,
+  'direction': 0.55, 'last-check': 0.6, 'final-search-armed': 0.6, 'zone-found': 0.9, 'hint-flip': 0.55,
+  'guess-wrong': 0.6, 'guess-right': 0.95, 'round-lost': 0.7, 'results': 0.6, 'achievement': 0.75,
+  'photo-open': 0.45, 'photo-close': 0.4, 'coach-step': 0.4,
+  'ambience-day': 0.22, 'ambience-evening': 0.22, 'ambience-night': 0.22,
+};
+const sounds = { ctx: null, buffers: new Map(), loops: new Map() };
+const soundOn = () => store.get('sound') !== 'off';
+function audioContext() {
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if (!AC) return null;
+  sounds.ctx ||= new AC();
+  if (sounds.ctx.state === 'suspended') sounds.ctx.resume().catch(() => {});
+  return sounds.ctx;
+}
+/** The decoded sound for a slot, fetched once; null if it has no file yet. */
+function soundBuffer(id) {
+  if (!sounds.buffers.has(id)) {
+    const ctx = audioContext();
+    sounds.buffers.set(id, !ctx ? Promise.resolve(null) : fetch(`sounds/${id}.mp3`)
+      .then(r => r.ok ? r.arrayBuffer() : null).then(data => data && ctx.decodeAudioData(data)).catch(() => null));
+  }
+  return sounds.buffers.get(id);
+}
+/** Plays a one-shot sound slot (silent if muted, unknown or not made yet). */
+async function sound(id, { volume = 1, rate = 1 } = {}) {
+  if (!soundOn() || !(id in SOUNDS)) return;
+  const buffer = await soundBuffer(id), ctx = sounds.ctx;
+  if (!buffer || !ctx) return;
+  const source = ctx.createBufferSource(), gain = ctx.createGain();
+  source.buffer = buffer; source.playbackRate.value = rate;
+  gain.gain.value = SOUNDS[id] * volume;
+  source.connect(gain).connect(ctx.destination);
+  source.start();
+}
+/** Starts a looping slot (walking, ambience) until stopLoop. */
+async function loopSound(id) {
+  if (!soundOn() || sounds.loops.has(id)) return;
+  sounds.loops.set(id, null);
+  const buffer = await soundBuffer(id), ctx = sounds.ctx;
+  if (!buffer || !ctx || !sounds.loops.has(id)) { sounds.loops.delete(id); return; }
+  const source = ctx.createBufferSource(), gain = ctx.createGain();
+  source.buffer = buffer; source.loop = true;
+  gain.gain.value = SOUNDS[id];
+  source.connect(gain).connect(ctx.destination);
+  source.start();
+  sounds.loops.set(id, { source, gain });
+}
+function stopLoop(id, fade = 0.25) {
+  const loop = sounds.loops.get(id);
+  sounds.loops.delete(id);
+  if (!loop || !sounds.ctx) return;
+  const t = sounds.ctx.currentTime;
+  loop.gain.gain.setTargetAtTime(0, t, fade / 3);
+  loop.source.stop(t + fade);
+}
+const ambienceFor = () => LOOK.night ? 'ambience-night' : LOOK === LOOKS.day ? 'ambience-day' : 'ambience-evening';
+function setSoundOn(on) {
+  store.set('sound', on ? 'on' : 'off');
+  for (const id of [...sounds.loops.keys()]) stopLoop(id, 0.1);
+  if (on && ['walk', 'zone', 'hint', 'guess'].includes(game.phase)) loopSound(ambienceFor());   // only during a round
+  for (const b of document.querySelectorAll('.soundToggle')) b.textContent = on ? '🔊 Sound on' : '🔇 Sound off';
+}
+// Browsers only allow audio after a tap or key press; buttons click softly.
+addEventListener('pointerdown', () => audioContext(), { once: true });
+addEventListener('keydown', () => audioContext(), { once: true });
+document.addEventListener('click', e => {
+  const b = e.target.closest('button');
+  if (b) sound(b.dataset.sfx === undefined ? 'ui-click' : b.dataset.sfx || 'ui-select');
+}, true);
+
+// ---------- feel: short effects on every action (presentation only; skipped for reduced motion) ----------
+const REDUCED_MOTION = matchMedia('(prefers-reduced-motion: reduce)');
+const calm = () => REDUCED_MOTION.matches;
+const pulses = [];
+let pulseLoop = 0;
+/** An expanding, fading ring on the ground: from r0 to r1 metres over ms. */
+function pulse(centre, color, r0, r1, ms = 600, width = 5, delay = 0) {
+  if (calm() || !map.getSource('pulses')) return;
+  pulses.push({ centre, color, r0, r1, ms, width, t0: performance.now() + delay });
+  if (!pulseLoop) pulseLoop = requestAnimationFrame(drawPulses);
+}
+function drawPulses(now) {
+  for (let i = pulses.length - 1; i >= 0; i--) if (now - pulses[i].t0 > pulses[i].ms) pulses.splice(i, 1);
+  map.getSource('pulses').setData(fc(pulses.filter(p => now >= p.t0).map(p => {
+    const t = (now - p.t0) / p.ms, ease = 1 - (1 - t) ** 3;
+    return { type: 'Feature', properties: { color: p.color, o: 1 - t, w: p.width * (1 - 0.6 * t) },
+      geometry: { type: 'LineString', coordinates: circle(p.centre, p.r0 + (p.r1 - p.r0) * ease, 48) } };
+  })));
+  pulseLoop = pulses.length ? requestAnimationFrame(drawPulses) : 0;
+}
+/** Runs step(t) for t from 0 to 1 over ms (eased by the caller); instantly at t = 1 for reduced motion. */
+function tween(ms, step) {
+  if (calm()) { step(1); return Promise.resolve(); }
+  const began = performance.now();
+  return new Promise(done => {
+    const frame = now => { const t = Math.min(1, (now - began) / ms); step(t); if (t < 1) requestAnimationFrame(frame); else done(); };
+    requestAnimationFrame(frame);
+  });
+}
+const bounce = t => t < 0.7 ? (t / 0.7) ** 2 : 1 - Math.sin((t - 0.7) / 0.3 * Math.PI) * 0.12;   // falls, then a small rebound
+/** The pin drops into place with a little bounce (about a fifth of a second). */
+function dropPin() {
+  const at = game.preview;
+  tween(220, t => { if (game.preview === at) drawPin((1 - bounce(t)) * 7); });
+}
+/** The mascot hops as it arrives and a ring of dust spreads from its feet. */
+function settleMascot() {
+  sound('arrive');
+  pulse(game.pos, '#fff8e7', 1.5, 9, 450, 3);
+  return tween(260, t => { game.avatarLift = Math.sin(t * Math.PI) * 0.9; drawAvatar(); }).then(() => { game.avatarLift = 0; drawAvatar(); });
+}
+/** Zone found: two gold rings sweep out from the zone's edge and its buildings flash gold before taking their colour. */
+function zoneBurst(zone) {
+  pulse(zone.centre, '#ffd23f', zone.radius * 0.3, zone.radius + 30, 900, 8);
+  pulse(zone.centre, '#ffd23f', zone.radius * 0.3, zone.radius + 30, 900, 6, 250);
+  if (calm()) return;
+  const ids = [...game.zoneBuildings];
+  for (const id of ids) tintBuilding(id, '#ffd23f');
+  map.triggerRepaint();
+  setTimeout(() => { refreshHighlights(); map.triggerRepaint(); }, 700);
+}
+/**
+ * A correct guess: the strongest effect. Gold sparks burst from the roof and fall, rings spread from the building, and
+ * a glow column rises with the beacon (additive light, the only bloom-like effect besides lamps).
+ */
+function celebrate(centre, roof) {
+  pulse(centre, '#ffd23f', 6, 60, 1000, 9);
+  pulse(centre, '#fff3b0', 6, 45, 1000, 5, 200);
+  pulse(centre, '#ffd23f', 6, 30, 1000, 4, 400);
+  const layer = scene3d.layer;
+  if (!layer) return;
+  const [x, y] = toLocal(centre);
+  const glow = new THREE.Mesh(new THREE.CylinderGeometry(4, 7, 120, 16, 1, true).rotateX(Math.PI / 2).translate(0, 0, roof + 60),
+    new THREE.MeshBasicMaterial({ map: glowColumnTexture(), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide, opacity: 0.8 }));
+  glow.position.set(x, y, 0);
+  glow.userData.flat = true;
+  layer.scene.add(glow);
+  game.revealGlow = glow;
+  if (calm()) { map.triggerRepaint(); return; }
+  const count = 90, sparks = new THREE.InstancedMesh(new THREE.BoxGeometry(0.9, 0.9, 0.9),
+    new THREE.MeshBasicMaterial({ color: 0xffd23f, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }), count);
+  sparks.frustumCulled = false;
+  const v = Array.from({ length: count }, (_, i) => {
+    const a = i * 2.39996, speed = 10 + (i % 7) * 3;
+    return [Math.cos(a) * speed, Math.sin(a) * speed, 18 + (i % 5) * 6];
+  });
+  layer.scene.add(sparks);
+  const m = new THREE.Matrix4(), q = new THREE.Quaternion();
+  tween(1400, t => {
+    const s = t * 1.4, fade = 1 - t;
+    v.forEach(([vx, vy, vz], i) => {
+      m.compose(new THREE.Vector3(x + vx * s, y + vy * s, roof + 2 + vz * s - 14 * s * s), q, new THREE.Vector3(fade, fade, fade));
+      sparks.setMatrixAt(i, m);
+    });
+    sparks.instanceMatrix.needsUpdate = true;
+    sparks.material.opacity = fade;
+    map.triggerRepaint();
+  }).then(() => { layer.scene.remove(sparks); sparks.geometry.dispose(); sparks.material.dispose(); map.triggerRepaint(); });
+}
+let glowColumn;
+function glowColumnTexture() {
+  if (glowColumn) return glowColumn;
+  const c = document.createElement('canvas');
+  c.width = 4; c.height = 64;
+  const g = c.getContext('2d'), grad = g.createLinearGradient(0, 64, 0, 0);
+  grad.addColorStop(0, 'rgba(255,230,140,0.9)'); grad.addColorStop(0.5, 'rgba(255,210,80,0.35)'); grad.addColorStop(1, 'rgba(255,200,60,0)');
+  g.fillStyle = grad; g.fillRect(0, 0, 4, 64);
+  glowColumn = new THREE.CanvasTexture(c);
+  return glowColumn;
+}
 
 // ---------- travel: tap the ground to drop a pin, tap the pin again to walk there ----------
 const PIN_HEIGHT = 14;   // metres: a gold post with a diamond on top, taller than the mascot
@@ -2163,11 +2583,11 @@ function onPreviewPin(point) {
  * The pin as a 3D object (a dark post, a gold diamond and a pale cap), and after the first missed check a gold arrow
  * on the ground there, pointing the way the reading said to search.
  */
-function drawPin() {
+function drawPin(lift = 0) {
   const p = game.preview, a = game.arrow, parts = [];
-  if (p) parts.push(box(p, 0, -0.5, 0.5, -0.5, 0.5, 0, PIN_HEIGHT - 2.5, '#1b1f3a'),
-    box(p, 45, -1.8, 1.8, -1.8, 1.8, PIN_HEIGHT - 3, PIN_HEIGHT + 0.6, '#ffd23f'),
-    box(p, 45, -1, 1, -1, 1, PIN_HEIGHT + 0.6, PIN_HEIGHT + 1.8, '#fff8e7'));
+  if (p) parts.push(box(p, 0, -0.5, 0.5, -0.5, 0.5, lift, lift + PIN_HEIGHT - 2.5, '#1b1f3a'),
+    box(p, 45, -1.8, 1.8, -1.8, 1.8, lift + PIN_HEIGHT - 3, lift + PIN_HEIGHT + 0.6, '#ffd23f'),
+    box(p, 45, -1, 1, -1, 1, lift + PIN_HEIGHT + 0.6, lift + PIN_HEIGHT + 1.8, '#fff8e7'));
   // Floating above head height, so walls and trees nearby can't hide it.
   if (a) parts.push(box(a.point, a.bearing, -1.2, 1.2, 4, 18, 6, 7.2, '#ffd23f'),
     ...[[5, 18, 21], [3.5, 21, 24], [2, 24, 27], [0.8, 27, 29]].map(([w, y0, y1]) => box(a.point, a.bearing, -w, w, y0, y1, 6, 7.2, '#ffd23f')));
@@ -2199,10 +2619,12 @@ function onMapTap(e) {
   let to = [e.lngLat.lng, e.lngLat.lat];
   if (distOf(to, game.pos) > 1500) { toast('Tap the ground', 'cold', 'Tap somewhere on the ground to drop a pin.'); return; }
   if (!isOpen(to)) to = game.mapView ? nearbyOpen(to) : inFrontOf(to);
-  if (!to || distOf(to, game.pos) < 3) { toast("Can't go there", 'cold', 'Tap a path or open ground.'); return; }
+  if (!to || distOf(to, game.pos) < 3) { toast("Can't go there", 'cold', 'Tap a path or open ground.'); sound('blocked'); return; }
   game.preview = to;
   $('travelCursor').classList.add('hidden');
-  drawPin();
+  drawPin(calm() ? 0 : 7);
+  dropPin();
+  sound('pin-drop');
   coachEvent('previewed');
 }
 $('pinTag').addEventListener('click', () => { if (game.preview) travelTo(game.preview); });
@@ -2260,13 +2682,16 @@ async function travelTo(to) {
     // The trip costs the time walking it would take.
     game.startedAt -= (r.body.metresWalked - game.walked) / WALK_SPEED * 1000;
     game.walked = r.body.metresWalked;
+    loopSound('walk');
     await animateWalk([from, ...r.body.path, end], Math.max(700, Math.min(2200, distOf(from, end) * 6)));
+    stopLoop('walk');
     game.pos = end; game.lastPushed = end; game.prevPos = end; game.pending = []; game.confirmedPos = end;
     game.heading = r.body.path.length ? bearingOf(r.body.path.at(-1), end) || game.heading : game.heading;
     game.camBearing = map.getBearing();
     game.trail.push(...r.body.path, end);
     if (game.mapView) drawMapOverlays();
     drawAvatar();
+    if (!game.mapView) settleMascot();   // not awaited: the next action is available at once
     renderHud();
     saveDailyRun();
     if (!game.checkCount && !practice.on) toast('NOW CHECK', 'warm', TOUCH ? 'Tap Check to read the temperature here.' : 'Press Space or Check to read the temperature here.');
@@ -2293,6 +2718,8 @@ function enterZone(zone) {
     geometry: { type: 'Polygon', coordinates: [circle(zone.centre, zone.radius, 64)] } }]));
   for (const b of pack.buildings) if (distOf(b.center, zone.centre) <= zone.radius) game.zoneBuildings.add(b.id);
   refreshHighlights();
+  zoneBurst(zone);
+  sound('zone-found');
   toast('ZONE FOUND!', 'warm', 'Pick a hint, then guess one of the highlighted buildings.');
   $('stage1').classList.remove('on'); $('stage2').classList.add('on');
   flyTo({ center: zone.centre, zoom: 17.5, pitch: 55, bearing: game.camBearing, duration: 2600 }).then(() => {
@@ -2307,6 +2734,7 @@ async function chooseHint(level, card) {
   card.classList.add('drawing');
   const r = await api('hint', { level }).finally(() => { game.drawing = false; card.classList.remove('drawing'); });
   if (r.status !== 200) { toast('Hmm', 'cold', r.body.error); return; }
+  sound('hint-flip');
   game.phase = 'hint';
   game.hint = r.body;
   game.zoneBuildings = new Set(r.body.zoneBuildings);
@@ -2371,7 +2799,7 @@ async function onBuildingClick(e) {
     game.hover = null;
     $('tip').classList.add('hidden');
     refreshHighlights();
-    if (!r.body.correct) toast('NOPE', 'cold', r.body.message);
+    if (!r.body.correct) { toast('NOPE', 'cold', r.body.message); sound('guess-wrong'); }
     if (r.body.result) finish(r.body.result, r.body.saveError);
     else {
       $('bannerText').textContent = `Not that one. ${r.body.guessesRemaining} guesses left.`;
@@ -2404,12 +2832,15 @@ async function finish(result, saveError) {
   const roof = buildings.get(t.buildingId)?.height || 10;
   map.getSource('beacon').setData(fc([box(t.centre, 0, -3, 3, -3, 3, roof + 1, roof + 120, '#ffd23f')]));
   toast(result.won ? 'FOUND IT!' : 'IT WAS…', result.won ? 'hot' : 'cool', t.name);
+  if (result.won) { celebrate(t.centre, roof); flashVignette('#ffd23f'); sound('guess-right'); } else sound('round-lost');
+  for (const id of [...sounds.loops.keys()]) stopLoop(id, 1.5);
   // Look down steeply so the gold roof shows even when taller neighbours stand in front.
   await flyTo({ center: t.centre, zoom: 18.2, pitch: 48, bearing: (game.camBearing + 40) % 360, duration: 3200 });
   orbit(t.centre);
   lookAroundMode();
   fillResults(result, saveError);
   show('results');
+  sound('results');
   coachEvent('done');
 }
 
@@ -2568,9 +2999,10 @@ function openClueCard() {
   if (!game.cluePhoto && !game.clueText) return Promise.resolve();
   $('clueCard').classList.remove('pinned');
   $('clueCard').setAttribute('aria-modal', 'true');
+  sound('photo-open');
   show('clueCard'); hide('clueThumb');
   $('clueClose').focus();
-  return new Promise(res => { closeClueCard = () => { pinClue(); closeClueCard = () => {}; res(); }; });
+  return new Promise(res => { closeClueCard = () => { pinClue(); sound('photo-close'); closeClueCard = () => {}; res(); }; });
 }
 $('clueSwap').addEventListener('click', () => clueMode(true));
 $('clueClose').addEventListener('click', () => closeClueCard());
@@ -2637,6 +3069,7 @@ function showBadges(earned) {
     el.addEventListener('click', showAchievements);
     if (!seen[a.id]) {
       const tag = document.createElement('em'); tag.textContent = 'NEW'; el.append(tag);
+      setTimeout(() => sound('achievement'), 600 + i * 250);   // as the badge appears
       seen[a.id] = game.date || new Date().toISOString().slice(0, 10);
     }
     box.append(el);
@@ -3428,6 +3861,7 @@ const CAMPUS_VIEW = { zoom: 15.6, pitch: 60 };
  */
 function showCanada(mode = 'visit', firstVisit = false) {
   if (game.phase !== 'title' || game.picking) return;
+  sound('picker-open');
   game.picking = true; game.orbiting = false; game.firstPick = firstVisit; game.pickMode = mode;
   $('pickerTitle').textContent = mode === 'home' ? (firstVisit ? 'Welcome! Pick your home university' : 'Pick your home university')
     : 'Visit another campus';
@@ -3436,6 +3870,7 @@ function showCanada(mode = 'visit', firstVisit = false) {
     : TOUCH ? 'Drag and pinch the map · tap a campus · your home stays the same'
     : 'Drag and scroll the map · click a campus to fly there · your home stays the same';
   $('pickerBack').classList.toggle('hidden', firstVisit);
+  $('campusSearch').value = ''; $('campusResults').classList.add('hidden');
   for (const pin of game.campusPins || []) pin.getElement().classList.toggle('home', pin.getElement().dataset.id === homeCampus());
   if (!game.campusPins?.length) toast('MAP NOT READY', 'warm', 'Campus positions did not load. Reload the page (Ctrl/Cmd+Shift+R).');
   $('title').classList.add('hidden'); $('pickerBar').classList.remove('hidden');
@@ -3462,6 +3897,53 @@ function closeCanada() {
   flyTo({ center: ORIGIN, ...CAMPUS_VIEW, bearing: -20, duration: 2600 })
     .then(() => { $('title').classList.remove('hidden'); game.orbiting = true; });
 }
+// ---------- campus search (in the picker bar, beside Back) ----------
+const CAMPUS_NICKNAMES = { 'st-george': 'uoft u of t toronto', mcmaster: 'mac hamilton', uwaterloo: 'uw', ubc: 'vancouver',
+  sfu: 'burnaby simon fraser', uvic: 'victoria', ualberta: 'edmonton u of a', ucalgary: 'u of c', usask: 'saskatoon',
+  western: 'uwo london', queens: 'kingston', uottawa: 'ottawa', tmu: 'ryerson toronto metropolitan', mcgill: 'montreal',
+  concordia: 'montreal', umontreal: 'udem montreal', ulaval: 'quebec', dal: 'halifax dalhousie', mun: 'mun st johns newfoundland',
+  umanitoba: 'winnipeg', york: 'toronto keele', carleton: 'ottawa', guelph: 'gryphons', laurier: 'wlu wilfrid waterloo' };
+const plain = t => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9 ]+/g, ' ');
+function campusMatches(query) {
+  const words = plain(query).split(/\s+/).filter(Boolean);
+  if (!words.length) return [];
+  return campusIndex.map(c => {
+    const name = plain(c.short + ' ' + c.name), text = name + ' ' + plain((c.region || '') + ' ' + c.id + ' ' + (CAMPUS_NICKNAMES[c.id] || ''));
+    if (!words.every(w => (' ' + text).includes(' ' + w))) return null;   // each word starts a word ("mont" ≠ Edmonton)
+    return { c, rank: name.startsWith(words[0]) ? 0 : name.includes(' ' + words[0]) ? 1 : 2 };
+  }).filter(Boolean).sort((a, b) => a.rank - b.rank || a.c.short.localeCompare(b.c.short)).slice(0, 7).map(m => m.c);
+}
+let campusPick = 0;
+function showCampusResults() {
+  const list = $('campusResults'), found = campusMatches($('campusSearch').value);
+  list.innerHTML = '';
+  campusPick = Math.min(campusPick, Math.max(0, found.length - 1));
+  found.forEach((c, i) => {
+    const li = document.createElement('li');
+    li.setAttribute('role', 'option'); li.setAttribute('aria-selected', String(i === campusPick)); li.dataset.id = c.id;
+    li.textContent = c.short;
+    const small = document.createElement('small'); small.textContent = c.region || ''; li.append(small);
+    li.addEventListener('pointerdown', e => { e.preventDefault(); pickCampus(c.id); });
+    list.append(li);
+  });
+  if ($('campusSearch').value.trim() && !found.length) {
+    const li = document.createElement('li'); li.textContent = 'No campus found'; li.style.cursor = 'default'; list.append(li);
+  }
+  list.classList.toggle('hidden', !$('campusSearch').value.trim());
+}
+$('campusSearch').addEventListener('input', () => { campusPick = 0; showCampusResults(); });
+$('campusSearch').addEventListener('keydown', e => {
+  const found = campusMatches($('campusSearch').value);
+  if (e.code === 'ArrowDown' || e.code === 'ArrowUp') {
+    campusPick = (campusPick + (e.code === 'ArrowDown' ? 1 : -1) + found.length) % Math.max(1, found.length);
+    showCampusResults(); e.preventDefault();
+  } else if (e.code === 'Enter' && found.length) { pickCampus(found[campusPick].id); e.preventDefault(); }
+  else if (e.code === 'Escape' && $('campusSearch').value) { $('campusSearch').value = ''; showCampusResults(); e.stopPropagation(); e.preventDefault(); }
+  if (e.code !== 'Escape') e.stopPropagation();   // typing here is not a game key (Enter mustn't start a round); Esc closes
+});
+$('campusSearch').addEventListener('blur', () => setTimeout(() => $('campusResults').classList.add('hidden'), 150));
+$('campusSearch').addEventListener('focus', showCampusResults);
+
 function pickCampus(id) {
   const settingHome = game.pickMode === 'home';
   if (settingHome) store.set('home', id);
@@ -3470,6 +3952,7 @@ function pickCampus(id) {
   game.picking = false; setInteractive(false);
   $('pickerBar').classList.add('hidden');
   for (const pin of game.campusPins) pin.remove();
+  sound('campus-fly');
   // Fly all the way down, then load that campus at the same view so the switch is seamless.
   flyTo({ center: campus.center, ...CAMPUS_VIEW, bearing: -20, duration: 3200 }).then(() => {
     const url = new URL(location.href); url.searchParams.delete('v');
@@ -3550,6 +4033,20 @@ function renderChoices() {
       : claimed ? "You've started today's daily. Come back tomorrow, or play unlimited."
       : 'One try. Everyone gets the same puzzle today, on normal difficulty.')
     : 'Fresh random rounds, as many as you like.';
+}
+// ---------- light setting: Live (the campus's own time of day), Day or Night ----------
+const lookSetting = () => ['day', 'night'].includes(store.get('look')) ? store.get('look') : 'live';
+function renderLookChoice() {
+  for (const b of document.querySelectorAll('#lookChoice button')) b.setAttribute('aria-checked', String(b.dataset.look === lookSetting()));
+  $('liveLook').textContent = '· ' + LOOKS[liveLook(ORIGIN[1], ORIGIN[0])].label.toLowerCase();
+}
+for (const b of document.querySelectorAll('#lookChoice button, #modeChoice button')) b.dataset.sfx = 'ui-select';
+for (const b of document.querySelectorAll('#lookChoice button')) {
+  b.addEventListener('click', () => {
+    if (b.dataset.look === lookSetting() || game.phase !== 'title') return;
+    store.set('look', b.dataset.look);
+    location.reload();   // the scene's light is built in, so it's rebuilt from scratch
+  });
 }
 for (const b of document.querySelectorAll('#modeChoice button')) {
   b.addEventListener('click', () => { chosenMode = b.dataset.mode; store.set('mode', chosenMode); renderChoices(); });
@@ -3661,6 +4158,7 @@ function play() {
   if (!store.get(PRACTICE_SEEN) && !DEBUG) startRound(true); else startRound();
 }
 function coach(step, text, done = false) {
+  if (text !== $('coachText').textContent) sound('coach-step');
   $('coachStep').textContent = `Practice · step ${step} of 7`;
   $('coachText').textContent = text;
   $('coachDone').classList.toggle('hidden', !done);
@@ -3759,6 +4257,8 @@ async function startRound(practiceRound = false) {
   Promise.race([photo, new Promise(res => setTimeout(() => res(null), 6000))]).then(p => showClue(p, PHONE.matches && !practice.on))
     .then(() => { if (!game.cluePhoto && !game.clueText) toast('NO ZONE CLUE', 'warm', 'No photo or clue for this zone. Use your checks.'); });
   $('mapBtn').classList.remove('pulse');
+  sound('round-start');
+  loopSound(ambienceFor());
   if (practice.on) coachEvent('started');
   else toast('1. FIND THE ZONE', 'warm', `${TOUCH ? 'Tap' : 'Click'} the ground to drop a pin, ${TOUCH ? 'tap' : 'click'} it again to walk there, then check.`);
 }
@@ -3829,6 +4329,8 @@ function setCompassHint(direction, from) {
 }
 function toggleControls() { $('help').classList.toggle('hidden'); }
 $('controlsBtn').addEventListener('click', toggleControls);
+for (const b of document.querySelectorAll('.soundToggle')) b.addEventListener('click', () => { setSoundOn(!soundOn()); if (soundOn()) sound('ui-select'); });
+setSoundOn(soundOn());
 let toastTimer;
 function toast(title, heat, detail = '') {
   const t = $('toast');
@@ -3999,8 +4501,16 @@ for (const card of document.querySelectorAll('.hintcard')) {
     + (mascotNamesItself(pack.mascot) ? '' : ` the ${pack.mascot.species}`);
   landmarkBuildings = named.filter(b => b.category);
   ORIGIN = [(pack.bounds.west + pack.bounds.east) / 2, (pack.bounds.south + pack.bounds.north) / 2];
+  // The look is fixed for this visit (and so for the whole round): Live follows the campus's own sky right now.
+  // ?look=dawn|day|golden|night shows one preset on demand (demos and testing); otherwise the Light setting decides.
+  LOOK = LOOKS[params.get('look')] || chooseLook(lookSetting(), ORIGIN[1], ORIGIN[0]);
+  SUN = [Math.sin(LOOK.az * Math.PI / 180), Math.cos(LOOK.az * Math.PI / 180)];
+  SUN_HEIGHT = LOOK.height;
+  setLookUniforms();
+  renderLookChoice();
   buildGrid(pack.bounds, pack.buildings);
   addGameLayers();
+  applyLookToMap();
   addCampusLayers();
   setInteractive(false);
   map.jumpTo({ center: ORIGIN, ...CAMPUS_VIEW, bearing: -20 });
