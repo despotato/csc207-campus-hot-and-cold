@@ -153,13 +153,22 @@
   #title .titleMore button.hidden { display: none; }
   #settings { z-index: 20; background: #0b0d1ed9; }
   #pauseMenu { z-index: 20; background: #0b0d1ed9; }
-  #pauseMenu .card { max-width: 400px; padding: 22px 26px; }
-  #pauseMenu .pauseButtons { display: grid; gap: 10px; margin: 6px 0 10px; }
-  #pauseMenu .note { margin: 0 0 14px; font-size: 11px; opacity: .8; }
-  #pauseMenu .pauseKeys { border-top: 2px dashed #fff8e755; padding-top: 12px; font-size: 11px; line-height: 1.9; }
-  #pauseMenu .pauseKeys b { display: block; font-size: 11px; opacity: .75; }
+  #pauseMenu .card { max-width: 440px; padding: 26px 30px; }
+  #pauseMenu h2 { margin: 0 0 16px; }
+  #pauseMenu .pauseButtons { display: grid; gap: 12px; margin-bottom: 12px; }
+  #pauseMenu .pauseRow { display: flex; gap: 12px; }
+  #pauseMenu .pauseRow button { flex: 1 1 0; white-space: nowrap; }
+  #pauseMenu .note { margin: 0 0 20px; font-size: 11px; line-height: 1.5; opacity: .8; }
+  #pauseMenu .pauseKeysTitle { margin: 0 0 10px; padding-top: 16px; border-top: 2px dashed #fff8e755; font-size: 12px;
+    color: var(--gold); }
+  #pauseMenu .pauseKeys { display: grid; grid-template-columns: 1fr auto; gap: 10px 18px; margin: 0; font-size: 12px;
+    align-items: center; }
+  #pauseMenu .pauseKeys dt { opacity: .75; }
+  #pauseMenu .pauseKeys dd { margin: 0; text-align: right; }
+  #pauseMenu .pauseKeys kbd { margin-left: 3px; }
   #pauseMenu .taps { display: none; }
-  @media (pointer: coarse) { #pauseMenu .keys { display: none; } #pauseMenu .taps { display: inline; } }
+  @media (pointer: coarse) { #pauseMenu .keys { display: none; } #pauseMenu .taps { display: grid; } }
+  @media (max-width: 640px) { #pauseMenu .card { padding: 20px 20px; } #pauseMenu .pauseRow button { font-size: 12px; padding: 8px 6px; } }
   #settings .card { max-width: 400px; padding: 22px 26px; }
   #settings .choice { align-items: center; margin-bottom: 12px; }
   #settings .label { font-size: 11px; opacity: .75; min-width: 56px; }
@@ -490,18 +499,28 @@
     <h2 id="pauseTitle">Paused</h2>
     <div class="pauseButtons">
       <button id="resumeBtn">Resume <kbd>Esc</kbd></button>
-      <button class="secondary soundToggle" data-sfx type="button">🔊 Sound on</button>
-      <button id="quitBtn" class="secondary">Quit to main menu</button>
+      <div class="pauseRow"><button class="secondary soundToggle" data-sfx type="button">🔊 Sound on</button><button id="quitBtn" class="secondary">Quit to main menu</button></div>
     </div>
     <p id="quitNote" class="note"></p>
-    <div class="pauseKeys">
-      <b>Controls</b>
-      <span class="keys">Click the ground: drop a pin · click the pin: walk there · drag to look around, right-drag to turn ·
-        <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> <kbd>Q</kbd><kbd>E</kbd> fly · <kbd>C</kbd> back to you ·
-        <kbd>Space</kbd> check · <kbd>M</kbd> map for long trips</span>
-      <span class="taps">Tap the ground: drop a pin · tap the pin: walk there · drag to look around, twist to turn, pinch to
-        zoom · Check reads the temperature · Map for long trips</span>
-    </div>
+    <h3 class="pauseKeysTitle">Controls</h3>
+    <dl class="pauseKeys keys">
+      <dt>Drop a pin</dt><dd>Click the ground</dd>
+      <dt>Walk there</dt><dd>Click the pin again</dd>
+      <dt>Look around</dt><dd>Drag · right-drag to turn</dd>
+      <dt>Fly the camera</dt><dd><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> <kbd>Q</kbd><kbd>E</kbd></dd>
+      <dt>Back to you</dt><dd><kbd>C</kbd></dd>
+      <dt>Check</dt><dd><kbd>Space</kbd></dd>
+      <dt>Campus map</dt><dd><kbd>M</kbd></dd>
+      <dt>Pause</dt><dd><kbd>Esc</kbd></dd>
+    </dl>
+    <dl class="pauseKeys taps">
+      <dt>Drop a pin</dt><dd>Tap the ground</dd>
+      <dt>Walk there</dt><dd>Tap the pin again</dd>
+      <dt>Look around</dt><dd>Drag · twist to turn</dd>
+      <dt>Zoom</dt><dd>Pinch</dd>
+      <dt>Check</dt><dd>Check button</dd>
+      <dt>Campus map</dt><dd>Map button</dd>
+    </dl>
   </div>
 </section>
 
