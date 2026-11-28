@@ -173,8 +173,10 @@
   #settings .choice { align-items: center; margin-bottom: 12px; }
   #settings .label { font-size: 11px; opacity: .75; min-width: 56px; }
   #settings #difficulty { margin: 0 0 14px; opacity: .75; font-size: 11px; }
-  #title .startRow { flex-wrap: nowrap; }
+  #title .startRow { flex-wrap: wrap; }
   #title .startRow button:not(.hidden) { flex: 1 1 0; white-space: nowrap; }   /* Start and practice share the row equally */
+  /* After today's daily: its result gets a full line of its own instead of squeezing past the card's edge. */
+  #title .startRow #viewDailyResult { flex: 1 1 100%; order: 3; }
   @media (max-width: 640px) {
     #title .card { padding: 18px 18px; }
     #title #campusChoice button, #title .titleMore button { font-size: 10px; padding: 5px 7px; }
