@@ -138,23 +138,33 @@
   .lead { margin: 0 0 14px; }
   .rules { display: grid; gap: 6px; margin: 0 0 14px; padding-left: 20px; }
   /* Title screen: the essentials up front (campus, mode, Start); everything else in a small row or Settings. */
-  #title .tagline { margin: -4px 0 12px; font-size: 12px; opacity: .8; }
-  #title #campusChoice { align-items: center; gap: 6px; }
-  #title #campusChoice .homeStatus { margin: 0 4px 0 0; }
-  #title #campusChoice button { font-size: 11px; padding: 4px 8px; box-shadow: 0 3px 0 var(--ink); }
-  #title .startRow { display: flex; gap: 8px; margin: 4px 0 8px; }
-  #title #startBtn { flex: 1; font-size: 20px; padding: 12px 16px; }
-  #title #practiceBtn { display: block; width: 100%; margin-bottom: 12px; }
-  #title #practiceBtn.secondary { background: none; border: 0; box-shadow: none; color: var(--paper); opacity: .8;
-    text-decoration: underline; font-size: 12px; padding: 2px 0; }
-  #title .titleMore { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+  /* Title screen: compact and roomy. A narrower card with real padding, Start and practice side by side. */
+  #title .card { max-width: 460px; padding: 22px 26px; }
+  #title .tagline { margin: -4px 0 14px; font-size: 12px; opacity: .8; }
+  #title #campusChoice { align-items: center; gap: 6px; margin-bottom: 12px; }
+  #title #campusChoice .homeStatus { margin: 0 4px 0 0; flex-basis: 100%; }
+  #title #campusChoice button, #title #modeChoice button { font-size: 11px; padding: 5px 9px; box-shadow: 0 3px 0 var(--ink); }
+  #title .startRow { display: flex; flex-wrap: wrap; gap: 10px; margin: 6px 0 14px; }
+  #title .startRow button { padding: 8px 14px; font-size: 14px; }
+  #title #startBtn { flex: 1 1 auto; font-size: 16px; }
+  #title .startRow .hidden { display: none; }
+  #title .titleMore { display: flex; flex-wrap: wrap; gap: 8px; }
   #title .titleMore button { font-size: 11px; padding: 5px 9px; box-shadow: 0 3px 0 var(--ink); }
   #title .titleMore button.hidden { display: none; }
-  #settingsPanel { border-top: 2px dashed #fff8e755; padding-top: 10px; margin-bottom: 10px; }
-  #settingsPanel.hidden { display: none; }
-  #settingsPanel .choice { align-items: center; margin-bottom: 8px; }
-  #settingsPanel .label { font-size: 11px; opacity: .75; min-width: 52px; }
-  #settingsPanel #difficulty { margin: 0; opacity: .75; font-size: 11px; }
+  #settings { z-index: 20; background: #0b0d1ed9; }
+  #settings .card { max-width: 400px; padding: 22px 26px; }
+  #settings .choice { align-items: center; margin-bottom: 12px; }
+  #settings .label { font-size: 11px; opacity: .75; min-width: 56px; }
+  #settings #difficulty { margin: 0 0 14px; opacity: .75; font-size: 11px; }
+  #title .startRow { flex-wrap: nowrap; }
+  #title .startRow button:not(.hidden) { flex: 1 1 0; white-space: nowrap; }   /* Start and practice share the row equally */
+  @media (max-width: 640px) {
+    #title .card { padding: 18px 18px; }
+    #title #campusChoice button, #title .titleMore button { font-size: 10px; padding: 5px 7px; }
+    #title .titleMore { gap: 6px; flex-wrap: nowrap; }
+    #title .titleMore button { flex: 1 1 auto; }
+    #title .startRow button { font-size: 13px; padding: 8px 8px; }
+  }
   .controls { display: flex; flex-wrap: wrap; gap: 10px 18px; margin: 0 0 16px; font-size: 12px; }
   .choice { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 10px; }
   .choice button { padding: 6px 10px; font-size: 12px; }
@@ -440,20 +450,8 @@
       <button class="secondary" data-mode="unlimited" role="radio">Unlimited</button>
     </div>
     <p id="modeNote" class="note"></p>
-    <div class="buttons startRow"><button id="startBtn" autofocus>Start <kbd>Enter</kbd></button><button id="viewDailyResult" class="secondary hidden">View today's result</button></div>
-    <button id="practiceBtn" class="secondary">Guided practice</button>
-    <div id="settingsPanel" class="hidden">
-      <div class="choice" id="lookChoice" role="radiogroup" aria-label="Light">
-        <span class="label">Light</span>
-        <button class="secondary" data-look="live" role="radio">Live <small id="liveLook"></small></button>
-        <button class="secondary" data-look="day" role="radio">Day</button>
-        <button class="secondary" data-look="night" role="radio">Night</button>
-      </div>
-      <div class="choice"><span class="label">Sound</span><button class="secondary soundToggle" data-sfx type="button">🔊 Sound on</button></div>
-      <!-- Difficulty selector: the start request already sends { difficulty }. See the team task "Difficulty levels". -->
-      <div id="difficulty" data-value="normal" class="controls">Difficulty: Normal</div>
-    </div>
-    <div class="titleMore"><button id="historyBtn" class="secondary hidden">History</button><button id="achievementsBtn" class="secondary">Achievements</button><button id="tutorialBtn" class="secondary">How to play</button><button id="settingsBtn" class="secondary" aria-expanded="false" aria-controls="settingsPanel">Settings</button></div>
+    <div class="buttons startRow"><button id="startBtn">Start <kbd>Enter</kbd></button><button id="practiceBtn" class="secondary">Guided practice</button><button id="viewDailyResult" class="secondary hidden">Today's result</button></div>
+    <div class="titleMore"><button id="historyBtn" class="secondary hidden">History</button><button id="achievementsBtn" class="secondary">Achievements</button><button id="tutorialBtn" class="secondary">How to play</button><button id="settingsBtn" class="secondary">Settings</button></div>
     <p id="loading">Loading campus…</p>
   </div>
 </section>
@@ -481,6 +479,22 @@
   </div>
 </section>
 <button id="clueThumb" class="hidden" aria-label="Show the photo of a building in the zone"><span class="cluePhoto" id="clueThumbPhoto"></span><small>Zone photo</small></button>
+
+<section id="settings" class="screen hidden" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+  <div class="card panel">
+    <h2 id="settingsTitle">Settings</h2>
+      <div class="choice" id="lookChoice" role="radiogroup" aria-label="Light">
+        <span class="label">Light</span>
+        <button class="secondary" data-look="live" role="radio">Live <small id="liveLook"></small></button>
+        <button class="secondary" data-look="day" role="radio">Day</button>
+        <button class="secondary" data-look="night" role="radio">Night</button>
+      </div>
+      <div class="choice"><span class="label">Sound</span><button class="secondary soundToggle" data-sfx type="button">🔊 Sound on</button></div>
+      <!-- Difficulty selector: the start request already sends { difficulty }. See the team task "Difficulty levels". -->
+      <div id="difficulty" data-value="normal" class="controls">Difficulty: Normal</div>
+    <div class="buttons"><button id="settingsClose" class="secondary">Close</button></div>
+  </div>
+</section>
 
 <section id="achievements" class="screen hidden" role="dialog" aria-modal="true" aria-labelledby="achTitle">
   <div class="card panel">
@@ -4218,16 +4232,18 @@ function endPractice() {
 $('coachSkip').addEventListener('click', endPractice);
 $('coachDone').addEventListener('click', endPractice);
 $('practiceBtn').addEventListener('click', () => { if (game.phase === 'title') startRound(true); });
-$('settingsBtn').addEventListener('click', () => {
-  const open = $('settingsPanel').classList.toggle('hidden') === false;
-  $('settingsBtn').setAttribute('aria-expanded', String(open));
-});
+// Settings: its own screen over the title, like Achievements.
+const closeSettings = () => hide('settings');
+$('settingsBtn').addEventListener('click', () => { show('settings'); $('settingsClose').focus(); });
+$('settingsClose').addEventListener('click', closeSettings);
+$('settings').addEventListener('click', e => { if (e.target.id === 'settings') closeSettings(); });
 /** New players (never finished or skipped the practice) see it highlighted in gold. */
 function markPractice() {
   const fresh = !store.get(PRACTICE_SEEN);
   $('practiceBtn').classList.toggle('secondary', !fresh);
   $('practiceBtn').classList.toggle('pulse', fresh);
-  $('practiceBtn').textContent = fresh ? 'New here? Guided practice' : 'Guided practice';
+  $('practiceBtn').textContent = fresh ? '★ Guided practice' : 'Guided practice';
+  $('practiceBtn').title = fresh ? 'New here? A guided round, step by step' : 'A guided round, step by step';
 }
 markPractice();
 
@@ -4444,6 +4460,7 @@ const KEYMAP = { KeyW: 'fwd', KeyS: 'back', KeyA: 'strafeLeft', KeyD: 'strafeRig
 addEventListener('keydown', e => {
   if (e.code === 'Escape' && !$('tutorial').classList.contains('hidden')) { closeTutorial(); return; }
   if (!$('achievements').classList.contains('hidden')) { if (e.code === 'Escape') closeAchievements(); return; }
+  if (!$('settings').classList.contains('hidden')) { if (e.code === 'Escape') closeSettings(); return; }
   if (clueEnlarged()) {
     if (e.code === 'Escape' || e.code === 'Enter' || e.code === 'Space') { e.preventDefault(); closeClueCard(); }
     return;
