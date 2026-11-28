@@ -148,7 +148,7 @@ Explore is the two-stage version of the game, played in a pixel-art 3D model of 
 
 **Results**
 - The camera flies to the answer, which glows gold under a beacon. You see your score, the building's Wikipedia summary and photo (when it has an article), and a replay of your route drawn against the shortest walking route.
-- **Score** (out of 1000) = route (400 at 80% efficiency or better; the shortest route assumes you already knew the zone) + identification (250 / 200 / 150 for a correct 1st / 2nd / 3rd guess) + hint bonus (+0% / +50% / +100% for easy / normal / hard) + checks saved (up to 100; the check that finds the zone is free).
+- **Score** (out of 1000) = route (400 at 80% efficiency or better: the shortest route to the zone's edge, assuming you already knew where it was, against the distance you walked until you last crossed into the zone; walking on inside it is free, so one trip straight in is a perfect route) + identification (250 / 200 / 150 for a correct 1st / 2nd / 3rd guess) + hint bonus (+0% / +50% / +100% for easy / normal / hard) + checks saved (up to 100; the check that finds the zone is free).
 
 The game never sends the hidden zone, the target or exact distances to the browser before the stage that reveals them. Moves are checked by Java for speed and path connectivity, so the page can't teleport or cut through buildings.
 

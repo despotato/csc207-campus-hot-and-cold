@@ -96,7 +96,7 @@ public final class RoundFinisher {
                 target.buildingId(), expedition.map().buildingOf(target).centre(), score.routePoints(),
                 score.efficiency(), score.guessPoints(), score.hintBonus(), score.checkBonus(),
                 score.nearMissPoints(), shortBy(expedition), score.multiplier(), score.total(),
-                expedition.metresWalked(), expedition.shortestToZone(), secondsToZone, expedition.checksUsed(),
+                expedition.metresToZone(), expedition.shortestToZone(), secondsToZone, expedition.checksUsed(),
                 expedition.guesses().size(), expedition.hintLevel().orElse(null),
                 new ExploreResponse.ZoneView(zone.centre(), zone.radiusMetres()), expedition.track(),
                 expedition.revealedShortestRoute().orElseThrow(), expedition.checks(), expedition.achievements(),

@@ -167,6 +167,28 @@ class ExpeditionTest {
         assertTrue(round.check(T0.plusSeconds(2)).inZone());
     }
 
+    @Test void oneTripDeepIntoTheZoneIsAPerfectRoute() {
+        Expedition round = round();
+        round.travelTo(at(1040, 105), T0.plusSeconds(1));   // well past the zone edge, in one trip
+        assertTrue(round.check(T0.plusSeconds(2)).inZone());
+        assertTrue(round.metresWalked() > round.shortestToZone() + 100, "the trip went deep into the zone");
+        assertEquals(round.shortestToZone(), round.metresToZone(), 5, "walking on inside the zone is free");
+        assertEquals(400, round.score().routePoints());
+        assertTrue(round.score().efficiency() > 0.98);
+    }
+
+    @Test void leavingTheZoneAndComingBackStillCounts() {
+        Expedition round = round();
+        round.travelTo(at(1000, 105), T0.plusSeconds(1));
+        round.travelTo(at(700, 140), T0.plusSeconds(2));    // back out of the zone
+        round.travelTo(at(1000, 105), T0.plusSeconds(3));   // and in again
+        assertTrue(round.check(T0.plusSeconds(4)).inZone());
+        assertTrue(round.metresToZone() > round.shortestToZone() + 400, "the trip out and back is a detour");
+        Expedition unfound = round();
+        unfound.travelTo(at(1000, 105), T0.plusSeconds(1));
+        assertEquals(unfound.metresWalked(), unfound.metresToZone(), 1e-9, "until the zone is found, all of it counts");
+    }
+
     @Test void checksGiveHeatAndTrendAndAreLimited() {
         Expedition round = round();
         Expedition.Check first = round.check(T0);
@@ -383,7 +405,7 @@ class ExpeditionTest {
         detour.guess(4);
         detour.guess(1);
         Expedition.Score worse = detour.score();
-        double efficiency = detour.shortestToZone() / detour.metresWalked();
+        double efficiency = detour.shortestToZone() / detour.metresToZone();   // walking on inside the zone is free
         assertEquals(Math.round(400 * Math.min(1, efficiency / 0.8)), worse.routePoints());
         assertTrue(worse.routePoints() < 400, "a 400 m detour costs route points");
         assertEquals(200, worse.guessPoints(), "second guess");

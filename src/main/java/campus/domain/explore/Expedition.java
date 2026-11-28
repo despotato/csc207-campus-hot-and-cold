@@ -519,7 +519,8 @@ public final class Expedition {
 
     public Score score() {
         boolean found = zoneReachedAt != null;
-        double efficiency = metresWalked <= 0 ? 0 : Math.min(1, shortestToZone / metresWalked);
+        double walked = metresToZone();
+        double efficiency = walked <= 0 ? 0 : Math.min(1, shortestToZone / walked);
         int routePoints = found ? (int) Math.round(ROUTE_POINTS * Math.min(1, efficiency / FULL_ROUTE_EFFICIENCY)) : 0;
         int guessPoints = won ? GUESS_POINTS[guesses.size() - 1] : 0;
         double multiplier = hintLevel == null ? 1 : hintLevel.multiplier();
@@ -632,6 +633,47 @@ public final class Expedition {
     public GeoPoint position() { return position; }
     public GeoPoint start() { return start; }
     public double metresWalked() { return metresWalked; }
+
+    /**
+     * What the route score counts: the metres walked until you last crossed into the zone. Walking on inside it
+     * (a pin dropped deep in the zone) is free, so one straight trip in is a perfect route; leaving the zone and
+     * coming back still counts. Before the zone is found, everything walked.
+     */
+    public double metresToZone() {
+        if (zoneReachedAt == null) {
+            return metresWalked;
+        }
+        List<GeoPoint> walked = new ArrayList<>(track);
+        if (!walked.getLast().equals(position)) {
+            walked.add(position);
+        }
+        int last = walked.size() - 1;
+        int outside = last;
+        while (outside >= 0 && zone.overlaps(walked.get(outside), PLAYER_RADIUS)) {
+            outside--;
+        }
+        if (outside < 0 || outside == last) {
+            return metresWalked;
+        }
+        // Find where the step from the last point outside to the first inside crosses into reach of the zone.
+        GeoPoint out = walked.get(outside);
+        GeoPoint in = walked.get(outside + 1);
+        double low = 0;
+        double high = 1;
+        for (int i = 0; i < 20; i++) {
+            double mid = (low + high) / 2;
+            if (zone.overlaps(out.towards(in, mid), PLAYER_RADIUS)) {
+                high = mid;
+            } else {
+                low = mid;
+            }
+        }
+        double inside = out.towards(in, high).distanceTo(in);
+        for (int i = outside + 1; i < last; i++) {
+            inside += walked.get(i).distanceTo(walked.get(i + 1));
+        }
+        return Math.max(0, metresWalked - inside);
+    }
     public int checksRemaining() { return difficulty.checks() - checks.size(); }
     public int checksUsed() { return checks.size(); }
     public Difficulty difficulty() { return difficulty; }
