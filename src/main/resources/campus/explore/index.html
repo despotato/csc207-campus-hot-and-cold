@@ -376,6 +376,7 @@
 <div id="travelCursor" class="hidden"></div>
 <div id="checkLabels"></div>
 <div id="help" class="panel hidden">
+  <button class="secondary soundToggle" data-sfx type="button">🔊 Sound on</button>
   Drag to move · right-drag to turn · <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> <kbd>Q</kbd><kbd>E</kbd> fly · <kbd>C</kbd> back to you · <kbd>Space</kbd> check · <kbd>M</kbd> map: pick a spot, then move
 </div>
 <div id="mapTitle" class="panel hidden"><span>Campus map<small class="keys">Click a spot to preview it, click the pin again to move · scroll to zoom</small><small class="taps">Tap a spot to preview it, tap the pin again to move</small></span><span id="mapActions"><button id="mapCheck" type="button">Check this spot <kbd>Space</kbd></button><button id="mapBack" class="secondary" type="button">Look around</button></span></div>
@@ -426,7 +427,7 @@
     </div>
     <!-- Difficulty selector: the start request already sends { difficulty }. See the team task "Difficulty levels". -->
     <div id="difficulty" data-value="normal" class="controls">Difficulty: Normal</div>
-    <div class="buttons"><button id="startBtn" autofocus>Start <kbd>Enter</kbd></button><button id="viewDailyResult" class="secondary hidden">View today's result</button><button id="historyBtn" class="secondary hidden">History</button><button id="tutorialBtn" class="secondary">How to play</button><button id="practiceBtn" class="secondary">Guided practice</button><button id="achievementsBtn" class="secondary">Achievements</button></div>
+    <div class="buttons"><button id="startBtn" autofocus>Start <kbd>Enter</kbd></button><button id="viewDailyResult" class="secondary hidden">View today's result</button><button id="historyBtn" class="secondary hidden">History</button><button id="tutorialBtn" class="secondary">How to play</button><button id="practiceBtn" class="secondary">Guided practice</button><button class="secondary soundToggle" data-sfx type="button">🔊 Sound on</button><button id="achievementsBtn" class="secondary">Achievements</button></div>
     <p id="loading">Loading campus…</p>
   </div>
 </section>
@@ -2249,6 +2250,7 @@ async function doCheck() {
   if (game.phase !== 'walk' || game.travelling || game.checking) return;
   if (game.checksLeft <= 0 && !(game.armedSearch && performance.now() - game.armedSearch < 3000)) {
     game.armedSearch = performance.now();
+    sound('final-search-armed');
     toast('FINAL SEARCH?', 'warm', 'Press Space or tap Check again. If the zone isn\'t here, the round ends.');
     return;
   }
@@ -2278,6 +2280,10 @@ async function doCheck() {
       const delta = b.change == null ? '' : ` ${b.change > 0 ? '▲ +' : b.change < 0 ? '▼ ' : '■ '}${b.change}°`;
       addCheckMarker(b.point, b.heat, b.number, `${b.temperature}°`, b.direction, b.temperature);
       pulse(b.point, HEAT_COLORS[b.heat], 6, 45, 650, 6);
+      sound('check-' + b.heat);
+      if (b.trend === 'warmer' || b.trend === 'colder') setTimeout(() => sound('trend-' + b.trend), 350);
+      if (b.direction) setTimeout(() => sound('direction'), 450);
+      if (b.checksRemaining === 0) setTimeout(() => sound('last-check'), 700);
       toast(checkHeadline(b), b.heat, `#${b.number} · ${b.temperature}°C${delta}` + (b.checksRemaining === 0 ? ' · No checks left: your next search is final' : ''));
       flashVignette(HEAT_COLORS[b.heat]);
       li.style.color = HEAT_COLORS[b.heat];
@@ -2310,6 +2316,7 @@ function toggleMapView(force) {
   const open = force ?? !game.mapView;
   if (open === game.mapView) return;
   game.mapView = open;
+  sound(open ? 'map-open' : 'map-close');
   game.keys = {};
   $('mapTitle').classList.toggle('hidden', !open);
   map.setLayoutProperty('dots', 'visibility', open ? 'visible' : 'none');
@@ -2366,6 +2373,83 @@ function drawAvatar() {
 }
 const pitchFor = zoom => 50 + (zoom - ZOOM_MIN) * 4;
 
+// ---------- sound: named slots for every event (the files come separately: docs/SOUND_EFFECTS.md) ----------
+// A slot plays sounds/<id>.mp3 if it exists and stays silent if not, so the game works with any, all or none of them.
+// Volumes live here so the mix can be tuned in one place.
+const SOUNDS = {
+  'ui-click': 0.35, 'ui-select': 0.45, 'picker-open': 0.5, 'campus-fly': 0.6, 'round-start': 0.7,
+  'pin-drop': 0.55, 'walk': 0.45, 'arrive': 0.5, 'blocked': 0.45, 'map-open': 0.45, 'map-close': 0.4,
+  'check-hot': 0.75, 'check-warm': 0.7, 'check-cool': 0.7, 'check-cold': 0.7, 'trend-warmer': 0.55, 'trend-colder': 0.55,
+  'direction': 0.55, 'last-check': 0.6, 'final-search-armed': 0.6, 'zone-found': 0.9, 'hint-flip': 0.55,
+  'guess-wrong': 0.6, 'guess-right': 0.95, 'round-lost': 0.7, 'results': 0.6, 'achievement': 0.75,
+  'photo-open': 0.45, 'photo-close': 0.4, 'coach-step': 0.4,
+  'ambience-day': 0.22, 'ambience-evening': 0.22, 'ambience-night': 0.22,
+};
+const sounds = { ctx: null, buffers: new Map(), loops: new Map() };
+const soundOn = () => store.get('sound') !== 'off';
+function audioContext() {
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if (!AC) return null;
+  sounds.ctx ||= new AC();
+  if (sounds.ctx.state === 'suspended') sounds.ctx.resume().catch(() => {});
+  return sounds.ctx;
+}
+/** The decoded sound for a slot, fetched once; null if it has no file yet. */
+function soundBuffer(id) {
+  if (!sounds.buffers.has(id)) {
+    const ctx = audioContext();
+    sounds.buffers.set(id, !ctx ? Promise.resolve(null) : fetch(`sounds/${id}.mp3`)
+      .then(r => r.ok ? r.arrayBuffer() : null).then(data => data && ctx.decodeAudioData(data)).catch(() => null));
+  }
+  return sounds.buffers.get(id);
+}
+/** Plays a one-shot sound slot (silent if muted, unknown or not made yet). */
+async function sound(id, { volume = 1, rate = 1 } = {}) {
+  if (!soundOn() || !(id in SOUNDS)) return;
+  const buffer = await soundBuffer(id), ctx = sounds.ctx;
+  if (!buffer || !ctx) return;
+  const source = ctx.createBufferSource(), gain = ctx.createGain();
+  source.buffer = buffer; source.playbackRate.value = rate;
+  gain.gain.value = SOUNDS[id] * volume;
+  source.connect(gain).connect(ctx.destination);
+  source.start();
+}
+/** Starts a looping slot (walking, ambience) until stopLoop. */
+async function loopSound(id) {
+  if (!soundOn() || sounds.loops.has(id)) return;
+  sounds.loops.set(id, null);
+  const buffer = await soundBuffer(id), ctx = sounds.ctx;
+  if (!buffer || !ctx || !sounds.loops.has(id)) { sounds.loops.delete(id); return; }
+  const source = ctx.createBufferSource(), gain = ctx.createGain();
+  source.buffer = buffer; source.loop = true;
+  gain.gain.value = SOUNDS[id];
+  source.connect(gain).connect(ctx.destination);
+  source.start();
+  sounds.loops.set(id, { source, gain });
+}
+function stopLoop(id, fade = 0.25) {
+  const loop = sounds.loops.get(id);
+  sounds.loops.delete(id);
+  if (!loop || !sounds.ctx) return;
+  const t = sounds.ctx.currentTime;
+  loop.gain.gain.setTargetAtTime(0, t, fade / 3);
+  loop.source.stop(t + fade);
+}
+const ambienceFor = () => LOOK.night ? 'ambience-night' : LOOK === LOOKS.day ? 'ambience-day' : 'ambience-evening';
+function setSoundOn(on) {
+  store.set('sound', on ? 'on' : 'off');
+  for (const id of [...sounds.loops.keys()]) stopLoop(id, 0.1);
+  if (on && ['walk', 'zone', 'hint', 'guess'].includes(game.phase)) loopSound(ambienceFor());   // only during a round
+  for (const b of document.querySelectorAll('.soundToggle')) b.textContent = on ? '🔊 Sound on' : '🔇 Sound off';
+}
+// Browsers only allow audio after a tap or key press; buttons click softly.
+addEventListener('pointerdown', () => audioContext(), { once: true });
+addEventListener('keydown', () => audioContext(), { once: true });
+document.addEventListener('click', e => {
+  const b = e.target.closest('button');
+  if (b) sound(b.dataset.sfx === undefined ? 'ui-click' : b.dataset.sfx || 'ui-select');
+}, true);
+
 // ---------- feel: short effects on every action (presentation only; skipped for reduced motion) ----------
 const REDUCED_MOTION = matchMedia('(prefers-reduced-motion: reduce)');
 const calm = () => REDUCED_MOTION.matches;
@@ -2403,6 +2487,7 @@ function dropPin() {
 }
 /** The mascot hops as it arrives and a ring of dust spreads from its feet. */
 function settleMascot() {
+  sound('arrive');
   pulse(game.pos, '#fff8e7', 1.5, 9, 450, 3);
   return tween(260, t => { game.avatarLift = Math.sin(t * Math.PI) * 0.9; drawAvatar(); }).then(() => { game.avatarLift = 0; drawAvatar(); });
 }
@@ -2534,11 +2619,12 @@ function onMapTap(e) {
   let to = [e.lngLat.lng, e.lngLat.lat];
   if (distOf(to, game.pos) > 1500) { toast('Tap the ground', 'cold', 'Tap somewhere on the ground to drop a pin.'); return; }
   if (!isOpen(to)) to = game.mapView ? nearbyOpen(to) : inFrontOf(to);
-  if (!to || distOf(to, game.pos) < 3) { toast("Can't go there", 'cold', 'Tap a path or open ground.'); return; }
+  if (!to || distOf(to, game.pos) < 3) { toast("Can't go there", 'cold', 'Tap a path or open ground.'); sound('blocked'); return; }
   game.preview = to;
   $('travelCursor').classList.add('hidden');
   drawPin(calm() ? 0 : 7);
   dropPin();
+  sound('pin-drop');
   coachEvent('previewed');
 }
 $('pinTag').addEventListener('click', () => { if (game.preview) travelTo(game.preview); });
@@ -2596,7 +2682,9 @@ async function travelTo(to) {
     // The trip costs the time walking it would take.
     game.startedAt -= (r.body.metresWalked - game.walked) / WALK_SPEED * 1000;
     game.walked = r.body.metresWalked;
+    loopSound('walk');
     await animateWalk([from, ...r.body.path, end], Math.max(700, Math.min(2200, distOf(from, end) * 6)));
+    stopLoop('walk');
     game.pos = end; game.lastPushed = end; game.prevPos = end; game.pending = []; game.confirmedPos = end;
     game.heading = r.body.path.length ? bearingOf(r.body.path.at(-1), end) || game.heading : game.heading;
     game.camBearing = map.getBearing();
@@ -2631,6 +2719,7 @@ function enterZone(zone) {
   for (const b of pack.buildings) if (distOf(b.center, zone.centre) <= zone.radius) game.zoneBuildings.add(b.id);
   refreshHighlights();
   zoneBurst(zone);
+  sound('zone-found');
   toast('ZONE FOUND!', 'warm', 'Pick a hint, then guess one of the highlighted buildings.');
   $('stage1').classList.remove('on'); $('stage2').classList.add('on');
   flyTo({ center: zone.centre, zoom: 17.5, pitch: 55, bearing: game.camBearing, duration: 2600 }).then(() => {
@@ -2645,6 +2734,7 @@ async function chooseHint(level, card) {
   card.classList.add('drawing');
   const r = await api('hint', { level }).finally(() => { game.drawing = false; card.classList.remove('drawing'); });
   if (r.status !== 200) { toast('Hmm', 'cold', r.body.error); return; }
+  sound('hint-flip');
   game.phase = 'hint';
   game.hint = r.body;
   game.zoneBuildings = new Set(r.body.zoneBuildings);
@@ -2709,7 +2799,7 @@ async function onBuildingClick(e) {
     game.hover = null;
     $('tip').classList.add('hidden');
     refreshHighlights();
-    if (!r.body.correct) toast('NOPE', 'cold', r.body.message);
+    if (!r.body.correct) { toast('NOPE', 'cold', r.body.message); sound('guess-wrong'); }
     if (r.body.result) finish(r.body.result, r.body.saveError);
     else {
       $('bannerText').textContent = `Not that one. ${r.body.guessesRemaining} guesses left.`;
@@ -2742,13 +2832,15 @@ async function finish(result, saveError) {
   const roof = buildings.get(t.buildingId)?.height || 10;
   map.getSource('beacon').setData(fc([box(t.centre, 0, -3, 3, -3, 3, roof + 1, roof + 120, '#ffd23f')]));
   toast(result.won ? 'FOUND IT!' : 'IT WAS…', result.won ? 'hot' : 'cool', t.name);
-  if (result.won) { celebrate(t.centre, roof); flashVignette('#ffd23f'); }
+  if (result.won) { celebrate(t.centre, roof); flashVignette('#ffd23f'); sound('guess-right'); } else sound('round-lost');
+  for (const id of [...sounds.loops.keys()]) stopLoop(id, 1.5);
   // Look down steeply so the gold roof shows even when taller neighbours stand in front.
   await flyTo({ center: t.centre, zoom: 18.2, pitch: 48, bearing: (game.camBearing + 40) % 360, duration: 3200 });
   orbit(t.centre);
   lookAroundMode();
   fillResults(result, saveError);
   show('results');
+  sound('results');
   coachEvent('done');
 }
 
@@ -2907,9 +2999,10 @@ function openClueCard() {
   if (!game.cluePhoto && !game.clueText) return Promise.resolve();
   $('clueCard').classList.remove('pinned');
   $('clueCard').setAttribute('aria-modal', 'true');
+  sound('photo-open');
   show('clueCard'); hide('clueThumb');
   $('clueClose').focus();
-  return new Promise(res => { closeClueCard = () => { pinClue(); closeClueCard = () => {}; res(); }; });
+  return new Promise(res => { closeClueCard = () => { pinClue(); sound('photo-close'); closeClueCard = () => {}; res(); }; });
 }
 $('clueSwap').addEventListener('click', () => clueMode(true));
 $('clueClose').addEventListener('click', () => closeClueCard());
@@ -2976,6 +3069,7 @@ function showBadges(earned) {
     el.addEventListener('click', showAchievements);
     if (!seen[a.id]) {
       const tag = document.createElement('em'); tag.textContent = 'NEW'; el.append(tag);
+      setTimeout(() => sound('achievement'), 600 + i * 250);   // as the badge appears
       seen[a.id] = game.date || new Date().toISOString().slice(0, 10);
     }
     box.append(el);
@@ -3767,6 +3861,7 @@ const CAMPUS_VIEW = { zoom: 15.6, pitch: 60 };
  */
 function showCanada(mode = 'visit', firstVisit = false) {
   if (game.phase !== 'title' || game.picking) return;
+  sound('picker-open');
   game.picking = true; game.orbiting = false; game.firstPick = firstVisit; game.pickMode = mode;
   $('pickerTitle').textContent = mode === 'home' ? (firstVisit ? 'Welcome! Pick your home university' : 'Pick your home university')
     : 'Visit another campus';
@@ -3857,6 +3952,7 @@ function pickCampus(id) {
   game.picking = false; setInteractive(false);
   $('pickerBar').classList.add('hidden');
   for (const pin of game.campusPins) pin.remove();
+  sound('campus-fly');
   // Fly all the way down, then load that campus at the same view so the switch is seamless.
   flyTo({ center: campus.center, ...CAMPUS_VIEW, bearing: -20, duration: 3200 }).then(() => {
     const url = new URL(location.href); url.searchParams.delete('v');
@@ -3944,6 +4040,7 @@ function renderLookChoice() {
   for (const b of document.querySelectorAll('#lookChoice button')) b.setAttribute('aria-checked', String(b.dataset.look === lookSetting()));
   $('liveLook').textContent = '· ' + LOOKS[liveLook(ORIGIN[1], ORIGIN[0])].label.toLowerCase();
 }
+for (const b of document.querySelectorAll('#lookChoice button, #modeChoice button')) b.dataset.sfx = 'ui-select';
 for (const b of document.querySelectorAll('#lookChoice button')) {
   b.addEventListener('click', () => {
     if (b.dataset.look === lookSetting() || game.phase !== 'title') return;
@@ -4061,6 +4158,7 @@ function play() {
   if (!store.get(PRACTICE_SEEN) && !DEBUG) startRound(true); else startRound();
 }
 function coach(step, text, done = false) {
+  if (text !== $('coachText').textContent) sound('coach-step');
   $('coachStep').textContent = `Practice · step ${step} of 7`;
   $('coachText').textContent = text;
   $('coachDone').classList.toggle('hidden', !done);
@@ -4159,6 +4257,8 @@ async function startRound(practiceRound = false) {
   Promise.race([photo, new Promise(res => setTimeout(() => res(null), 6000))]).then(p => showClue(p, PHONE.matches && !practice.on))
     .then(() => { if (!game.cluePhoto && !game.clueText) toast('NO ZONE CLUE', 'warm', 'No photo or clue for this zone. Use your checks.'); });
   $('mapBtn').classList.remove('pulse');
+  sound('round-start');
+  loopSound(ambienceFor());
   if (practice.on) coachEvent('started');
   else toast('1. FIND THE ZONE', 'warm', `${TOUCH ? 'Tap' : 'Click'} the ground to drop a pin, ${TOUCH ? 'tap' : 'click'} it again to walk there, then check.`);
 }
@@ -4229,6 +4329,8 @@ function setCompassHint(direction, from) {
 }
 function toggleControls() { $('help').classList.toggle('hidden'); }
 $('controlsBtn').addEventListener('click', toggleControls);
+for (const b of document.querySelectorAll('.soundToggle')) b.addEventListener('click', () => { setSoundOn(!soundOn()); if (soundOn()) sound('ui-select'); });
+setSoundOn(soundOn());
 let toastTimer;
 function toast(title, heat, detail = '') {
   const t = $('toast');

@@ -83,6 +83,14 @@ class ExploreWebServerTest {
                 .statusCode(), "a photo that isn't stored");
         assertEquals(404, send(HttpRequest.newBuilder(server.address().resolve("/packs/clues/../index.html")))
                 .statusCode(), "only clue photo paths");
+        var sound = send(HttpRequest.newBuilder(server.address().resolve("/sounds/test-slot.mp3")));
+        assertEquals(200, sound.statusCode(), "a sound slot with a file is served");
+        assertEquals("audio/mpeg", sound.headers().firstValue("Content-Type").orElseThrow());
+        assertEquals(404, send(HttpRequest.newBuilder(server.address().resolve("/sounds/zone-found.mp3"))).statusCode(),
+                "a slot without its file yet is simply missing (the page stays silent)");
+        assertEquals(404, send(HttpRequest.newBuilder(server.address().resolve("/sounds/../index.html"))).statusCode());
+        assertEquals(404, send(HttpRequest.newBuilder(server.address().resolve("/sounds/Zone.wav"))).statusCode(),
+                "only lower-case .mp3 slot names");
         var debug = send(HttpRequest.newBuilder(server.address().resolve("/api/debug")));
         assertNotEquals(200, debug.statusCode(), "debug info is off unless explicitly enabled");
         assertFalse(debug.body().contains("zone"));

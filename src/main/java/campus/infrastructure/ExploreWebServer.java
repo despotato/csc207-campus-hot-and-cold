@@ -29,6 +29,10 @@ public final class ExploreWebServer implements AutoCloseable {
     private static final java.util.regex.Pattern CLUE_PHOTO =
             java.util.regex.Pattern.compile("/packs/clues/[a-z0-9-]{1,40}/\\d{1,12}\\.jpg");
 
+    /** Sound effects shipped with the page: /sounds/<slot>.mp3 (docs/SOUND_EFFECTS.md), nothing else. */
+    private static final java.util.regex.Pattern SOUND =
+            java.util.regex.Pattern.compile("/sounds/[a-z0-9-]{1,40}\\.mp3");
+
     private final HttpServer server;
     private final ExecutorService executor = Executors.newFixedThreadPool(4, runnable -> {
         Thread thread = new Thread(runnable, "explore-web");
@@ -72,12 +76,25 @@ public final class ExploreWebServer implements AutoCloseable {
                 send(exchange, 200, "text/html; charset=utf-8", page());
             } else if ("GET".equals(method) && path.startsWith("/packs/")) {
                 packFile(exchange, path);
+            } else if ("GET".equals(method) && SOUND.matcher(path).matches()) {
+                soundFile(exchange, path);
             } else if ("GET".equals(method) && "/api/debug".equals(path) && debug != null) {
                 json(exchange, 200, debug.get());
             } else if (path.startsWith("/api/")) {
                 api(exchange, path.substring("/api/".length()), "http://" + host);
             } else {
                 send(exchange, 404, "text/plain", "Not found".getBytes(StandardCharsets.UTF_8));
+            }
+        }
+    }
+
+    /** A sound effect file, if that slot has one yet (the page stays silent for missing ones). */
+    private void soundFile(HttpExchange exchange, String path) throws IOException {
+        try (InputStream sound = ExploreWebServer.class.getResourceAsStream("/campus/explore" + path)) {
+            if (sound == null) {
+                send(exchange, 404, "text/plain", "Not found".getBytes(StandardCharsets.UTF_8));
+            } else {
+                send(exchange, 200, "audio/mpeg", sound.readAllBytes());
             }
         }
     }
