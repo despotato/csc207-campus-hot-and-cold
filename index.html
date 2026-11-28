@@ -152,6 +152,18 @@
   #title .titleMore button { font-size: 11px; padding: 5px 9px; box-shadow: 0 3px 0 var(--ink); }
   #title .titleMore button.hidden { display: none; }
   #settings { z-index: 20; background: #0b0d1ed9; }
+  /* Narrow phones: short labels, a little less padding, nothing wraps or clips. */
+  .short { display: none; }
+  @media (max-width: 400px) {
+    .long { display: none; } .short { display: inline; }
+    #title .card { padding: 16px 16px; }
+    #title h1 { font-size: 22px; }
+    #title .lead { font-size: 12px; }
+    #title .titleMore { display: grid; grid-template-columns: repeat(3, 1fr); }
+    #title .titleMore button { white-space: nowrap; }
+    #pauseMenu .pauseRow { flex-direction: column; }
+  }
+  #pauseMenu .pauseKeys dt { white-space: nowrap; }
   #pauseMenu { z-index: 20; background: #0b0d1ed9; }
   #pauseMenu .card { max-width: 440px; padding: 26px 30px; }
   #pauseMenu h2 { margin: 0 0 16px; }
@@ -364,10 +376,18 @@
     #needle { font-size: 14px; }
     #banner { top: auto; bottom: calc(max(16px, env(safe-area-inset-bottom)) + 64px); max-width: min(560px, calc(100vw - 90px));
       left: 8px; transform: none; font-size: 11px; padding: 6px 8px; text-align: left; }
+    /* The map panel: one line of instructions, then Check and Look around as two equal buttons. */
     #mapTitle { top: auto; bottom: max(16px, env(safe-area-inset-bottom)); left: 8px; right: 8px; transform: none;
-      justify-content: space-between; text-align: left; font-size: 13px; padding: 8px 10px; }
+      flex-direction: column; align-items: stretch; gap: 8px; text-align: left; font-size: 13px; padding: 10px 12px; }
+    #mapTitle .taps { font-size: 10px; }
+    #mapActions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    #mapActions button { white-space: nowrap; font-size: 12px; padding: 8px 6px; }
+    #mapActions kbd { display: none; }
     #mapBack, #mapCheck { min-height: 44px; }
-    body:has(#mapTitle:not(.hidden)) #compass { bottom: calc(max(16px, env(safe-area-inset-bottom)) + 84px); }
+    body:has(#mapTitle:not(.hidden)) #compass { bottom: calc(max(16px, env(safe-area-inset-bottom)) + 128px); }
+    body:has(#mapTitle:not(.hidden)) #clueThumb, body:has(#mapTitle:not(.hidden)) #controlsBtn { display: none; }
+    /* Menu sits in the bottom row, between Check and Map, instead of floating over the view. */
+    #controlsBtn { right: auto; left: 50%; transform: translateX(-50%); bottom: calc(max(16px, env(safe-area-inset-bottom)) + 10px); }
     /* Hint cards: short rows; once one is drawn the other two step aside so its text and the button fit. */
     .hintcard { min-height: 64px; padding: 8px; }
     .hintcard .back { font-size: 26px; }
@@ -467,7 +487,7 @@
     </div>
     <p id="modeNote" class="note"></p>
     <div class="buttons startRow"><button id="startBtn">Start <kbd>Enter</kbd></button><button id="practiceBtn" class="secondary">Guided practice</button><button id="viewDailyResult" class="secondary hidden">Today's result</button></div>
-    <div class="titleMore"><button id="historyBtn" class="secondary hidden">History</button><button id="achievementsBtn" class="secondary">Achievements</button><button id="tutorialBtn" class="secondary">How to play</button><button id="settingsBtn" class="secondary">Settings</button></div>
+    <div class="titleMore"><button id="historyBtn" class="secondary hidden">History</button><button id="achievementsBtn" class="secondary"><span class="long">Achievements</span><span class="short">Badges</span></button><button id="tutorialBtn" class="secondary"><span class="long">How to play</span><span class="short">Help</span></button><button id="settingsBtn" class="secondary">Settings</button></div>
     <p id="loading">Loading campus…</p>
   </div>
 </section>
@@ -2686,8 +2706,9 @@ function placePreview() {
   if (!game.preview || game.phase !== 'walk') { tag.classList.add('hidden'); flat.classList.add('hidden'); return; }
   const pin = pinOnScreen();
   tag.textContent = game.travelling ? 'Walking…' : TOUCH ? 'Tap again to walk here' : 'Click again to walk here';
-  tag.style.transform = `translate(${Math.round(pin.x + 14)}px, ${Math.round(pin.top - 34)}px)`;
   tag.classList.remove('hidden');
+  const width = tag.offsetWidth, x = pin.x + 14 + width > innerWidth - 8 ? pin.x - 14 - width : pin.x + 14;   // flip left at the edge
+  tag.style.transform = `translate(${Math.round(Math.max(8, x))}px, ${Math.round(pin.top - 34)}px)`;
   if (game.mapView) {
     flat.style.transform = `translate(${Math.round(pin.x)}px, ${Math.round(pin.foot)}px)`;
     flat.querySelector('span').textContent = '';
@@ -4068,7 +4089,7 @@ function renderChoices() {
     if (!home || home === pack.id) {
       status.textContent = '🏠 Your home university';
       box.append(status);
-      button('changeCampus', `🗺 Visit another campus <small>${campusIndex.length}</small>`, () => showCanada('visit'));
+      button('changeCampus', `🗺 <span class="long">Visit another campus <small>${campusIndex.length}</small></span><span class="short">Other campus</span>`, () => showCanada('visit'));
       button('changeHome', 'Change home', () => showCanada('home'));
     } else {
       status.textContent = `Visiting · your home is ${homeName || home}`;
@@ -4288,7 +4309,7 @@ function markPractice() {
   const fresh = !store.get(PRACTICE_SEEN);
   $('practiceBtn').classList.toggle('secondary', !fresh);
   $('practiceBtn').classList.toggle('pulse', fresh);
-  $('practiceBtn').textContent = fresh ? '★ Guided practice' : 'Guided practice';
+  $('practiceBtn').innerHTML = `${fresh ? '★ ' : ''}<span class="long">Guided practice</span><span class="short">Practice</span>`;
   $('practiceBtn').title = fresh ? 'New here? A guided round, step by step' : 'A guided round, step by step';
 }
 markPractice();
