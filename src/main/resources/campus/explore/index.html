@@ -1735,6 +1735,10 @@ function addGameLayers() {
   map.addLayer({ id: 'zone-floor', type: 'fill', source: 'zone', paint: { 'fill-color': '#ffd23f', 'fill-opacity': 0.18 } });
   map.addLayer({ id: 'zone-ring', type: 'line', source: 'zone', paint: { 'line-color': '#ffd23f', 'line-width': 4, 'line-dasharray': [2, 1] } });
 
+  // Expanding rings for feedback (a check, an arrival, finding the zone, a correct guess).
+  map.addSource('pulses', { type: 'geojson', data: fc([]) });
+  map.addLayer({ id: 'pulses', type: 'line', source: 'pulses', paint: { 'line-color': ['get', 'color'],
+    'line-opacity': ['get', 'o'], 'line-width': ['get', 'w'] } });
   map.addSource('check-rings', { type: 'geojson', data: fc([]) });
   map.addLayer({ id: 'check-rings', type: 'line', source: 'check-rings', paint: { 'line-color': ['get', 'color'], 'line-width': 4 } });
 
@@ -2273,6 +2277,7 @@ async function doCheck() {
     } else {
       const delta = b.change == null ? '' : ` ${b.change > 0 ? '▲ +' : b.change < 0 ? '▼ ' : '■ '}${b.change}°`;
       addCheckMarker(b.point, b.heat, b.number, `${b.temperature}°`, b.direction, b.temperature);
+      pulse(b.point, HEAT_COLORS[b.heat], 6, 45, 650, 6);
       toast(checkHeadline(b), b.heat, `#${b.number} · ${b.temperature}°C${delta}` + (b.checksRemaining === 0 ? ' · No checks left: your next search is final' : ''));
       flashVignette(HEAT_COLORS[b.heat]);
       li.style.color = HEAT_COLORS[b.heat];
@@ -2339,7 +2344,9 @@ function toggleMapView(force) {
 /** Where you stand: the camera orbits this spot; you move only by travelling with the map. */
 const LOOK_ZOOM = 18;
 function drawAvatar() {
+  const lift = game.avatarLift || 0;
   const parts = avatarFeatures(game.pos, game.heading).filter(f => f.properties.color !== '#00000055');
+  if (lift) for (const f of parts) { f.properties.base += lift; f.properties.top += lift; }
   map.getSource('avatar').setData(fc(parts));
   const layer = scene3d.layer;
   if (!layer) return;
@@ -2358,6 +2365,107 @@ function drawAvatar() {
   map.triggerRepaint();
 }
 const pitchFor = zoom => 50 + (zoom - ZOOM_MIN) * 4;
+
+// ---------- feel: short effects on every action (presentation only; skipped for reduced motion) ----------
+const REDUCED_MOTION = matchMedia('(prefers-reduced-motion: reduce)');
+const calm = () => REDUCED_MOTION.matches;
+const pulses = [];
+let pulseLoop = 0;
+/** An expanding, fading ring on the ground: from r0 to r1 metres over ms. */
+function pulse(centre, color, r0, r1, ms = 600, width = 5, delay = 0) {
+  if (calm() || !map.getSource('pulses')) return;
+  pulses.push({ centre, color, r0, r1, ms, width, t0: performance.now() + delay });
+  if (!pulseLoop) pulseLoop = requestAnimationFrame(drawPulses);
+}
+function drawPulses(now) {
+  for (let i = pulses.length - 1; i >= 0; i--) if (now - pulses[i].t0 > pulses[i].ms) pulses.splice(i, 1);
+  map.getSource('pulses').setData(fc(pulses.filter(p => now >= p.t0).map(p => {
+    const t = (now - p.t0) / p.ms, ease = 1 - (1 - t) ** 3;
+    return { type: 'Feature', properties: { color: p.color, o: 1 - t, w: p.width * (1 - 0.6 * t) },
+      geometry: { type: 'LineString', coordinates: circle(p.centre, p.r0 + (p.r1 - p.r0) * ease, 48) } };
+  })));
+  pulseLoop = pulses.length ? requestAnimationFrame(drawPulses) : 0;
+}
+/** Runs step(t) for t from 0 to 1 over ms (eased by the caller); instantly at t = 1 for reduced motion. */
+function tween(ms, step) {
+  if (calm()) { step(1); return Promise.resolve(); }
+  const began = performance.now();
+  return new Promise(done => {
+    const frame = now => { const t = Math.min(1, (now - began) / ms); step(t); if (t < 1) requestAnimationFrame(frame); else done(); };
+    requestAnimationFrame(frame);
+  });
+}
+const bounce = t => t < 0.7 ? (t / 0.7) ** 2 : 1 - Math.sin((t - 0.7) / 0.3 * Math.PI) * 0.12;   // falls, then a small rebound
+/** The pin drops into place with a little bounce (about a fifth of a second). */
+function dropPin() {
+  const at = game.preview;
+  tween(220, t => { if (game.preview === at) drawPin((1 - bounce(t)) * 7); });
+}
+/** The mascot hops as it arrives and a ring of dust spreads from its feet. */
+function settleMascot() {
+  pulse(game.pos, '#fff8e7', 1.5, 9, 450, 3);
+  return tween(260, t => { game.avatarLift = Math.sin(t * Math.PI) * 0.9; drawAvatar(); }).then(() => { game.avatarLift = 0; drawAvatar(); });
+}
+/** Zone found: two gold rings sweep out from the zone's edge and its buildings flash gold before taking their colour. */
+function zoneBurst(zone) {
+  pulse(zone.centre, '#ffd23f', zone.radius * 0.3, zone.radius + 30, 900, 8);
+  pulse(zone.centre, '#ffd23f', zone.radius * 0.3, zone.radius + 30, 900, 6, 250);
+  if (calm()) return;
+  const ids = [...game.zoneBuildings];
+  for (const id of ids) tintBuilding(id, '#ffd23f');
+  map.triggerRepaint();
+  setTimeout(() => { refreshHighlights(); map.triggerRepaint(); }, 700);
+}
+/**
+ * A correct guess: the strongest effect. Gold sparks burst from the roof and fall, rings spread from the building, and
+ * a glow column rises with the beacon (additive light, the only bloom-like effect besides lamps).
+ */
+function celebrate(centre, roof) {
+  pulse(centre, '#ffd23f', 6, 60, 1000, 9);
+  pulse(centre, '#fff3b0', 6, 45, 1000, 5, 200);
+  pulse(centre, '#ffd23f', 6, 30, 1000, 4, 400);
+  const layer = scene3d.layer;
+  if (!layer) return;
+  const [x, y] = toLocal(centre);
+  const glow = new THREE.Mesh(new THREE.CylinderGeometry(4, 7, 120, 16, 1, true).rotateX(Math.PI / 2).translate(0, 0, roof + 60),
+    new THREE.MeshBasicMaterial({ map: glowColumnTexture(), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide, opacity: 0.8 }));
+  glow.position.set(x, y, 0);
+  glow.userData.flat = true;
+  layer.scene.add(glow);
+  game.revealGlow = glow;
+  if (calm()) { map.triggerRepaint(); return; }
+  const count = 90, sparks = new THREE.InstancedMesh(new THREE.BoxGeometry(0.9, 0.9, 0.9),
+    new THREE.MeshBasicMaterial({ color: 0xffd23f, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }), count);
+  sparks.frustumCulled = false;
+  const v = Array.from({ length: count }, (_, i) => {
+    const a = i * 2.39996, speed = 10 + (i % 7) * 3;
+    return [Math.cos(a) * speed, Math.sin(a) * speed, 18 + (i % 5) * 6];
+  });
+  layer.scene.add(sparks);
+  const m = new THREE.Matrix4(), q = new THREE.Quaternion();
+  tween(1400, t => {
+    const s = t * 1.4, fade = 1 - t;
+    v.forEach(([vx, vy, vz], i) => {
+      m.compose(new THREE.Vector3(x + vx * s, y + vy * s, roof + 2 + vz * s - 14 * s * s), q, new THREE.Vector3(fade, fade, fade));
+      sparks.setMatrixAt(i, m);
+    });
+    sparks.instanceMatrix.needsUpdate = true;
+    sparks.material.opacity = fade;
+    map.triggerRepaint();
+  }).then(() => { layer.scene.remove(sparks); sparks.geometry.dispose(); sparks.material.dispose(); map.triggerRepaint(); });
+}
+let glowColumn;
+function glowColumnTexture() {
+  if (glowColumn) return glowColumn;
+  const c = document.createElement('canvas');
+  c.width = 4; c.height = 64;
+  const g = c.getContext('2d'), grad = g.createLinearGradient(0, 64, 0, 0);
+  grad.addColorStop(0, 'rgba(255,230,140,0.9)'); grad.addColorStop(0.5, 'rgba(255,210,80,0.35)'); grad.addColorStop(1, 'rgba(255,200,60,0)');
+  g.fillStyle = grad; g.fillRect(0, 0, 4, 64);
+  glowColumn = new THREE.CanvasTexture(c);
+  return glowColumn;
+}
 
 // ---------- travel: tap the ground to drop a pin, tap the pin again to walk there ----------
 const PIN_HEIGHT = 14;   // metres: a gold post with a diamond on top, taller than the mascot
@@ -2390,11 +2498,11 @@ function onPreviewPin(point) {
  * The pin as a 3D object (a dark post, a gold diamond and a pale cap), and after the first missed check a gold arrow
  * on the ground there, pointing the way the reading said to search.
  */
-function drawPin() {
+function drawPin(lift = 0) {
   const p = game.preview, a = game.arrow, parts = [];
-  if (p) parts.push(box(p, 0, -0.5, 0.5, -0.5, 0.5, 0, PIN_HEIGHT - 2.5, '#1b1f3a'),
-    box(p, 45, -1.8, 1.8, -1.8, 1.8, PIN_HEIGHT - 3, PIN_HEIGHT + 0.6, '#ffd23f'),
-    box(p, 45, -1, 1, -1, 1, PIN_HEIGHT + 0.6, PIN_HEIGHT + 1.8, '#fff8e7'));
+  if (p) parts.push(box(p, 0, -0.5, 0.5, -0.5, 0.5, lift, lift + PIN_HEIGHT - 2.5, '#1b1f3a'),
+    box(p, 45, -1.8, 1.8, -1.8, 1.8, lift + PIN_HEIGHT - 3, lift + PIN_HEIGHT + 0.6, '#ffd23f'),
+    box(p, 45, -1, 1, -1, 1, lift + PIN_HEIGHT + 0.6, lift + PIN_HEIGHT + 1.8, '#fff8e7'));
   // Floating above head height, so walls and trees nearby can't hide it.
   if (a) parts.push(box(a.point, a.bearing, -1.2, 1.2, 4, 18, 6, 7.2, '#ffd23f'),
     ...[[5, 18, 21], [3.5, 21, 24], [2, 24, 27], [0.8, 27, 29]].map(([w, y0, y1]) => box(a.point, a.bearing, -w, w, y0, y1, 6, 7.2, '#ffd23f')));
@@ -2429,7 +2537,8 @@ function onMapTap(e) {
   if (!to || distOf(to, game.pos) < 3) { toast("Can't go there", 'cold', 'Tap a path or open ground.'); return; }
   game.preview = to;
   $('travelCursor').classList.add('hidden');
-  drawPin();
+  drawPin(calm() ? 0 : 7);
+  dropPin();
   coachEvent('previewed');
 }
 $('pinTag').addEventListener('click', () => { if (game.preview) travelTo(game.preview); });
@@ -2494,6 +2603,7 @@ async function travelTo(to) {
     game.trail.push(...r.body.path, end);
     if (game.mapView) drawMapOverlays();
     drawAvatar();
+    if (!game.mapView) settleMascot();   // not awaited: the next action is available at once
     renderHud();
     saveDailyRun();
     if (!game.checkCount && !practice.on) toast('NOW CHECK', 'warm', TOUCH ? 'Tap Check to read the temperature here.' : 'Press Space or Check to read the temperature here.');
@@ -2520,6 +2630,7 @@ function enterZone(zone) {
     geometry: { type: 'Polygon', coordinates: [circle(zone.centre, zone.radius, 64)] } }]));
   for (const b of pack.buildings) if (distOf(b.center, zone.centre) <= zone.radius) game.zoneBuildings.add(b.id);
   refreshHighlights();
+  zoneBurst(zone);
   toast('ZONE FOUND!', 'warm', 'Pick a hint, then guess one of the highlighted buildings.');
   $('stage1').classList.remove('on'); $('stage2').classList.add('on');
   flyTo({ center: zone.centre, zoom: 17.5, pitch: 55, bearing: game.camBearing, duration: 2600 }).then(() => {
@@ -2631,6 +2742,7 @@ async function finish(result, saveError) {
   const roof = buildings.get(t.buildingId)?.height || 10;
   map.getSource('beacon').setData(fc([box(t.centre, 0, -3, 3, -3, 3, roof + 1, roof + 120, '#ffd23f')]));
   toast(result.won ? 'FOUND IT!' : 'IT WAS…', result.won ? 'hot' : 'cool', t.name);
+  if (result.won) { celebrate(t.centre, roof); flashVignette('#ffd23f'); }
   // Look down steeply so the gold roof shows even when taller neighbours stand in front.
   await flyTo({ center: t.centre, zoom: 18.2, pitch: 48, bearing: (game.camBearing + 40) % 360, duration: 3200 });
   orbit(t.centre);
