@@ -342,6 +342,16 @@
 .campusPin:hover { background: var(--hot); color: #fff; }
 #pickerBar { position: fixed; top: calc(12px + env(safe-area-inset-top, 0px)); left: 50%; transform: translateX(-50%);
   display: flex; gap: 12px; align-items: center; flex-wrap: wrap; justify-content: center; max-width: calc(100% - 32px); z-index: 5; }
+#campusFind { position: relative; }
+#campusSearch { font: inherit; font-size: 12px; width: 190px; padding: 8px 10px; background: #fff8e1; color: #1d2038;
+  border: 2px solid #1d2038; box-shadow: 0 3px 0 #1d2038; }
+#campusResults { position: absolute; top: calc(100% + 6px); left: 0; min-width: 100%; width: max-content; max-width: 320px;
+  margin: 0; padding: 4px; list-style: none; z-index: 6; }
+#campusResults.hidden { display: none; }
+#campusResults li { padding: 6px 8px; font-size: 12px; cursor: pointer; white-space: nowrap; }
+#campusResults li small { opacity: .7; margin-left: 6px; font-size: 10px; }
+#campusResults li[aria-selected="true"], #campusResults li:hover { background: var(--gold); color: var(--ink); }
+@media (max-width: 640px) { #campusSearch { width: 120px; } }
 #campusSelect { font: inherit; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; width: 100%;
   max-width: 100%; padding: 8px 10px; background: #fff8e1; color: #1d2038; border: 2px solid #1d2038;
   box-shadow: 3px 3px 0 rgba(0,0,0,0.35); border-radius: 0; cursor: pointer; }
@@ -386,6 +396,8 @@
 
 <div id="pickerBar" class="panel hidden">
   <span><b id="pickerTitle">Choose a university</b> <span class="note" id="pickerNote">Drag and scroll the map · click a campus to fly there</span></span>
+  <span id="campusFind"><input id="campusSearch" type="search" placeholder="Search campuses" autocomplete="off" spellcheck="false"
+    aria-label="Search campuses" aria-controls="campusResults" aria-autocomplete="list"><ul id="campusResults" class="panel hidden" role="listbox"></ul></span>
   <button class="secondary" id="pickerBack">Back <kbd>Esc</kbd></button>
 </div>
 <section id="title" class="screen">
@@ -3436,6 +3448,7 @@ function showCanada(mode = 'visit', firstVisit = false) {
     : TOUCH ? 'Drag and pinch the map · tap a campus · your home stays the same'
     : 'Drag and scroll the map · click a campus to fly there · your home stays the same';
   $('pickerBack').classList.toggle('hidden', firstVisit);
+  $('campusSearch').value = ''; $('campusResults').classList.add('hidden');
   for (const pin of game.campusPins || []) pin.getElement().classList.toggle('home', pin.getElement().dataset.id === homeCampus());
   if (!game.campusPins?.length) toast('MAP NOT READY', 'warm', 'Campus positions did not load. Reload the page (Ctrl/Cmd+Shift+R).');
   $('title').classList.add('hidden'); $('pickerBar').classList.remove('hidden');
@@ -3462,6 +3475,53 @@ function closeCanada() {
   flyTo({ center: ORIGIN, ...CAMPUS_VIEW, bearing: -20, duration: 2600 })
     .then(() => { $('title').classList.remove('hidden'); game.orbiting = true; });
 }
+// ---------- campus search (in the picker bar, beside Back) ----------
+const CAMPUS_NICKNAMES = { 'st-george': 'uoft u of t toronto', mcmaster: 'mac hamilton', uwaterloo: 'uw', ubc: 'vancouver',
+  sfu: 'burnaby simon fraser', uvic: 'victoria', ualberta: 'edmonton u of a', ucalgary: 'u of c', usask: 'saskatoon',
+  western: 'uwo london', queens: 'kingston', uottawa: 'ottawa', tmu: 'ryerson toronto metropolitan', mcgill: 'montreal',
+  concordia: 'montreal', umontreal: 'udem montreal', ulaval: 'quebec', dal: 'halifax dalhousie', mun: 'mun st johns newfoundland',
+  umanitoba: 'winnipeg', york: 'toronto keele', carleton: 'ottawa', guelph: 'gryphons', laurier: 'wlu wilfrid waterloo' };
+const plain = t => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9 ]+/g, ' ');
+function campusMatches(query) {
+  const words = plain(query).split(/\s+/).filter(Boolean);
+  if (!words.length) return [];
+  return campusIndex.map(c => {
+    const name = plain(c.short + ' ' + c.name), text = name + ' ' + plain((c.region || '') + ' ' + c.id + ' ' + (CAMPUS_NICKNAMES[c.id] || ''));
+    if (!words.every(w => (' ' + text).includes(' ' + w))) return null;   // each word starts a word ("mont" ≠ Edmonton)
+    return { c, rank: name.startsWith(words[0]) ? 0 : name.includes(' ' + words[0]) ? 1 : 2 };
+  }).filter(Boolean).sort((a, b) => a.rank - b.rank || a.c.short.localeCompare(b.c.short)).slice(0, 7).map(m => m.c);
+}
+let campusPick = 0;
+function showCampusResults() {
+  const list = $('campusResults'), found = campusMatches($('campusSearch').value);
+  list.innerHTML = '';
+  campusPick = Math.min(campusPick, Math.max(0, found.length - 1));
+  found.forEach((c, i) => {
+    const li = document.createElement('li');
+    li.setAttribute('role', 'option'); li.setAttribute('aria-selected', String(i === campusPick)); li.dataset.id = c.id;
+    li.textContent = c.short;
+    const small = document.createElement('small'); small.textContent = c.region || ''; li.append(small);
+    li.addEventListener('pointerdown', e => { e.preventDefault(); pickCampus(c.id); });
+    list.append(li);
+  });
+  if ($('campusSearch').value.trim() && !found.length) {
+    const li = document.createElement('li'); li.textContent = 'No campus found'; li.style.cursor = 'default'; list.append(li);
+  }
+  list.classList.toggle('hidden', !$('campusSearch').value.trim());
+}
+$('campusSearch').addEventListener('input', () => { campusPick = 0; showCampusResults(); });
+$('campusSearch').addEventListener('keydown', e => {
+  const found = campusMatches($('campusSearch').value);
+  if (e.code === 'ArrowDown' || e.code === 'ArrowUp') {
+    campusPick = (campusPick + (e.code === 'ArrowDown' ? 1 : -1) + found.length) % Math.max(1, found.length);
+    showCampusResults(); e.preventDefault();
+  } else if (e.code === 'Enter' && found.length) { pickCampus(found[campusPick].id); e.preventDefault(); }
+  else if (e.code === 'Escape' && $('campusSearch').value) { $('campusSearch').value = ''; showCampusResults(); e.stopPropagation(); e.preventDefault(); }
+  if (e.code !== 'Escape') e.stopPropagation();   // typing here is not a game key (Enter mustn't start a round); Esc closes
+});
+$('campusSearch').addEventListener('blur', () => setTimeout(() => $('campusResults').classList.add('hidden'), 150));
+$('campusSearch').addEventListener('focus', showCampusResults);
+
 function pickCampus(id) {
   const settingHome = game.pickMode === 'home';
   if (settingHome) store.set('home', id);
