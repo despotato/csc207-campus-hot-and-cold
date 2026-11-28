@@ -27,6 +27,9 @@
   button { font: inherit; color: var(--ink); background: var(--gold); border: 3px solid var(--ink); box-shadow: 0 4px 0 var(--ink);
     padding: 8px 14px; cursor: pointer; text-transform: uppercase; }
   button:hover { filter: brightness(1.08); }
+  /* Focus in the game's own style (keyboard users still see where they are), not the browser's blue ring. */
+  button:focus { outline: none; }
+  button:focus-visible { outline: 3px solid var(--paper); outline-offset: 3px; }
   button:disabled { opacity: .45; cursor: not-allowed; filter: grayscale(.6); }
   button:disabled:active { transform: none; box-shadow: 0 4px 0 var(--ink); }
   button:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
@@ -134,6 +137,24 @@
   h2 { margin: 0 0 8px; color: var(--gold); }
   .lead { margin: 0 0 14px; }
   .rules { display: grid; gap: 6px; margin: 0 0 14px; padding-left: 20px; }
+  /* Title screen: the essentials up front (campus, mode, Start); everything else in a small row or Settings. */
+  #title .tagline { margin: -4px 0 12px; font-size: 12px; opacity: .8; }
+  #title #campusChoice { align-items: center; gap: 6px; }
+  #title #campusChoice .homeStatus { margin: 0 4px 0 0; }
+  #title #campusChoice button { font-size: 11px; padding: 4px 8px; box-shadow: 0 3px 0 var(--ink); }
+  #title .startRow { display: flex; gap: 8px; margin: 4px 0 8px; }
+  #title #startBtn { flex: 1; font-size: 20px; padding: 12px 16px; }
+  #title #practiceBtn { display: block; width: 100%; margin-bottom: 12px; }
+  #title #practiceBtn.secondary { background: none; border: 0; box-shadow: none; color: var(--paper); opacity: .8;
+    text-decoration: underline; font-size: 12px; padding: 2px 0; }
+  #title .titleMore { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+  #title .titleMore button { font-size: 11px; padding: 5px 9px; box-shadow: 0 3px 0 var(--ink); }
+  #title .titleMore button.hidden { display: none; }
+  #settingsPanel { border-top: 2px dashed #fff8e755; padding-top: 10px; margin-bottom: 10px; }
+  #settingsPanel.hidden { display: none; }
+  #settingsPanel .choice { align-items: center; margin-bottom: 8px; }
+  #settingsPanel .label { font-size: 11px; opacity: .75; min-width: 52px; }
+  #settingsPanel #difficulty { margin: 0; opacity: .75; font-size: 11px; }
   .controls { display: flex; flex-wrap: wrap; gap: 10px 18px; margin: 0 0 16px; font-size: 12px; }
   .choice { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 10px; }
   .choice button { padding: 6px 10px; font-size: 12px; }
@@ -325,7 +346,8 @@
     #hintScreen .lead { font-size: 12px; margin-bottom: 8px; }
     #toGuess { width: 100%; min-height: 48px; }
     body:has(#checkBtn.hidden) #banner { bottom: max(16px, env(safe-area-inset-bottom)); right: 8px; max-width: none; }
-    body #pickerBar { gap: 6px 10px; padding: 8px 10px; flex-wrap: nowrap; left: 8px; right: 8px; transform: none; max-width: none; }
+    body #pickerBar { gap: 6px 10px; padding: 8px 10px; flex-wrap: wrap; left: 8px; right: 8px; transform: none; max-width: none; }
+    #pickerBar > span:first-child { flex-basis: 100%; }   /* title on its own line; search and Back share the next */
     #pickerBar .note { display: block; margin: 2px 0 0; font-size: 10px; }
     #pickerBar #pickerTitle { font-size: 13px; }
     #pickerBar kbd { display: none; }
@@ -343,15 +365,21 @@
 #pickerBar { position: fixed; top: calc(12px + env(safe-area-inset-top, 0px)); left: 50%; transform: translateX(-50%);
   display: flex; gap: 12px; align-items: center; flex-wrap: wrap; justify-content: center; max-width: calc(100% - 32px); z-index: 5; }
 #campusFind { position: relative; }
-#campusSearch { font: inherit; font-size: 12px; width: 190px; padding: 8px 10px; background: #fff8e1; color: #1d2038;
-  border: 2px solid #1d2038; box-shadow: 0 3px 0 #1d2038; }
+/* The search box matches the Back button beside it (same height, border and font) in the panel's own colours. */
+#campusFind { flex: 1 1 260px; min-width: 200px; align-self: stretch; display: flex; }   /* as tall as Back */
+#campusSearch { font: inherit; text-transform: uppercase; box-sizing: border-box; width: 100%; height: 100%; padding: 8px 12px;
+  background: var(--ink); color: var(--paper); border: 3px solid var(--paper); box-shadow: 0 4px 0 #0008;
+  outline: none; caret-color: transparent; border-radius: 0; -webkit-appearance: none; appearance: none; }
+#campusSearch::placeholder { color: var(--paper); opacity: .55; }
+#campusSearch:focus { border-color: var(--gold); }
+#campusSearch::-webkit-search-cancel-button, #campusSearch::-webkit-search-decoration { -webkit-appearance: none; display: none; }
 #campusResults { position: absolute; top: calc(100% + 6px); left: 0; min-width: 100%; width: max-content; max-width: 320px;
   margin: 0; padding: 4px; list-style: none; z-index: 6; }
 #campusResults.hidden { display: none; }
 #campusResults li { padding: 6px 8px; font-size: 12px; cursor: pointer; white-space: nowrap; }
 #campusResults li small { opacity: .7; margin-left: 6px; font-size: 10px; }
 #campusResults li[aria-selected="true"], #campusResults li:hover { background: var(--gold); color: var(--ink); }
-@media (max-width: 640px) { #campusSearch { width: 120px; } }
+@media (max-width: 640px) { #campusFind { min-width: 0; flex-basis: 140px; } }
 #campusSelect { font: inherit; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; width: 100%;
   max-width: 100%; padding: 8px 10px; background: #fff8e1; color: #1d2038; border: 2px solid #1d2038;
   box-shadow: 3px 3px 0 rgba(0,0,0,0.35); border-radius: 0; cursor: pointer; }
@@ -405,29 +433,27 @@
   <div class="card panel">
     <h1>Campus<br>Hot <span class="amp">&amp;</span> Cold</h1>
     <p class="lead"><span id="campusName">Campus</span> · Explore<span id="mascotLine"></span></p>
+    <p class="tagline">Find the hidden zone, then guess the building.</p>
     <div class="choice" id="campusChoice" role="radiogroup" aria-label="University"></div>
-    <div class="choice" id="lookChoice" role="radiogroup" aria-label="Light">
-      <button class="secondary" data-look="live" role="radio">Live <small id="liveLook"></small></button>
-      <button class="secondary" data-look="day" role="radio">Day</button>
-      <button class="secondary" data-look="night" role="radio">Night</button>
-    </div>
     <div class="choice" id="modeChoice" role="radiogroup" aria-label="Mode">
       <button class="secondary" data-mode="daily" role="radio">Daily <small id="dailyDate"></small></button>
       <button class="secondary" data-mode="unlimited" role="radio">Unlimited</button>
     </div>
     <p id="modeNote" class="note"></p>
-    <ol class="rules">
-      <li>Find the hidden <b>zone</b>: tap the ground to drop a pin, tap it again to walk there, then check. Warmer means closer to the zone; a check inside it finds it.</li>
-      <li>Inside the zone, pick a hint <b>blind</b>: easy, normal or hard. Harder hints score more.</li>
-      <li>Click the building you think it is. Fewer guesses and shorter walks score more.</li>
-    </ol>
-    <div class="controls">
-      <span>Tap ground: pin · tap pin: walk</span>
-      <span><kbd>Space</kbd> check</span><span><kbd>M</kbd> map for long trips</span><span><kbd>Esc</kbd> controls</span>
+    <div class="buttons startRow"><button id="startBtn" autofocus>Start <kbd>Enter</kbd></button><button id="viewDailyResult" class="secondary hidden">View today's result</button></div>
+    <button id="practiceBtn" class="secondary">Guided practice</button>
+    <div id="settingsPanel" class="hidden">
+      <div class="choice" id="lookChoice" role="radiogroup" aria-label="Light">
+        <span class="label">Light</span>
+        <button class="secondary" data-look="live" role="radio">Live <small id="liveLook"></small></button>
+        <button class="secondary" data-look="day" role="radio">Day</button>
+        <button class="secondary" data-look="night" role="radio">Night</button>
+      </div>
+      <div class="choice"><span class="label">Sound</span><button class="secondary soundToggle" data-sfx type="button">🔊 Sound on</button></div>
+      <!-- Difficulty selector: the start request already sends { difficulty }. See the team task "Difficulty levels". -->
+      <div id="difficulty" data-value="normal" class="controls">Difficulty: Normal</div>
     </div>
-    <!-- Difficulty selector: the start request already sends { difficulty }. See the team task "Difficulty levels". -->
-    <div id="difficulty" data-value="normal" class="controls">Difficulty: Normal</div>
-    <div class="buttons"><button id="startBtn" autofocus>Start <kbd>Enter</kbd></button><button id="viewDailyResult" class="secondary hidden">View today's result</button><button id="historyBtn" class="secondary hidden">History</button><button id="tutorialBtn" class="secondary">How to play</button><button id="practiceBtn" class="secondary">Guided practice</button><button class="secondary soundToggle" data-sfx type="button">🔊 Sound on</button><button id="achievementsBtn" class="secondary">Achievements</button></div>
+    <div class="titleMore"><button id="historyBtn" class="secondary hidden">History</button><button id="achievementsBtn" class="secondary">Achievements</button><button id="tutorialBtn" class="secondary">How to play</button><button id="settingsBtn" class="secondary" aria-expanded="false" aria-controls="settingsPanel">Settings</button></div>
     <p id="loading">Loading campus…</p>
   </div>
 </section>
@@ -4192,6 +4218,10 @@ function endPractice() {
 $('coachSkip').addEventListener('click', endPractice);
 $('coachDone').addEventListener('click', endPractice);
 $('practiceBtn').addEventListener('click', () => { if (game.phase === 'title') startRound(true); });
+$('settingsBtn').addEventListener('click', () => {
+  const open = $('settingsPanel').classList.toggle('hidden') === false;
+  $('settingsBtn').setAttribute('aria-expanded', String(open));
+});
 /** New players (never finished or skipped the practice) see it highlighted in gold. */
 function markPractice() {
   const fresh = !store.get(PRACTICE_SEEN);
