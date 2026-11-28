@@ -3005,8 +3005,10 @@ function openClueCard() {
   return new Promise(res => { closeClueCard = () => { pinClue(); sound('photo-close'); closeClueCard = () => {}; res(); }; });
 }
 $('clueSwap').addEventListener('click', () => clueMode(true));
-$('clueClose').addEventListener('click', () => closeClueCard());
+// Stop here: the click would otherwise reach the card, which (now pinned) would enlarge itself straight away.
+$('clueClose').addEventListener('click', e => { e.stopPropagation(); closeClueCard(); });
 $('clueCard').addEventListener('click', e => {
+  if (e.target.closest('button')) return;   // the card's own buttons do their own thing
   if ($('clueCard').classList.contains('pinned')) openClueCard();
   else if (e.target.id === 'clueCard') closeClueCard();
 });
